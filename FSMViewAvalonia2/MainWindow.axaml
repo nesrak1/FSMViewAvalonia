@@ -1,0 +1,47 @@
+﻿<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        Width="800" Height="600"
+        x:Class="FSMViewAvalonia2.MainWindow"
+        Title="FSMView Avalonia [BETA]">
+  <Grid Background="#3f3f3f">
+    <Canvas x:Name="graphCanvas" Height="383" Margin="10,26,10,0" VerticalAlignment="Top">
+      <TextBlock Canvas.Top="50" Canvas.Left="50" Foreground="#ffffff" Name="tipText">Welcome to FSMView Avalonia. Go to File->Open to get started.</TextBlock>
+      <Canvas.RenderTransform>
+        <MatrixTransform />
+      </Canvas.RenderTransform>
+    </Canvas>
+    <Menu Height="21" VerticalAlignment="Top" Background="#f0f0f0">
+      <MenuItem Header="File">
+        <MenuItem Header="Open" Name="fileOpen" />
+      </MenuItem>
+      <MenuItem x:Name="openLast" Header="Open Last" IsEnabled="False" Foreground="#cccccc" />
+    </Menu>
+    <TabControl HorizontalAlignment="Right" Margin="0,26,10,10" Background="#FFCFCFCF">
+      <TabItem Header="State">
+        <Grid Background="#FFE5E5E5">
+          <ScrollViewer>
+            <StackPanel x:Name="stateList"/>
+          </ScrollViewer>
+        </Grid>
+      </TabItem>
+      <TabItem Header="Events">
+        <Grid Background="#FFE5E5E5">
+          <ScrollViewer>
+            <StackPanel x:Name="eventList"/>
+          </ScrollViewer>
+        </Grid>
+      </TabItem>
+      <TabItem Header="Variables">
+        <Grid Background="#FFE5E5E5">
+          <ScrollViewer>
+            <StackPanel x:Name="variableList"/>
+          </ScrollViewer>
+        </Grid>
+      </TabItem>
+    </TabControl>
+
+  </Grid>
+</Window>
