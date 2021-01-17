@@ -22,13 +22,19 @@ namespace FSMViewAvalonia2
         private MenuItem fileOpen;
         private MenuItem openLast;
         private TextBlock tipText;
+        private StackPanel stateList;
+        private StackPanel eventList;
+        private StackPanel variableList;
         private MatrixTransform mt;
 
         //variables
         private AssetsManager am;
         private FSMLoader fsmLoader;
         private FsmDataInstance fsmData;
-        private string lastFilename;
+        private string lastFileName;
+
+        //fsm info
+        private List<UINode> nodes;
 
         public MainWindow()
         {
@@ -41,6 +47,9 @@ namespace FSMViewAvalonia2
             fileOpen = this.FindControl<MenuItem>("fileOpen");
             openLast = this.FindControl<MenuItem>("openLast");
             tipText = this.FindControl<TextBlock>("tipText");
+            stateList = this.FindControl<StackPanel>("stateList");
+            eventList = this.FindControl<StackPanel>("eventList");
+            variableList = this.FindControl<StackPanel>("variableList");
             mt = graphCanvas.RenderTransform as MatrixTransform;
             //generated events
             PointerPressed += MouseDownCanvas;
@@ -48,6 +57,7 @@ namespace FSMViewAvalonia2
             PointerMoved += MouseMoveCanvas;
             PointerWheelChanged += MouseScrollCanvas;
             fileOpen.Click += FileOpen_Click;
+            openLast.Click += OpenLast_Click;
         }
 
         //ui events
@@ -58,17 +68,11 @@ namespace FSMViewAvalonia2
             messageBoxStandardWindow.Show();
         }
 
-        public async void FileOpen_Click(object sender, RoutedEventArgs e)
+        private async void FileOpen_Click(object sender, RoutedEventArgs e)
         {
-            if (am == null)
-                am = FSMAssetHelper.CreateAssetManager();
-
-            if (fsmLoader == null)
-                fsmLoader = new FSMLoader(this, am);
-
             OpenFileDialog openFileDialog = new OpenFileDialog();
             string[] result = await openFileDialog.ShowAsync(this);
-
+            
             if (result == null || result.Length == 0)
                 return;
 
@@ -79,8 +83,24 @@ namespace FSMViewAvalonia2
             }
 
             string fileName = result[0];
-            lastFilename = fileName;
+            lastFileName = fileName;
             openLast.IsEnabled = true;
+
+            LoadFsm(fileName);
+        }
+
+        private void OpenLast_Click(object sender, RoutedEventArgs e)
+        {
+            LoadFsm(lastFileName);
+        }
+
+        private async void LoadFsm(string fileName)
+        {
+            if (am == null)
+                am = FSMAssetHelper.CreateAssetManager();
+
+            if (fsmLoader == null)
+                fsmLoader = new FSMLoader(this, am);
 
             List<AssetInfo> assetInfos = fsmLoader.LoadAllFSMsFromFile(fileName);
             FSMSelectionDialog selector = new FSMSelectionDialog(assetInfos);
@@ -91,21 +111,171 @@ namespace FSMViewAvalonia2
                 return;
 
             fsmData = fsmLoader.LoadFSM(selectedId);
-                
+
+            graphCanvas.Children.Clear();
+            nodes = new List<UINode>();
+
+            stateList.Children.Clear();
+            eventList.Children.Clear();
+            variableList.Children.Clear();
+
+            LoadStates();
+            LoadEvents();
+            LoadVariables();
+        }
+
+        private void LoadStates()
+        {
             foreach (FsmStateData stateData in fsmData.states)
             {
                 FsmNodeData node = stateData.node;
                 UINode uiNode = new UINode(node);
 
-                graphCanvas.Children.Add(uiNode.grid);
+                uiNode.grid.PointerPressed += (object sender, PointerPressedEventArgs e) =>
+                {
+                    if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+                        return;
 
-                PlaceTransitions(stateData, node);
+                    foreach (UINode uiNode2 in nodes)
+                    {
+                        uiNode2.Selected = false;
+                    }
+                    uiNode.Selected = true;
+                    StateSidebarData(stateData);
+                };
+
+                graphCanvas.Children.Add(uiNode.grid);
+                nodes.Add(uiNode);
+
+                PlaceTransitions(node, false);
+            }
+            foreach (FsmNodeData globalTransition in fsmData.globalTransitions)
+            {
+                FsmNodeData node = globalTransition;
+                UINode uiNode = new UINode(node);
+
+                graphCanvas.Children.Add(uiNode.grid);
+                nodes.Add(uiNode);
+
+                PlaceTransitions(node, true);
             }
         }
 
-        private async void PlaceTransitions(FsmStateData stateData, FsmNodeData node)
+        private void LoadEvents()
         {
-            float yPos = 24;
+            foreach (FsmEventData eventData in fsmData.events)
+            {
+                eventList.Children.Add(CreateSidebarRowEvent(eventData.Name, eventData.Global));
+            }
+        }
+
+        private void LoadVariables()
+        {
+            foreach (FsmVariableData varData in fsmData.variables)
+            {
+                string variableType = varData.Type;
+
+                variableList.Children.Add(CreateSidebarHeader(variableType));
+                foreach (Tuple<string, object> value in varData.Values)
+                {
+                    variableList.Children.Add(CreateSidebarRow(value.Item1, value.Item2.ToString()));
+                }
+            }
+        }
+
+        private void StateSidebarData(FsmStateData stateData)
+        {
+            stateList.Children.Clear();
+            var entries = stateData.ActionData;
+            foreach (var entry in entries)
+            {
+                string actionName = entry.Name;
+                var fields = entry.Values;
+
+                stateList.Children.Add(CreateSidebarHeader(actionName));
+
+                foreach (var field in fields)
+                {
+                    string key = field.Item1;
+                    object value = field.Item2;
+                    string valueString = value.ToString();
+
+                    if (value is bool)
+                    {
+                        valueString = valueString.ToLower();
+                    }
+
+                    stateList.Children.Add(CreateSidebarRow(key, valueString));
+                }
+            }
+        }
+
+        private TextBlock CreateSidebarHeader(string text)
+        {
+            TextBlock header = new TextBlock()
+            {
+                Text = text,
+                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left,
+                Height = 28,
+                FontWeight = FontWeight.Bold
+            };
+            return header;
+        }
+
+        private Grid CreateSidebarRow(string key, string value)
+        {
+            Grid valueContainer = new Grid()
+            {
+                Height = 28,
+                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Top,
+                Background = Brushes.LightGray
+            };
+            TextBlock valueLabel = new TextBlock()
+            {
+                Text = key,
+                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left,
+                Width = 120
+            };
+            TextBox valueBox = new TextBox()
+            {
+                Margin = new Thickness(125, 0, 0, 0),
+                IsReadOnly = true,
+                Text = value
+            };
+            valueContainer.Children.Add(valueLabel);
+            valueContainer.Children.Add(valueBox);
+            return valueContainer;
+        }
+
+        private Grid CreateSidebarRowEvent(string key, bool value)
+        {
+            Grid valueContainer = new Grid()
+            {
+                Height = 28,
+                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Top,
+                Background = Brushes.LightGray
+            };
+            TextBlock valueLabel = new TextBlock()
+            {
+                Text = key,
+                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left,
+                Width = 120
+            };
+            CheckBox valueBox = new CheckBox()
+            {
+                Margin = new Thickness(125, 0, 0, 0),
+                IsEnabled = false,
+                IsChecked = value,
+                Content = "Global"
+            };
+            valueContainer.Children.Add(valueLabel);
+            valueContainer.Children.Add(valueBox);
+            return valueContainer;
+        }
+
+        private async void PlaceTransitions(FsmNodeData node, bool global)
+        {
+            float yPos = 27;
             foreach (FsmTransition trans in node.transitions)
             {
                 try
@@ -117,12 +287,12 @@ namespace FSMViewAvalonia2
 
                         Point start, end, startMiddle, endMiddle;
 
-                        if (stateData != null)
+                        if (!global)
                         {
                             start = ArrowUtil.ComputeLocation(node, endNode, yPos, out bool isLeftStart);
                             end = ArrowUtil.ComputeLocation(endNode, node, 10, out bool isLeftEnd);
 
-                            double dist = 30;
+                            double dist = 40;
 
                             if (isLeftStart == isLeftEnd)
                                 dist *= 0.5;
@@ -140,7 +310,7 @@ namespace FSMViewAvalonia2
                         else
                         {
                             start = new Point(node.transform.X + node.transform.Width / 2,
-                                              node.transform.Y + node.transform.Height);
+                                              node.transform.Y + node.transform.Height / 2);
                             end = new Point(endNode.transform.X + endNode.transform.Width / 2,
                                             endNode.transform.Y);
                             startMiddle = new Point(start.X, start.Y + 1);

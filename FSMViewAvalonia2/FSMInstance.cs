@@ -4,6 +4,7 @@ using Avalonia.Controls;
 using Avalonia.Media;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace FSMViewAvalonia2
 {
@@ -15,12 +16,13 @@ namespace FSMViewAvalonia2
         public List<FsmStateData> states;
         public List<FsmEventData> events;
         public List<FsmVariableData> variables;
+        public List<FsmNodeData> globalTransitions;
         public int dataVersion;
     }
     public class FsmStateData
     {
         public string Name { get { return state.name; } }
-        public List<Tuple<string, string>> Values { get; set; }
+        public List<ActionScriptEntry> ActionData { get; set; }
         public FsmState state;
         public FsmNodeData node;
     }
@@ -31,8 +33,21 @@ namespace FSMViewAvalonia2
     }
     public class FsmVariableData
     {
+        public string Type { get; set; }
+        public List<Tuple<string, object>> Values { get; set; }
+    }
+    public class FsmGlobalTransition
+    {
+        public FsmEvent fsmEvent;
+        public string toState;
+        public int linkStyle;
+        public int linkConstraint;
+        public byte colorIndex;
+    }
+    public class ActionScriptEntry
+    {
         public string Name { get; set; }
-        public List<Tuple<string, string>> Values { get; set; }
+        public List<Tuple<string, object>> Values { get; set; }
     }
     public class FsmNodeData
     {
@@ -42,10 +57,26 @@ namespace FSMViewAvalonia2
         public Color transitionColor;
         public string name;
         public FsmTransition[] transitions;
-        public FsmNodeData(FsmState state, bool isGlobal)
+        public FsmNodeData(FsmDataInstance dataInst, FsmGlobalTransition transition)
         {
-            this.isGlobal = isGlobal;
-            transform = state.position;
+            isGlobal = true;
+            FsmNodeData toNode = dataInst.states.FirstOrDefault(s => s.state.name == transition.toState).node;
+            if (toNode != null)
+                transform = new Rect(toNode.transform.X, toNode.transform.Y - 50, toNode.transform.Width, toNode.transform.Height);
+            else
+                transform = new Rect(-999, -999, 0, 0);
+            stateColor = Constants.STATE_COLORS[transition.colorIndex];
+            transitionColor = Constants.TRANSITION_COLORS[transition.colorIndex];
+            name = transition.fsmEvent.name;
+            transitions = new FsmTransition[1]
+            {
+                new FsmTransition(transition)
+            };
+        }
+        public FsmNodeData(FsmState state)
+        {
+            isGlobal = false;
+            transform = new Rect(state.position.x, state.position.y, state.position.width, state.position.height);
             stateColor = Constants.STATE_COLORS[state.colorIndex];
             transitionColor = Constants.TRANSITION_COLORS[state.colorIndex];
             name = state.name;

@@ -11,4 +11,9 @@
     <PackageReference Include="Avalonia.Desktop" Version="0.9.12" />
     <PackageReference Include="MessageBox.Avalonia" Version="0.9.6.1" />
   </ItemGroup>
+  <ItemGroup>
+    <None Update="GridSplitter.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </None>
+  </ItemGroup>
 </Project>

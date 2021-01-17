@@ -4,5 +4,21 @@
     <Application.Styles>
         <StyleInclude Source="avares://Avalonia.Themes.Default/DefaultTheme.xaml"/>
         <StyleInclude Source="avares://Avalonia.Themes.Default/Accents/BaseLight.xaml"/>
+      <Styles>
+        <Style Selector="GridSplitter.newSplitter" >
+          <Setter Property="Focusable" Value="True" />
+          <Setter Property="MinWidth" Value="1" />
+          <Setter Property="MinHeight" Value="1" />
+          <Setter Property="Background" Value="{DynamicResource ThemeControlMidBrush}" />
+          <Setter Property="Template">
+            <ControlTemplate>
+              <Border
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}"
+                Background="{TemplateBinding Background}"/>
+            </ControlTemplate>
+          </Setter>
+        </Style>
+      </Styles>
     </Application.Styles>
 </Application>

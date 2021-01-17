@@ -1,59 +1,14 @@
 ﻿using AssetsTools.NET;
-using Avalonia;
+using AssetsTools.NET.Extra;
 using Avalonia.Media;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Numerics;
+using System.Text;
 
 namespace FSMViewAvalonia2
 {
-    public class StructUtil
-    {
-        public static AssetPPtr ReadAssetPPtr(AssetTypeValueField field)
-        {
-            int fileId = field.Get("m_FileID").GetValue().AsInt();
-            long pathId = field.Get("m_PathID").GetValue().AsInt64();
-            return new AssetPPtr(fileId, pathId);
-        }
-        public static List<T> ReadAssetList<T>(AssetTypeValueField field)
-        {
-            List<T> data = new List<T>();
-            int size = field.GetChildrenCount();
-            switch (typeof(T))
-            {
-                case Type intType when intType == typeof(int):
-                    for (int i = 0; i < size; i++)
-                        data.Add((T)(object)field[i].GetValue().AsInt());
-                    return data;
-                case Type stringType when stringType == typeof(string):
-                    for (int i = 0; i < size; i++)
-                        data.Add((T)(object)field[i].GetValue().AsString());
-                    return data;
-                case Type boolType when boolType == typeof(bool):
-                    for (int i = 0; i < size; i++)
-                        data.Add((T)(object)field[i].GetValue().AsBool());
-                    return data;
-                case Type byteType when byteType == typeof(byte):
-                    for (int i = 0; i < size; i++)
-                        data.Add((T)(object)(byte)field[i].GetValue().AsInt());
-                    return data;
-                case Type enumType when enumType.IsEnum:
-                    for (int i = 0; i < size; i++)
-                        data.Add((T)(object)field[i].GetValue().AsInt());
-                    return data;
-                case Type pptrType when pptrType == typeof(AssetPPtr):
-                    for (int i = 0; i < size; i++)
-                        data.Add((T)(object)ReadAssetPPtr(field[i]));
-                    return data;
-                default:
-                    //no error checking so don't put something stupid for <T>
-                    for (int i = 0; i < size; i++)
-                        data.Add((T)Activator.CreateInstance(typeof(T), field[i]));
-                    return data;
-            }
-        }
-    }
-
     public static class Constants
     {
         public static readonly Color[] STATE_COLORS =
@@ -81,27 +36,81 @@ namespace FSMViewAvalonia2
         };
     }
 
+    public static class StructUtil
+    {
+        public static AssetPPtr ReadAssetPPtr(AssetTypeValueField field)
+        {
+            int fileId = field.Get("m_FileID").GetValue().AsInt();
+            long pathId = field.Get("m_PathID").GetValue().AsInt64();
+            return new AssetPPtr(fileId, pathId);
+        }
+        public static NamedAssetPPtr ReadNamedAssetPPtr(AssetNameResolver namer, AssetTypeValueField field)
+        {
+            int fileId = field.Get("m_FileID").GetValue().AsInt();
+            long pathId = field.Get("m_PathID").GetValue().AsInt64();
+            return namer.GetNamedPtr(new AssetPPtr(fileId, pathId));
+        }
+        public static List<T> ReadAssetList<T>(AssetNameResolver namer, AssetTypeValueField field)
+        {
+            List<T> data = new List<T>();
+            int size = field.GetChildrenCount();
+            switch (typeof(T))
+            {
+                case Type intType when intType == typeof(int):
+                    for (int i = 0; i < size; i++)
+                        data.Add((T)(object)field[i].GetValue().AsInt());
+                    return data;
+                case Type stringType when stringType == typeof(string):
+                    for (int i = 0; i < size; i++)
+                        data.Add((T)(object)field[i].GetValue().AsString());
+                    return data;
+                case Type boolType when boolType == typeof(bool):
+                    for (int i = 0; i < size; i++)
+                        data.Add((T)(object)field[i].GetValue().AsBool());
+                    return data;
+                case Type byteType when byteType == typeof(byte):
+                    for (int i = 0; i < size; i++)
+                        data.Add((T)(object)(byte)field[i].GetValue().AsInt());
+                    return data;
+                case Type enumType when enumType.IsEnum:
+                    for (int i = 0; i < size; i++)
+                        data.Add((T)(object)field[i].GetValue().AsInt());
+                    return data;
+                //don't use this anymore, does not have name info
+                case Type pptrType when pptrType == typeof(AssetPPtr):
+                    for (int i = 0; i < size; i++)
+                        data.Add((T)(object)ReadAssetPPtr(field[i]));
+                    return data;
+                case Type namedPPtrType when namedPPtrType == typeof(NamedAssetPPtr):
+                    for (int i = 0; i < size; i++)
+                        data.Add((T)(object)ReadNamedAssetPPtr(namer, field[i]));
+                    return data;
+                default:
+                    //no error checking so don't put something stupid for <T>
+                    for (int i = 0; i < size; i++)
+                        data.Add((T)Activator.CreateInstance(typeof(T), namer, field[i]));
+                    return data;
+            }
+        }
+    }
+
     public class FsmState
     {
         public string name;
         public string description;
         public byte colorIndex;
-        public Rect position;
+        public UnityRect position;
         public bool isBreakpoint;
         public bool isSequence;
         public bool hideUnused;
         public FsmTransition[] transitions;
         public ActionData actionData;
-        public FsmState(AssetTypeValueField field)
+        public FsmState(AssetNameResolver namer, AssetTypeValueField field)
         {
             name = field.Get("name").GetValue().AsString();
             description = field.Get("description").GetValue().AsString();
             colorIndex = (byte)field.Get("colorIndex").GetValue().AsUInt();
-            AssetTypeValueField positionField = field.Get("position");
-            position = new Rect(positionField.Get("x").GetValue().AsFloat(),
-                                positionField.Get("y").GetValue().AsFloat(),
-                                positionField.Get("width").GetValue().AsFloat(),
-                                positionField.Get("height").GetValue().AsFloat());
+            position = new UnityRect(field.Get("position"));
             isBreakpoint = field.Get("isBreakpoint").GetValue().AsBool();
             isSequence = field.Get("isSequence").GetValue().AsBool();
             hideUnused = field.Get("hideUnused").GetValue().AsBool();
@@ -110,7 +119,11 @@ namespace FSMViewAvalonia2
             {
                 transitions[i] = new FsmTransition(field.Get("transitions")[i]);
             }
-            actionData = new ActionData(field.Get("actionData"));
+            actionData = new ActionData(namer, field.Get("actionData"));
+        }
+        public override string ToString()
+        {
+            return $"State {name}";
         }
     }
 
@@ -122,7 +135,7 @@ namespace FSMViewAvalonia2
         public List<bool> actionIsOpen;
         public List<int> actionStartIndex;
         public List<int> actionHashCodes;
-        public List<AssetPPtr> unityObjectParams;
+        public List<NamedAssetPPtr> unityObjectParams;
         public List<FsmGameObject> fsmGameObjectParams;
         public List<FsmOwnerDefault> fsmOwnerDefaultParams;
         public List<FsmAnimationCurve> animationCurveParams;
@@ -154,54 +167,65 @@ namespace FSMViewAvalonia2
         public List<string> paramName;
         public List<int> paramDataPos;
         public List<int> paramByteDataSize;
-        public ActionData(AssetTypeValueField field)
+        public ActionData(AssetNameResolver namer, AssetTypeValueField field)
         {
-            actionNames = StructUtil.ReadAssetList<string>(field.Get("actionNames"));
-            customNames = StructUtil.ReadAssetList<string>(field.Get("customNames"));
-            actionEnabled = StructUtil.ReadAssetList<bool>(field.Get("actionEnabled"));
-            actionIsOpen = StructUtil.ReadAssetList<bool>(field.Get("actionIsOpen"));
-            actionStartIndex = StructUtil.ReadAssetList<int>(field.Get("actionStartIndex"));
-            actionHashCodes = StructUtil.ReadAssetList<int>(field.Get("actionHashCodes"));
-            unityObjectParams = StructUtil.ReadAssetList<AssetPPtr>(field.Get("unityObjectParams"));
-            fsmGameObjectParams = StructUtil.ReadAssetList<FsmGameObject>(field.Get("fsmGameObjectParams"));
-            fsmOwnerDefaultParams = StructUtil.ReadAssetList<FsmOwnerDefault>(field.Get("fsmOwnerDefaultParams"));
-            animationCurveParams = StructUtil.ReadAssetList<FsmAnimationCurve>(field.Get("animationCurveParams"));
-            fsmTemplateControlParams = StructUtil.ReadAssetList<FsmTemplateControl>(field.Get("fsmTemplateControlParams"));
-            fsmEventTargetParams = StructUtil.ReadAssetList<FsmEventTarget>(field.Get("fsmEventTargetParams"));
-            fsmPropertyParams = StructUtil.ReadAssetList<FsmProperty>(field.Get("fsmPropertyParams"));
-            layoutOptionParams = StructUtil.ReadAssetList<FsmLayoutOption>(field.Get("layoutOptionParams"));
-            fsmStringParams = StructUtil.ReadAssetList<FsmString>(field.Get("fsmStringParams"));
-            fsmObjectParams = StructUtil.ReadAssetList<FsmObject>(field.Get("fsmObjectParams"));
-            fsmVarParams = StructUtil.ReadAssetList<FsmVar>(field.Get("fsmVarParams"));
-            fsmArrayParams = StructUtil.ReadAssetList<FsmArray>(field.Get("fsmArrayParams"));
-            fsmEnumParams = StructUtil.ReadAssetList<FsmEnum>(field.Get("fsmEnumParams"));
-            fsmFloatParams = StructUtil.ReadAssetList<FsmFloat>(field.Get("fsmFloatParams"));
-            fsmIntParams = StructUtil.ReadAssetList<FsmInt>(field.Get("fsmIntParams"));
-            fsmBoolParams = StructUtil.ReadAssetList<FsmBool>(field.Get("fsmBoolParams"));
-            fsmVector2Params = StructUtil.ReadAssetList<FsmVector2>(field.Get("fsmVector2Params"));
-            fsmVector3Params = StructUtil.ReadAssetList<FsmVector3>(field.Get("fsmVector3Params"));
-            fsmColorParams = StructUtil.ReadAssetList<FsmColor>(field.Get("fsmColorParams"));
-            fsmRectParams = StructUtil.ReadAssetList<FsmRect>(field.Get("fsmRectParams"));
-            fsmQuaternionParams = StructUtil.ReadAssetList<FsmQuaternion>(field.Get("fsmQuaternionParams"));
-            stringParams = StructUtil.ReadAssetList<string>(field.Get("stringParams"));
-            byteData = StructUtil.ReadAssetList<byte>(field.Get("byteData"));
-            arrayParamSizes = StructUtil.ReadAssetList<int>(field.Get("arrayParamSizes"));
-            arrayParamTypes = StructUtil.ReadAssetList<string>(field.Get("arrayParamTypes"));
-            customTypeSizes = StructUtil.ReadAssetList<int>(field.Get("customTypeSizes"));
-            customTypeNames = StructUtil.ReadAssetList<string>(field.Get("customTypeNames"));
-            paramDataType = StructUtil.ReadAssetList<ParamDataType>(field.Get("paramDataType"));
-            paramName = StructUtil.ReadAssetList<string>(field.Get("paramName"));
-            paramDataPos = StructUtil.ReadAssetList<int>(field.Get("paramDataPos"));
-            paramByteDataSize = StructUtil.ReadAssetList<int>(field.Get("paramByteDataSize"));
+            actionNames = StructUtil.ReadAssetList<string>(namer, field.Get("actionNames"));
+            customNames = StructUtil.ReadAssetList<string>(namer, field.Get("customNames"));
+            actionEnabled = StructUtil.ReadAssetList<bool>(namer, field.Get("actionEnabled"));
+            actionIsOpen = StructUtil.ReadAssetList<bool>(namer, field.Get("actionIsOpen"));
+            actionStartIndex = StructUtil.ReadAssetList<int>(namer, field.Get("actionStartIndex"));
+            actionHashCodes = StructUtil.ReadAssetList<int>(namer, field.Get("actionHashCodes"));
+            unityObjectParams = StructUtil.ReadAssetList<NamedAssetPPtr>(namer, field.Get("unityObjectParams"));
+            fsmGameObjectParams = StructUtil.ReadAssetList<FsmGameObject>(namer, field.Get("fsmGameObjectParams"));
+            fsmOwnerDefaultParams = StructUtil.ReadAssetList<FsmOwnerDefault>(namer, field.Get("fsmOwnerDefaultParams"));
+            animationCurveParams = StructUtil.ReadAssetList<FsmAnimationCurve>(namer, field.Get("animationCurveParams"));
+            functionCallParams = StructUtil.ReadAssetList<FsmFunctionCall>(namer, field.Get("functionCallParams"));
+            fsmTemplateControlParams = StructUtil.ReadAssetList<FsmTemplateControl>(namer, field.Get("fsmTemplateControlParams"));
+            fsmEventTargetParams = StructUtil.ReadAssetList<FsmEventTarget>(namer, field.Get("fsmEventTargetParams"));
+            fsmPropertyParams = StructUtil.ReadAssetList<FsmProperty>(namer, field.Get("fsmPropertyParams"));
+            layoutOptionParams = StructUtil.ReadAssetList<FsmLayoutOption>(namer, field.Get("layoutOptionParams"));
+            fsmStringParams = StructUtil.ReadAssetList<FsmString>(namer, field.Get("fsmStringParams"));
+            fsmObjectParams = StructUtil.ReadAssetList<FsmObject>(namer, field.Get("fsmObjectParams"));
+            fsmVarParams = StructUtil.ReadAssetList<FsmVar>(namer, field.Get("fsmVarParams"));
+            fsmArrayParams = StructUtil.ReadAssetList<FsmArray>(namer, field.Get("fsmArrayParams"));
+            fsmEnumParams = StructUtil.ReadAssetList<FsmEnum>(namer, field.Get("fsmEnumParams"));
+            fsmFloatParams = StructUtil.ReadAssetList<FsmFloat>(namer, field.Get("fsmFloatParams"));
+            fsmIntParams = StructUtil.ReadAssetList<FsmInt>(namer, field.Get("fsmIntParams"));
+            fsmBoolParams = StructUtil.ReadAssetList<FsmBool>(namer, field.Get("fsmBoolParams"));
+            fsmVector2Params = StructUtil.ReadAssetList<FsmVector2>(namer, field.Get("fsmVector2Params"));
+            fsmVector3Params = StructUtil.ReadAssetList<FsmVector3>(namer, field.Get("fsmVector3Params"));
+            fsmColorParams = StructUtil.ReadAssetList<FsmColor>(namer, field.Get("fsmColorParams"));
+            fsmRectParams = StructUtil.ReadAssetList<FsmRect>(namer, field.Get("fsmRectParams"));
+            fsmQuaternionParams = StructUtil.ReadAssetList<FsmQuaternion>(namer, field.Get("fsmQuaternionParams"));
+            stringParams = StructUtil.ReadAssetList<string>(namer, field.Get("stringParams"));
+            byteData = StructUtil.ReadAssetList<byte>(namer, field.Get("byteData"));
+            arrayParamSizes = StructUtil.ReadAssetList<int>(namer, field.Get("arrayParamSizes"));
+            arrayParamTypes = StructUtil.ReadAssetList<string>(namer, field.Get("arrayParamTypes"));
+            customTypeSizes = StructUtil.ReadAssetList<int>(namer, field.Get("customTypeSizes"));
+            customTypeNames = StructUtil.ReadAssetList<string>(namer, field.Get("customTypeNames"));
+            paramDataType = StructUtil.ReadAssetList<ParamDataType>(namer, field.Get("paramDataType"));
+            paramName = StructUtil.ReadAssetList<string>(namer, field.Get("paramName"));
+            paramDataPos = StructUtil.ReadAssetList<int>(namer, field.Get("paramDataPos"));
+            paramByteDataSize = StructUtil.ReadAssetList<int>(namer, field.Get("paramByteDataSize"));
         }
     }
 
     public class FsmGameObject : NamedVariable
     {
-        public AssetPPtr value;
-        public FsmGameObject(AssetTypeValueField field) : base(field)
+        public NamedAssetPPtr value;
+        public FsmGameObject() { }
+        public FsmGameObject(AssetNameResolver namer, AssetTypeValueField field) : base(field)
         {
-            value = StructUtil.ReadAssetPPtr(field.Get("value"));
+            value = StructUtil.ReadNamedAssetPPtr(namer, field.Get("value"));
+            if (name == "")
+                name = value.name;
+        }
+        public override string ToString()
+        {
+            if (value.name != "")
+                return $"GameObject {value.name}";
+            else
+                return $"GameObject {name}";
         }
     }
 
@@ -209,19 +233,29 @@ namespace FSMViewAvalonia2
     {
         public OwnerDefaultOption ownerOption;
         public FsmGameObject gameObject;
-        public FsmOwnerDefault(AssetTypeValueField field)
+        public FsmOwnerDefault() { }
+        public FsmOwnerDefault(AssetNameResolver namer, AssetTypeValueField field)
         {
             ownerOption = (OwnerDefaultOption)field.Get("ownerOption").GetValue().AsInt();
-            gameObject = new FsmGameObject(field.Get("gameObject"));
+            gameObject = new FsmGameObject(namer, field.Get("gameObject"));
+        }
+        public override string ToString()
+        {
+            return $"OwnerDefault {gameObject.name}";
         }
     }
 
     public class FsmAnimationCurve
     {
         public AnimationCurve value;
-        public FsmAnimationCurve(AssetTypeValueField field)
+        public FsmAnimationCurve() { }
+        public FsmAnimationCurve(AssetNameResolver namer, AssetTypeValueField field)
         {
-            value = new AnimationCurve(field);
+            value = new AnimationCurve(namer, field);
+        }
+        public override string ToString()
+        {
+            return "AnimationCurve";
         }
     }
 
@@ -244,25 +278,89 @@ namespace FSMViewAvalonia2
         public FsmColor ColorParameter;
         public FsmEnum EnumParameter;
         public FsmArray ArrayParameter;
-        public FsmFunctionCall(AssetTypeValueField field)
+        public FsmFunctionCall() { }
+        public FsmFunctionCall(AssetNameResolver namer, AssetTypeValueField field)
         {
             FunctionName = field.Get("FunctionName").GetValue().AsString();
             parameterType = field.Get("parameterType").GetValue().AsString();
-            BoolParameter = new FsmBool(field.Get("BoolParameter"));
-            FloatParameter = new FsmFloat(field.Get("FloatParameter"));
-            IntParameter = new FsmInt(field.Get("IntParameter"));
-            GameObjectParameter = new FsmGameObject(field.Get("GameObjectParameter"));
-            ObjectParameter = new FsmObject(field.Get("ObjectParameter"));
-            StringParameter = new FsmString(field.Get("StringParameter"));
-            Vector2Parameter = new FsmVector2(field.Get("Vector2Parameter"));
-            Vector3Parameter = new FsmVector3(field.Get("Vector3Parameter"));
-            RectParamater = new FsmRect(field.Get("RectParamater"));
-            QuaternionParameter = new FsmQuaternion(field.Get("QuaternionParameter"));
-            MaterialParameter = new FsmObject(field.Get("MaterialParameter"));
-            TextureParameter = new FsmObject(field.Get("TextureParameter"));
-            ColorParameter = new FsmColor(field.Get("ColorParameter"));
-            EnumParameter = new FsmEnum(field.Get("EnumParameter"));
-            ArrayParameter = new FsmArray(field.Get("ArrayParameter"));
+            BoolParameter = new FsmBool(namer, field.Get("BoolParameter"));
+            FloatParameter = new FsmFloat(namer, field.Get("FloatParameter"));
+            IntParameter = new FsmInt(namer, field.Get("IntParameter"));
+            GameObjectParameter = new FsmGameObject(namer, field.Get("GameObjectParameter"));
+            ObjectParameter = new FsmObject(namer, field.Get("ObjectParameter"));
+            StringParameter = new FsmString(namer, field.Get("StringParameter"));
+            Vector2Parameter = new FsmVector2(namer, field.Get("Vector2Parameter"));
+            Vector3Parameter = new FsmVector3(namer, field.Get("Vector3Parameter"));
+            RectParamater = new FsmRect(namer, field.Get("RectParamater"));
+            QuaternionParameter = new FsmQuaternion(namer, field.Get("QuaternionParameter"));
+            MaterialParameter = new FsmObject(namer, field.Get("MaterialParameter"));
+            TextureParameter = new FsmObject(namer, field.Get("TextureParameter"));
+            ColorParameter = new FsmColor(namer, field.Get("ColorParameter"));
+            EnumParameter = new FsmEnum(namer, field.Get("EnumParameter"));
+            ArrayParameter = new FsmArray(namer, field.Get("ArrayParameter"));
+        }
+        public override string ToString()
+        {
+            NamedVariable value = null;
+            switch (parameterType)
+            {
+                case "bool":
+                    value = BoolParameter;
+                    break;
+                case "float":
+                    value = FloatParameter;
+                    break;
+                case "int":
+                    value = IntParameter;
+                    break;
+                case "GameObject":
+                    value = GameObjectParameter;
+                    break;
+                case "Object":
+                    value = ObjectParameter;
+                    break;
+                case "string":
+                    value = StringParameter;
+                    break;
+                case "Vector2":
+                    value = Vector2Parameter;
+                    break;
+                case "Vector3":
+                    value = Vector3Parameter;
+                    break;
+                case "Rect":
+                    value = RectParamater;
+                    break;
+                case "Quaternion":
+                    value = QuaternionParameter;
+                    break;
+                case "Material":
+                    value = MaterialParameter;
+                    break;
+                case "Texture":
+                    value = TextureParameter;
+                    break;
+                case "Color":
+                    value = ColorParameter;
+                    break;
+                case "Enum":
+                    value = EnumParameter;
+                    break;
+                case "Array":
+                    value = ArrayParameter;
+                    break;
+            }
+            if (value != null)
+            {
+                if (value.name == "")
+                    return $"{FunctionName}({value})";
+                else
+                    return $"{FunctionName}({value.name}={value})";
+            }
+            else
+            {
+                return $"{FunctionName}(???)";
+            }
         }
     }
 
@@ -270,14 +368,19 @@ namespace FSMViewAvalonia2
     {
         public AssetPPtr fsmTemplate;
         public FsmVarOverride[] fsmVarOverrides;
-        public FsmTemplateControl(AssetTypeValueField field)
+        public FsmTemplateControl() { }
+        public FsmTemplateControl(AssetNameResolver namer, AssetTypeValueField field)
         {
             fsmTemplate = StructUtil.ReadAssetPPtr(field.Get("fsmTemplate"));
             fsmVarOverrides = new FsmVarOverride[field.Get("fsmVarOverrides").GetChildrenCount()];
             for (int i = 0; i < fsmVarOverrides.Length; i++)
             {
-                fsmVarOverrides[i] = new FsmVarOverride(field.Get("fsmVarOverrides")[i]);
+                fsmVarOverrides[i] = new FsmVarOverride(namer, field.Get("fsmVarOverrides")[i]);
             }
+        }
+        public override string ToString()
+        {
+            return "TemplateControl";
         }
     }
 
@@ -289,14 +392,19 @@ namespace FSMViewAvalonia2
         public FsmString fsmName;
         public FsmBool sendToChildren;
         public AssetPPtr fsmComponent;
-        public FsmEventTarget(AssetTypeValueField field)
+        public FsmEventTarget() { }
+        public FsmEventTarget(AssetNameResolver namer, AssetTypeValueField field)
         {
             target = (EventTarget)field.Get("target").GetValue().AsInt();
-            excludeSelf = new FsmBool(field.Get("excludeSelf"));
-            gameObject = new FsmOwnerDefault(field.Get("gameObject"));
-            fsmName = new FsmString(field.Get("fsmName"));
-            sendToChildren = new FsmBool(field.Get("sendToChildren"));
+            excludeSelf = new FsmBool(namer, field.Get("excludeSelf"));
+            gameObject = new FsmOwnerDefault(namer, field.Get("gameObject"));
+            fsmName = new FsmString(namer, field.Get("fsmName"));
+            sendToChildren = new FsmBool(namer, field.Get("sendToChildren"));
             fsmComponent = StructUtil.ReadAssetPPtr(field.Get("fsmComponent"));
+        }
+        public override string ToString()
+        {
+            return $"EventTarget {target.ToString()}{(excludeSelf.value ? "!" : "")}";
         }
     }
 
@@ -321,27 +429,32 @@ namespace FSMViewAvalonia2
         public FsmEnum EnumParameter;
         public FsmArray ArrayParameter;
         public bool setProperty;
-        public FsmProperty(AssetTypeValueField field)
+        public FsmProperty() { }
+        public FsmProperty(AssetNameResolver namer, AssetTypeValueField field)
         {
-            TargetObject = new FsmObject(field.Get("TargetObject"));
+            TargetObject = new FsmObject(namer, field.Get("TargetObject"));
             TargetTypeName = field.Get("TargetTypeName").GetValue().AsString();
             PropertyName = field.Get("PropertyName").GetValue().AsString();
-            BoolParameter = new FsmBool(field.Get("BoolParameter"));
-            FloatParameter = new FsmFloat(field.Get("FloatParameter"));
-            IntParameter = new FsmInt(field.Get("IntParameter"));
-            GameObjectParameter = new FsmGameObject(field.Get("GameObjectParameter"));
-            ObjectParameter = new FsmObject(field.Get("ObjectParameter"));
-            StringParameter = new FsmString(field.Get("StringParameter"));
-            Vector2Parameter = new FsmVector2(field.Get("Vector2Parameter"));
-            Vector3Parameter = new FsmVector3(field.Get("Vector3Parameter"));
-            RectParamater = new FsmRect(field.Get("RectParamater"));
-            QuaternionParameter = new FsmQuaternion(field.Get("QuaternionParameter"));
-            MaterialParameter = new FsmObject(field.Get("MaterialParameter"));
-            TextureParameter = new FsmObject(field.Get("TextureParameter"));
-            ColorParameter = new FsmColor(field.Get("ColorParameter"));
-            EnumParameter = new FsmEnum(field.Get("EnumParameter"));
-            ArrayParameter = new FsmArray(field.Get("ArrayParameter"));
+            BoolParameter = new FsmBool(namer, field.Get("BoolParameter"));
+            FloatParameter = new FsmFloat(namer, field.Get("FloatParameter"));
+            IntParameter = new FsmInt(namer, field.Get("IntParameter"));
+            GameObjectParameter = new FsmGameObject(namer, field.Get("GameObjectParameter"));
+            ObjectParameter = new FsmObject(namer, field.Get("ObjectParameter"));
+            StringParameter = new FsmString(namer, field.Get("StringParameter"));
+            Vector2Parameter = new FsmVector2(namer, field.Get("Vector2Parameter"));
+            Vector3Parameter = new FsmVector3(namer, field.Get("Vector3Parameter"));
+            RectParamater = new FsmRect(namer, field.Get("RectParamater"));
+            QuaternionParameter = new FsmQuaternion(namer, field.Get("QuaternionParameter"));
+            MaterialParameter = new FsmObject(namer, field.Get("MaterialParameter"));
+            TextureParameter = new FsmObject(namer, field.Get("TextureParameter"));
+            ColorParameter = new FsmColor(namer, field.Get("ColorParameter"));
+            EnumParameter = new FsmEnum(namer, field.Get("EnumParameter"));
+            ArrayParameter = new FsmArray(namer, field.Get("ArrayParameter"));
             setProperty = field.Get("setProperty").GetValue().AsBool();
+        }
+        public override string ToString()
+        {
+            return $"Property {TargetTypeName} {PropertyName}";
         }
     }
 
@@ -350,29 +463,59 @@ namespace FSMViewAvalonia2
         public LayoutOptionType option;
         public FsmFloat floatParam;
         public FsmBool boolParam;
-        public FsmLayoutOption(AssetTypeValueField field) : base(field)
+        public FsmLayoutOption() { }
+        public FsmLayoutOption(AssetNameResolver namer, AssetTypeValueField field) : base(field)
         {
             option = (LayoutOptionType)field.Get("option").GetValue().AsInt();
-            floatParam = new FsmFloat(field.Get("floatParam"));
-            boolParam = new FsmBool(field.Get("boolParam"));
+            floatParam = new FsmFloat(namer, field.Get("floatParam"));
+            boolParam = new FsmBool(namer, field.Get("boolParam"));
+        }
+        public override string ToString()
+        {
+            if (name != "")
+                return $"LayoutOption {name} = {option.ToString()}";
+            else
+                return $"LayoutOption.{option.ToString()}";
         }
     }
 
     public class FsmString : NamedVariable
     {
         public string value;
-        public FsmString(AssetTypeValueField field) : base(field)
+        public FsmString() { }
+        public FsmString(AssetNameResolver namer, AssetTypeValueField field) : base(field)
         {
             value = field.Get("value").GetValue().AsString();
+        }
+        public override string ToString()
+        {
+            if (name != "")
+                if (value == "")
+                    return $"string {name}";
+                else
+                    return $"string {name} = \"{value}\"";
+            else
+                return $"\"{value}\"";
         }
     }
 
     public class FsmObject : NamedVariable
     {
-        public AssetPPtr value;
-        public FsmObject(AssetTypeValueField field) : base(field)
+        public NamedAssetPPtr value;
+        public FsmObject() { }
+        public FsmObject(AssetNameResolver namer, AssetTypeValueField field) : base(field)
         {
-            value = StructUtil.ReadAssetPPtr(field.Get("value"));
+            value = StructUtil.ReadNamedAssetPPtr(namer, field.Get("value"));
+        }
+        public override string ToString()
+        {
+            if (name != "")
+                if (value.name == "")
+                    return $"object {name}";
+                else
+                    return $"object {name} = [{value.name}]";
+            else
+                return $"[{value.name}]";
         }
     }
 
@@ -387,9 +530,10 @@ namespace FSMViewAvalonia2
         public bool boolValue;
         public string stringValue;
         public Vector4 vector4Value;
-        public AssetPPtr objectReference;
+        public NamedAssetPPtr objectReference;
         public FsmArray arrayValue;
-        public FsmVar(AssetTypeValueField field)
+        public FsmVar() { }
+        public FsmVar(AssetNameResolver namer, AssetTypeValueField field)
         {
             variableName = field.Get("variableName").GetValue().AsString();
             objectType = field.Get("objectType").GetValue().AsString();
@@ -400,8 +544,71 @@ namespace FSMViewAvalonia2
             boolValue = field.Get("boolValue").GetValue().AsBool();
             stringValue = field.Get("stringValue").GetValue().AsString();
             vector4Value = new Vector4(field.Get("vector4Value"));
-            objectReference = StructUtil.ReadAssetPPtr(field.Get("objectReference"));
-            arrayValue = new FsmArray(field.Get("arrayValue"));
+            objectReference = StructUtil.ReadNamedAssetPPtr(namer, field.Get("objectReference"));
+            arrayValue = new FsmArray(namer, field.Get("arrayValue"));
+        }
+        public override string ToString()
+        {
+            object value = null;
+            switch (type)
+            {
+                case VariableType.Float:
+                    value = floatValue;
+                    break;
+                case VariableType.Int:
+                    value = intValue;
+                    break;
+                case VariableType.Bool:
+                    value = boolValue;
+                    break;
+                case VariableType.String:
+                    value = stringValue;
+                    break;
+                case VariableType.Vector2:
+                    value = new Vector2() { x = vector4Value.x, y = vector4Value.y };
+                    break;
+                case VariableType.Vector3:
+                    value = new Vector3() { x = vector4Value.x, y = vector4Value.y, z = vector4Value.z };
+                    break;
+                case VariableType.Object:
+                case VariableType.GameObject:
+                case VariableType.Material:
+                case VariableType.Texture:
+                    value = objectReference;
+                    break;
+                case VariableType.Color:
+                    value = new UnityColor() { r = vector4Value.x, g = vector4Value.y, b = vector4Value.z, a = vector4Value.w };
+                    break;
+                case VariableType.Rect:
+                    value = new UnityRect() { x = vector4Value.x, y = vector4Value.y, width = vector4Value.z, height = vector4Value.w };
+                    break;
+                case VariableType.Quaternion:
+                    value = new Quaternion() { x = vector4Value.x, y = vector4Value.y, z = vector4Value.z, w = vector4Value.w };
+                    break;
+                case VariableType.Array:
+                    value = arrayValue;
+                    break;
+            }
+            if (value != null)
+            {
+                object valueObj;
+                if (value is NamedAssetPPtr namedPPtr && namedPPtr.name != "")
+                    valueObj = namedPPtr.name;
+                else
+                    valueObj = value;
+                
+                if (variableName != "")
+                    return $"Var {variableName} = {valueObj}";
+                else
+                    return $"Var unnamed = {valueObj}";
+            }
+            else
+            {
+                if (variableName != "")
+                    return $"Var {variableName}";
+                else
+                    return $"Var";
+            }
         }
     }
 
@@ -415,7 +622,8 @@ namespace FSMViewAvalonia2
         public string[] stringValues;
         public Vector4[] vector4Values;
         public AssetPPtr[] objectReferences;
-        public FsmArray(AssetTypeValueField field) : base(field)
+        public FsmArray() { }
+        public FsmArray(AssetNameResolver namer, AssetTypeValueField field) : base(field)
         {
             type = (VariableType)field.Get("type").GetValue().AsInt();
             objectTypeName = field.Get("objectTypeName").GetValue().AsString();
@@ -450,89 +658,148 @@ namespace FSMViewAvalonia2
                 objectReferences[i] = StructUtil.ReadAssetPPtr(field.Get("objectReferences")[i]);
             }
         }
+        public override string ToString()
+        {
+            if (name != "")
+                return $"Array {name}";
+            else
+                return $"Array {type.ToString()} {objectTypeName}";
+        }
     }
 
     public class FsmFloat : NamedVariable
     {
         public float value;
-        public FsmFloat(AssetTypeValueField field) : base(field)
+        public FsmFloat() { }
+        public FsmFloat(AssetNameResolver namer, AssetTypeValueField field) : base(field)
         {
             value = field.Get("value").GetValue().AsFloat();
+        }
+        public override string ToString()
+        {
+            if (name != "")
+                return $"float {name}";
+            else
+                return value + "f";
         }
     }
 
     public class FsmInt : NamedVariable
     {
         public int value;
-        public FsmInt(AssetTypeValueField field) : base(field)
+        public FsmInt() { }
+        public FsmInt(AssetNameResolver namer, AssetTypeValueField field) : base(field)
         {
             value = field.Get("value").GetValue().AsInt();
+        }
+        public override string ToString()
+        {
+            if (name != "")
+                return $"int {name}";
+            else
+                return value.ToString();
         }
     }
 
     public class FsmBool : NamedVariable
     {
         public bool value;
-        public FsmBool(AssetTypeValueField field) : base(field)
+        public FsmBool() { }
+        public FsmBool(AssetNameResolver namer, AssetTypeValueField field) : base(field)
         {
             value = field.Get("value").GetValue().AsBool();
+        }
+        public override string ToString()
+        {
+            if (name != "")
+                return $"bool {name}";
+            else
+                return value.ToString().ToLower();
         }
     }
 
     public class FsmVector2 : NamedVariable
     {
         public Vector2 value;
-        public FsmVector2(AssetTypeValueField field) : base(field)
+        public FsmVector2() { }
+        public FsmVector2(AssetNameResolver namer, AssetTypeValueField field) : base(field)
         {
             value = new Vector2(field.Get("value"));
+        }
+        public override string ToString()
+        {
+            if (name != "")
+                return $"Vector2 {name}";
+            else
+                return value.ToString();
         }
     }
 
     public class FsmVector3 : NamedVariable
     {
         public Vector3 value;
-        public FsmVector3(AssetTypeValueField field) : base(field)
+        public FsmVector3() { }
+        public FsmVector3(AssetNameResolver namer, AssetTypeValueField field) : base(field)
         {
             value = new Vector3(field.Get("value"));
+        }
+        public override string ToString()
+        {
+            if (name != "")
+                return $"Vector3 {name}";
+            else
+                return value.ToString();
         }
     }
 
     public class FsmColor : NamedVariable
     {
-        public Color value;
-        public FsmColor(AssetTypeValueField field) : base(field)
+        public UnityColor value;
+        public FsmColor() { }
+        public FsmColor(AssetNameResolver namer, AssetTypeValueField field) : base(field)
         {
-            AssetTypeValueField valueField = field.Get("value");
-            value = new Color((byte)valueField.Get("a").GetValue().AsInt(),
-                              (byte)valueField.Get("r").GetValue().AsInt(),
-                              (byte)valueField.Get("g").GetValue().AsInt(),
-                              (byte)valueField.Get("b").GetValue().AsInt());
+            value = new UnityColor(field.Get("value"));
+        }
+        public override string ToString()
+        {
+            if (name != "")
+                return $"Color {name}";
+            else
+                return value.ToString();
         }
     }
 
     public class FsmRect : NamedVariable
     {
-        public Rect value;
-        public FsmRect(AssetTypeValueField field) : base(field)
+        public UnityRect value;
+        public FsmRect() { }
+        public FsmRect(AssetNameResolver namer, AssetTypeValueField field) : base(field)
         {
-            AssetTypeValueField valueField = field.Get("value");
-            value = new Rect(valueField.Get("x").GetValue().AsFloat(),
-                             valueField.Get("y").GetValue().AsFloat(),
-                             valueField.Get("width").GetValue().AsFloat(),
-                             valueField.Get("height").GetValue().AsFloat());
+            value = new UnityRect(field.Get("value"));
+        }
+        public override string ToString()
+        {
+            if (name != "")
+                return $"Rect {name}";
+            else
+                return value.ToString();
         }
     }
 
     public class FsmQuaternion : NamedVariable
     {
         public Quaternion value;
-        public FsmQuaternion(AssetTypeValueField field) : base(field)
+        public FsmQuaternion() { }
+        public FsmQuaternion(AssetNameResolver namer, AssetTypeValueField field) : base(field)
         {
-            AssetTypeValueField valueField = field.Get("value");
-            value = new Quaternion(valueField.Get("x").GetValue().AsFloat(),
-                                   valueField.Get("y").GetValue().AsFloat(),
-                                   valueField.Get("z").GetValue().AsFloat(),
-                                   valueField.Get("w").GetValue().AsFloat());
+            value = new Quaternion(field.Get("value"));
+        }
+        public override string ToString()
+        {
+            if (name != "")
+                return $"Quaternion {name}";
+            else
+                return value.ToString();
         }
     }
 
@@ -545,6 +812,7 @@ namespace FSMViewAvalonia2
         public string tooltip;
         public bool showInInspector;
         public bool networkSync;
+        public NamedVariable() { }
         public NamedVariable(AssetTypeValueField field)
         {
             useVariable = field.Get("useVariable").GetValue().AsBool();
@@ -561,9 +829,10 @@ namespace FSMViewAvalonia2
         public int m_PreInfinity;
         public int m_PostInfinity;
         public int m_RotationOrder;
-        public AnimationCurve(AssetTypeValueField field)
+        public AnimationCurve() { }
+        public AnimationCurve(AssetNameResolver namer, AssetTypeValueField field)
         {
-            m_Curve = StructUtil.ReadAssetList<Keyframe>(field.Get("m_Curve"));
+            m_Curve = StructUtil.ReadAssetList<Keyframe>(namer, field.Get("m_Curve"));
             m_PreInfinity = field.Get("m_PreInfinity").GetValue().AsInt();
             m_PostInfinity = field.Get("m_PostInfinity").GetValue().AsInt();
             m_RotationOrder = field.Get("m_RotationOrder").GetValue().AsInt();
@@ -581,6 +850,7 @@ namespace FSMViewAvalonia2
         public float inWeight;
         public float outWeight;
         /////////////
+        public Keyframe() { }
         public Keyframe(AssetTypeValueField field)
         {
             time = field.Get("time").GetValue().AsFloat();
@@ -594,10 +864,15 @@ namespace FSMViewAvalonia2
     {
         public float x;
         public float y;
+        public Vector2() { }
         public Vector2(AssetTypeValueField field)
         {
             x = field.Get("x").GetValue().AsFloat();
             y = field.Get("y").GetValue().AsFloat();
+        }
+        public override string ToString()
+        {
+            return $"Vector2({x}, {y})";
         }
     }
 
@@ -606,11 +881,16 @@ namespace FSMViewAvalonia2
         public float x;
         public float y;
         public float z;
+        public Vector3() { }
         public Vector3(AssetTypeValueField field)
         {
             x = field.Get("x").GetValue().AsFloat();
             y = field.Get("y").GetValue().AsFloat();
             z = field.Get("z").GetValue().AsFloat();
+        }
+        public override string ToString()
+        {
+            return $"Vector3({x}, {y}, {z})";
         }
     }
 
@@ -620,6 +900,7 @@ namespace FSMViewAvalonia2
         public float y;
         public float z;
         public float w;
+        public Vector4() { }
         public Vector4(AssetTypeValueField field)
         {
             x = field.Get("x").GetValue().AsFloat();
@@ -627,16 +908,88 @@ namespace FSMViewAvalonia2
             z = field.Get("z").GetValue().AsFloat();
             w = field.Get("w").GetValue().AsFloat();
         }
+        public override string ToString()
+        {
+            return $"Vector4({x}, {y}, {z}, {w})";
+        }
+    }
+
+    public class Quaternion
+    {
+        public float x;
+        public float y;
+        public float z;
+        public float w;
+        public Quaternion() { }
+        public Quaternion(AssetTypeValueField field)
+        {
+            x = field.Get("x").GetValue().AsFloat();
+            y = field.Get("y").GetValue().AsFloat();
+            z = field.Get("z").GetValue().AsFloat();
+            w = field.Get("w").GetValue().AsFloat();
+        }
+        public override string ToString()
+        {
+            return $"Quaternion({x}, {y}, {z}, {w})";
+        }
+    }
+
+    public class UnityColor
+    {
+        public float r;
+        public float g;
+        public float b;
+        public float a;
+        public UnityColor() { }
+        public UnityColor(AssetTypeValueField field)
+        {
+            r = field.Get("r").GetValue().AsFloat();
+            g = field.Get("g").GetValue().AsFloat();
+            b = field.Get("b").GetValue().AsFloat();
+            a = field.Get("a").GetValue().AsFloat();
+        }
+        public override string ToString()
+        {
+            return $"Color({r}, {g}, {b}, {a})";
+        }
+    }
+
+    public class UnityRect
+    {
+        public float x;
+        public float y;
+        public float width;
+        public float height;
+        public UnityRect() { }
+        public UnityRect(AssetTypeValueField field)
+        {
+            x = field.Get("x").GetValue().AsFloat();
+            y = field.Get("y").GetValue().AsFloat();
+            width = field.Get("width").GetValue().AsFloat();
+            height = field.Get("height").GetValue().AsFloat();
+        }
+        public override string ToString()
+        {
+            return $"Rect({x}, {y}, {width}, {height})";
+        }
     }
 
     public class FsmEnum : NamedVariable
     {
         public string enumName;
         public int intValue;
-        public FsmEnum(AssetTypeValueField field) : base(field)
+        public FsmEnum() { }
+        public FsmEnum(AssetNameResolver namer, AssetTypeValueField field) : base(field)
         {
             enumName = field.Get("enumName").GetValue().AsString();
             intValue = field.Get("intValue").GetValue().AsInt();
+        }
+        public override string ToString()
+        {
+            if (name != "")
+                return $"Enum {name}";
+            else
+                return $"Enum({enumName}, {intValue})";
         }
     }
 
@@ -645,11 +998,16 @@ namespace FSMViewAvalonia2
         public NamedVariable variable;
         public FsmVar fsmVar;
         public bool isEdited;
-        public FsmVarOverride(AssetTypeValueField field)
+        public FsmVarOverride() { }
+        public FsmVarOverride(AssetNameResolver namer, AssetTypeValueField field)
         {
             variable = new NamedVariable(field.Get("variable"));
-            fsmVar = new FsmVar(field.Get("fsmVar"));
+            fsmVar = new FsmVar(namer, field.Get("fsmVar"));
             isEdited = field.Get("isEdited").GetValue().AsBool();
+        }
+        public override string ToString()
+        {
+            return $"VarOverride({variable.name})";
         }
     }
 
@@ -660,6 +1018,15 @@ namespace FSMViewAvalonia2
         public int linkStyle;
         public int linkConstraint;
         public byte colorIndex;
+        public FsmTransition() { }
+        public FsmTransition(FsmGlobalTransition globalTransition)
+        {
+            fsmEvent = null;
+            toState = globalTransition.toState;
+            linkStyle = globalTransition.linkStyle;
+            linkConstraint = globalTransition.linkConstraint;
+            colorIndex = globalTransition.colorIndex;
+        }
         public FsmTransition(AssetTypeValueField valueField)
         {
             fsmEvent = new FsmEvent(valueField.Get("fsmEvent"));
@@ -668,6 +1035,10 @@ namespace FSMViewAvalonia2
             linkConstraint = valueField.Get("linkConstraint").GetValue().AsInt();
             colorIndex = (byte)valueField.Get("colorIndex").GetValue().AsInt();
         }
+        public override string ToString()
+        {
+            return $"Transition({fsmEvent.name} -> {toState})";
+        }
     }
 
     public class FsmEvent
@@ -675,11 +1046,16 @@ namespace FSMViewAvalonia2
         public string name;
         public bool isSystemEvent;
         public bool isGlobal;
+        public FsmEvent() { }
         public FsmEvent(AssetTypeValueField valueField)
         {
             name = valueField.Get("name").GetValue().AsString();
             isSystemEvent = valueField.Get("isSystemEvent").GetValue().AsBool();
             isGlobal = valueField.Get("isGlobal").GetValue().AsBool();
+        }
+        public override string ToString()
+        {
+            return $"Event({name})";
         }
     }
 

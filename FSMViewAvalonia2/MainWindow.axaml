@@ -16,32 +16,49 @@
     <Menu Height="21" VerticalAlignment="Top" Background="#f0f0f0">
       <MenuItem Header="File">
         <MenuItem Header="Open" Name="fileOpen" />
+        <MenuItem Header="Open Last" Name="openLast" IsEnabled="False" />
       </MenuItem>
-      <MenuItem x:Name="openLast" Header="Open Last" IsEnabled="False" Foreground="#cccccc" />
+      <MenuItem Header="Utilities">
+        <MenuItem Header="Fsm Scanner" Name="scanner" />
+      </MenuItem>
     </Menu>
-    <TabControl HorizontalAlignment="Right" Margin="0,26,10,10" Background="#FFCFCFCF">
-      <TabItem Header="State">
-        <Grid Background="#FFE5E5E5">
-          <ScrollViewer>
-            <StackPanel x:Name="stateList"/>
-          </ScrollViewer>
-        </Grid>
-      </TabItem>
-      <TabItem Header="Events">
-        <Grid Background="#FFE5E5E5">
-          <ScrollViewer>
-            <StackPanel x:Name="eventList"/>
-          </ScrollViewer>
-        </Grid>
-      </TabItem>
-      <TabItem Header="Variables">
-        <Grid Background="#FFE5E5E5">
-          <ScrollViewer>
-            <StackPanel x:Name="variableList"/>
-          </ScrollViewer>
-        </Grid>
-      </TabItem>
-    </TabControl>
-
+    <Grid Margin="0,21,0,0">
+      <Grid.RowDefinitions>
+        <RowDefinition Height="*"/>
+      </Grid.RowDefinitions>
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*" />
+        <ColumnDefinition Width="auto" />
+        <ColumnDefinition Width="250" />
+      </Grid.ColumnDefinitions>
+      <!-- newSplitter = remove ugliness (copied from 0.10 beta) -->
+      <GridSplitter Grid.Row="0" Grid.Column="1" Margin="2,0,2,0"
+             Width="4" VerticalAlignment="Stretch"
+             HorizontalAlignment="Center" Background="#ffffffff"
+             Classes="newSplitter" />
+      <TabControl HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="#ffcfcfcf" Grid.Row="0" Grid.Column="2">
+        <TabItem Header="State">
+          <Grid Background="#ffe5e5e5">
+            <ScrollViewer>
+              <StackPanel Name="stateList"/>
+            </ScrollViewer>
+          </Grid>
+        </TabItem>
+        <TabItem Header="Events">
+          <Grid Background="#ffe5e5e5">
+            <ScrollViewer>
+              <StackPanel Name="eventList"/>
+            </ScrollViewer>
+          </Grid>
+        </TabItem>
+        <TabItem Header="Variables">
+          <Grid Background="#ffe5e5e5">
+            <ScrollViewer>
+              <StackPanel Name="variableList"/>
+            </ScrollViewer>
+          </Grid>
+        </TabItem>
+      </TabControl>
+    </Grid>
   </Grid>
 </Window>

@@ -14,10 +14,10 @@ namespace FSMViewAvalonia2
     {
         public Grid grid;
         public RectangleGeometry rectGeom;
-        public Rectangle rect;
+        public Border border;
         public Path rectPath;
         public TextBlock label;
-        public Brush stroke;
+        public SolidColorBrush stroke;
         public FsmNodeData nodeData;
         public FsmTransition[] transitions;
         public string name;
@@ -29,28 +29,22 @@ namespace FSMViewAvalonia2
             set
             {
                 selected = value;
-    
-                rect.Stroke = selected
-                    ? new SolidColorBrush(Colors.LightBlue)
+
+                border.BorderBrush = selected
+                    ? Brushes.LightBlue
                     : stroke;
-    
-                rect.StrokeThickness = selected
-                    ? 8
-                    : 2;
+
+                border.BorderThickness = selected
+                    ? new Thickness(3)
+                    : new Thickness(2);
 
                 Rect transform = nodeData.transform;
 
                 //add border and fix offset
                 if (selected)
-                {
-                    rect.Margin = new Thickness(0, -2, 0, 0);
-                    Transform = new Rect(transform.X - 1, transform.Y, transform.Width + 4, transform.Height + 5);
-                }
+                    Transform = new Rect(transform.X - 1, transform.Y - 1, transform.Width + 4, transform.Height + 5);
                 else
-                {
-                    rect.Margin = new Thickness(0, -1, 0, 0);
                     Transform = new Rect(transform.X, transform.Y, transform.Width + 2, transform.Height + 3);
-                }
             }
         }
     
@@ -58,25 +52,26 @@ namespace FSMViewAvalonia2
         {
             get
             {
-                return new Rect((double)grid.GetValue(Canvas.LeftProperty),
-                                (double)grid.GetValue(Canvas.TopProperty),
-                                        rectGeom.Rect.Width,
-                                        rectGeom.Rect.Height);
+                return new Rect(grid.GetValue(Canvas.LeftProperty),
+                                grid.GetValue(Canvas.TopProperty),
+                                rectGeom.Rect.Width,
+                                rectGeom.Rect.Height);
             }
             set
             {
                 grid.SetValue(Canvas.LeftProperty, value.X);
                 grid.SetValue(Canvas.TopProperty, value.Y);
-                rect.Width = value.Width;
-                rect.Height = value.Height;
+                //todo
+                //rect.Width = value.Width;
+                //rect.Height = value.Height;
             }
         }
     
         public UINode(FsmNodeData nodeData) :
-                    this(nodeData, new SolidColorBrush(Colors.LightGray), new SolidColorBrush(Colors.Black))
+                    this(nodeData, new SolidColorBrush(Colors.Black))
         { }
     
-        public UINode(FsmNodeData nodeData, Brush fill, Brush stroke)
+        public UINode(FsmNodeData nodeData, SolidColorBrush stroke)
         {
             this.nodeData = nodeData;
             this.transitions = nodeData.transitions;
@@ -92,31 +87,6 @@ namespace FSMViewAvalonia2
             grid.SetValue(Canvas.LeftProperty, transform.X);
             grid.SetValue(Canvas.TopProperty, transform.Y);
     
-            rectGeom = new RectangleGeometry()
-            {
-                Rect = new Rect(0, 0, transform.Width, transform.Height)
-            };
-    
-            rect = new Rectangle()
-            {
-                Fill = fill,
-                Stroke = stroke,
-                StrokeThickness = 2,
-                Opacity = 0.75,
-                Width = transform.Width + 2,
-                Height = transform.Height + 3,
-                Margin = new Thickness(0, -1, 0, 0)
-            };
-    
-            rectPath = new Path
-            {
-                Fill = fill,
-                Stroke = stroke,
-                StrokeThickness = 1,
-                Opacity = 0.75,
-                Data = rectGeom
-            };
-    
             FontFamily font = new FontFamily("Segoe UI Bold");
     
             StackPanel stack = new StackPanel();
@@ -125,18 +95,13 @@ namespace FSMViewAvalonia2
             {
                 Foreground = Brushes.White,
                 Text = name,
-                ////Padding = new Thickness(1),
                 FontFamily = font,
-                //BorderBrush = Brushes.Black,
-                //BorderThickness = new Thickness(1, 1, 1, 0),
                 HorizontalAlignment = HorizontalAlignment.Stretch,
-                //HorizontalContentAlignment = HorizontalAlignment.Center,
-                //VerticalContentAlignment = VerticalAlignment.Stretch,
                 Background = new SolidColorBrush(nodeData.stateColor),
                 MaxWidth = transform.Width,
                 MinWidth = transform.Width
             };
-    
+
             if (isGlobal)
                 label.Background = new SolidColorBrush(Color.FromRgb(0x20, 0x20, 0x20));
     
@@ -151,13 +116,8 @@ namespace FSMViewAvalonia2
                         Background = new SolidColorBrush(nodeData.transitionColor),
                         Foreground = Brushes.DimGray,
                         Text = transition.fsmEvent.name,
-                        ////Padding = new Thickness(1),
-                        //BorderBrush = Brushes.Black,
-                        //BorderThickness = new Thickness(1, .5, 1, .25),
                         FontFamily = font,
                         HorizontalAlignment = HorizontalAlignment.Stretch,
-                        //HorizontalContentAlignment = HorizontalAlignment.Center,
-                        //VerticalContentAlignment = VerticalAlignment.Stretch,
                         MaxWidth = transform.Width,
                         MinWidth = transform.Width
                     });
@@ -176,9 +136,16 @@ namespace FSMViewAvalonia2
                         : (i.MinHeight = (transform.Height - 1.4) / list.Count);
                 }
             }
-    
-            grid.Children.Add(rect);
-            grid.Children.Add(stack);
+
+            border = new Border()
+            {
+                Child = stack,
+                BorderBrush = Brushes.Black,
+                BorderThickness = new Thickness(2),
+                Padding = new Thickness(0)
+            };
+
+            grid.Children.Add(border);
         }
     }
 }
