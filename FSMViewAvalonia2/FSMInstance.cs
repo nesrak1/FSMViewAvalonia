@@ -62,7 +62,7 @@ namespace FSMViewAvalonia2
             isGlobal = true;
             FsmNodeData toNode = dataInst.states.FirstOrDefault(s => s.state.name == transition.toState).node;
             if (toNode != null)
-                transform = new Rect(toNode.transform.X, toNode.transform.Y - 50, toNode.transform.Width, toNode.transform.Height);
+                transform = new Rect(toNode.transform.X, toNode.transform.Y - 50, toNode.transform.Width, 18);
             else
                 transform = new Rect(-999, -999, 0, 0);
             stateColor = Constants.STATE_COLORS[transition.colorIndex];
