@@ -24,10 +24,24 @@ namespace FSMViewAvalonia2
             curFile = am.LoadAssetsFile(path, true);
             am.UpdateDependencies();
 
+            //bad hack, tpk doesn't support newer versions yet
+            string unityVersion = curFile.file.typeTree.unityVersion;
+            if (unityVersion.StartsWith("2020.2.2"))
+                am.LoadClassDatabaseFromPackage("2020.1.6f1");
+            else
+                am.LoadClassDatabaseFromPackage(curFile.file.typeTree.unityVersion);
+
             AssetsFile file = curFile.file;
             AssetsFileTable table = curFile.table;
+
+            //we read manually with binaryreader to speed up reading, but sometimes the dataVersion field won't exist
+            //so here we read the template manually to see whether it exists and back up a bit if it doesn't
+            string assemblyPath = Path.Combine(Path.GetDirectoryName(curFile.path), "Managed", "PlayMaker.dll");
+            MonoDeserializer deserializer = new MonoDeserializer();
+            deserializer.Read("PlayMakerFSM", MonoDeserializer.GetAssemblyWithDependencies(assemblyPath), file.header.format);
+            bool hasDataField = deserializer.children[0].children[0].name == "dataVersion";
             
-            return GetFSMInfos(file, table);
+            return GetFSMInfos(file, table, hasDataField);
         }
 
         public FsmDataInstance LoadFSM(long id)
@@ -116,7 +130,7 @@ namespace FSMViewAvalonia2
             return dataInstance;
         }
 
-        private List<AssetInfo> GetFSMInfos(AssetsFile file, AssetsFileTable table)
+        private List<AssetInfo> GetFSMInfos(AssetsFile file, AssetsFileTable table, bool hasDataField)
         {
             List<AssetInfo> assetInfos = new List<AssetInfo>();
             uint assetCount = table.assetFileInfoCount;
@@ -144,6 +158,7 @@ namespace FSMViewAvalonia2
                 if (isMono)
                 {
                     AssetTypeInstance monoAti = am.GetATI(file, info);
+                    AssetExternal ext = am.GetExtAsset(curFile, monoAti.GetBaseField().Get("m_Script"));
                     AssetTypeInstance scriptAti = am.GetExtAsset(curFile, monoAti.GetBaseField().Get("m_Script")).instance;
                     AssetTypeInstance goAti = am.GetExtAsset(curFile, monoAti.GetBaseField().Get("m_GameObject")).instance;
                     if (goAti == null) //found a scriptable object, oops
@@ -159,7 +174,7 @@ namespace FSMViewAvalonia2
                         if (fsmTypeId == 0)
                             fsmTypeId = info.curFileType;
 
-                        BinaryReader reader = file.reader;
+                        AssetsFileReader reader = file.reader;
 
                         long oldPos = reader.BaseStream.Position;
                         reader.BaseStream.Position = info.absoluteFilePos;
@@ -167,12 +182,11 @@ namespace FSMViewAvalonia2
                         uint length = reader.ReadUInt32();
                         reader.ReadBytes((int)length);
 
-                        long pad = 4 - (reader.BaseStream.Position % 4);
-                        if (pad != 4) reader.BaseStream.Position += pad;
+                        reader.Align();
 
                         reader.BaseStream.Position += 16;
 
-                        if (file.header.format <= 0x0E)
+                        if (!hasDataField)
                         {
                             reader.BaseStream.Position -= 4;
                         }
@@ -328,6 +342,9 @@ namespace FSMViewAvalonia2
             {
                 string header = pptrTypeHeaders[j];
                 AssetTypeValueField field = pptrTypeFields[j];
+
+                if (field.IsDummy())
+                    continue;
 
                 FsmVariableData genericData = new FsmVariableData() { Type = header, Values = new List<Tuple<string, object>>() };
                 varData.Add(genericData);

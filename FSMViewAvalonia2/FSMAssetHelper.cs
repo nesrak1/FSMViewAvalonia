@@ -1,4 +1,5 @@
 ﻿using AssetsTools.NET.Extra;
+using MessageBox.Avalonia;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -13,7 +14,11 @@ namespace FSMViewAvalonia2
             AssetsManager am = new AssetsManager();
             am.updateAfterLoad = false;
             am.useTemplateFieldCache = true;
-            am.LoadClassDatabase(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "cldb.dat"));
+            if (!File.Exists("classdata.tpk"))
+            {
+                return null;
+            }
+            am.LoadClassPackage("classdata.tpk");
             return am;
         }
     }

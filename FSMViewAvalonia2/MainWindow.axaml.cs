@@ -97,7 +97,18 @@ namespace FSMViewAvalonia2
         private async void LoadFsm(string fileName)
         {
             if (am == null)
+            {
                 am = FSMAssetHelper.CreateAssetManager();
+                if (am == null)
+                {
+                    await MessageBoxManager
+                        .GetMessageBoxStandardWindow("No classdata",
+                        "You're missing classdata.tpk next to the executable. Please make sure it exists.")
+                        .Show();
+                    Environment.Exit(0);
+                }
+            }
+                
 
             if (fsmLoader == null)
                 fsmLoader = new FSMLoader(this, am);
