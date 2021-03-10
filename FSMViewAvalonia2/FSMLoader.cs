@@ -24,12 +24,7 @@ namespace FSMViewAvalonia2
             curFile = am.LoadAssetsFile(path, true);
             am.UpdateDependencies();
 
-            //bad hack, tpk doesn't support newer versions yet
-            string unityVersion = curFile.file.typeTree.unityVersion;
-            if (unityVersion.StartsWith("2020.2.2"))
-                am.LoadClassDatabaseFromPackage("2020.1.6f1");
-            else
-                am.LoadClassDatabaseFromPackage(curFile.file.typeTree.unityVersion);
+            am.LoadClassDatabaseFromPackage(curFile.file.typeTree.unityVersion);
 
             AssetsFile file = curFile.file;
             AssetsFileTable table = curFile.table;
@@ -335,9 +330,8 @@ namespace FSMViewAvalonia2
                 object value = new Quaternion(quaternion);
                 quaternions.Values.Add(new Tuple<string, object>(name, value));
             }
-            string[] pptrTypeHeaders = new[] { "GameObjects", "Objects", "Materials", "Textures", "Arrays", "Enums" };
-            AssetTypeValueField[] pptrTypeFields = new[] { gameObjectVariables, objectVariables, materialVariables,
-                                                           textureVariables, arrayVariables, enumVariables };
+            string[] pptrTypeHeaders = new[] { "GameObjects", "Objects", "Materials", "Textures" };
+            AssetTypeValueField[] pptrTypeFields = new[] { gameObjectVariables, objectVariables, materialVariables, textureVariables };
             for (int j = 0; j < pptrTypeHeaders.Length; j++)
             {
                 string header = pptrTypeHeaders[j];
@@ -361,6 +355,29 @@ namespace FSMViewAvalonia2
                     genericData.Values.Add(new Tuple<string, object>(name, value));
                 }
             }
+        }
+
+        public List<SceneInfo> LoadSceneList(string folder)
+        {
+            string ggmPath = Path.Combine(folder, "globalgamemanagers");
+            AssetsFileInstance ggm = am.LoadAssetsFile(ggmPath, false);
+            am.LoadClassDatabaseFromPackage(ggm.file.typeTree.unityVersion);
+
+            AssetFileInfoEx buildSettingsInfo = ggm.table.GetAssetsOfType(0x8D)[0];
+            AssetTypeValueField buildSettings = am.GetTypeInstance(ggm, buildSettingsInfo).GetBaseField();
+            AssetTypeValueField scenes = buildSettings.Get("scenes").Get("Array");
+            int sceneCount = scenes.GetValue().AsArray().size;
+
+            List<SceneInfo> sceneInfos = new List<SceneInfo>();
+            for (int i = 0; i < sceneCount; i++)
+            {
+                sceneInfos.Add(new SceneInfo()
+                {
+                    id = i,
+                    name = scenes[i].GetValue().AsString()
+                });
+            }
+            return sceneInfos;
         }
     }
 }

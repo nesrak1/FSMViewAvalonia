@@ -241,7 +241,10 @@ namespace FSMViewAvalonia2
         }
         public override string ToString()
         {
-            return $"OwnerDefault {gameObject.name}";
+            if (ownerOption == OwnerDefaultOption.UseOwner)
+                return "OwnerDefault FSM Owner";
+            else
+                return $"OwnerDefault {gameObject.name}";
         }
     }
 
@@ -400,11 +403,11 @@ namespace FSMViewAvalonia2
             gameObject = new FsmOwnerDefault(namer, field.Get("gameObject"));
             fsmName = new FsmString(namer, field.Get("fsmName"));
             sendToChildren = new FsmBool(namer, field.Get("sendToChildren"));
-            fsmComponent = StructUtil.ReadAssetPPtr(field.Get("fsmComponent"));
+            fsmComponent = StructUtil.ReadNamedAssetPPtr(namer, field.Get("fsmComponent"));
         }
         public override string ToString()
         {
-            return $"EventTarget {target.ToString()}{(excludeSelf.value ? "!" : "")}";
+            return $"EventTarget {target.ToString()} {(excludeSelf.value ? "!" : "")}{gameObject}";
         }
     }
 

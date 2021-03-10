@@ -16,6 +16,7 @@
     <Menu Height="21" VerticalAlignment="Top" Background="#f0f0f0">
       <MenuItem Header="File">
         <MenuItem Header="Open" Name="fileOpen" />
+        <MenuItem Header="Open Scene List" Name="openSceneList" />
         <MenuItem Header="Open Last" Name="openLast" IsEnabled="False" />
       </MenuItem>
       <MenuItem Header="Utilities">
