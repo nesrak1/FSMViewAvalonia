@@ -20,6 +20,7 @@ namespace FSMViewAvalonia2
         //controls
         private Canvas graphCanvas;
         private MenuItem fileOpen;
+        private MenuItem openSceneList;
         private MenuItem openLast;
         private TextBlock tipText;
         private StackPanel stateList;
@@ -45,6 +46,7 @@ namespace FSMViewAvalonia2
             //generated items
             graphCanvas = this.FindControl<Canvas>("graphCanvas");
             fileOpen = this.FindControl<MenuItem>("fileOpen");
+            openSceneList = this.FindControl<MenuItem>("openSceneList");
             openLast = this.FindControl<MenuItem>("openLast");
             tipText = this.FindControl<TextBlock>("tipText");
             stateList = this.FindControl<StackPanel>("stateList");
@@ -58,14 +60,7 @@ namespace FSMViewAvalonia2
             PointerWheelChanged += MouseScrollCanvas;
             fileOpen.Click += FileOpen_Click;
             openLast.Click += OpenLast_Click;
-        }
-
-        //ui events
-        private void Eee_Click(object sender, RoutedEventArgs e)
-        {
-            var messageBoxStandardWindow = MessageBoxManager
-                .GetMessageBoxStandardWindow("EEE", "You clicked EEE");
-            messageBoxStandardWindow.Show();
+            openSceneList.Click += OpenSceneList_Click;
         }
 
         private async void FileOpen_Click(object sender, RoutedEventArgs e)
@@ -94,24 +89,37 @@ namespace FSMViewAvalonia2
             LoadFsm(lastFileName);
         }
 
+        private async void OpenSceneList_Click(object sender, RoutedEventArgs e)
+        {
+            await CreateAssetsManagerAndLoader();
+
+            string gamePath = await SteamHelper.FindHollowKnightPath(this);
+            if (gamePath == string.Empty)
+                return;
+
+            string dataPath = System.IO.Path.Combine(gamePath, "hollow_knight_Data");
+
+            List<SceneInfo> sceneList = fsmLoader.LoadSceneList(dataPath);
+            SceneSelectionDialog selector = new SceneSelectionDialog(sceneList);
+            await selector.ShowDialog(this);
+
+            long selectedId = selector.selectedID;
+
+            if (selectedId == -1)
+                return;
+
+            string levelName = "level" + selectedId;
+            string fullLevelPath = System.IO.Path.Combine(dataPath, levelName);
+
+            lastFileName = fullLevelPath;
+            openLast.IsEnabled = true;
+
+            LoadFsm(fullLevelPath);
+        }
+
         private async void LoadFsm(string fileName)
         {
-            if (am == null)
-            {
-                am = FSMAssetHelper.CreateAssetManager();
-                if (am == null)
-                {
-                    await MessageBoxManager
-                        .GetMessageBoxStandardWindow("No classdata",
-                        "You're missing classdata.tpk next to the executable. Please make sure it exists.")
-                        .Show();
-                    Environment.Exit(0);
-                }
-            }
-                
-
-            if (fsmLoader == null)
-                fsmLoader = new FSMLoader(this, am);
+            await CreateAssetsManagerAndLoader();
 
             List<AssetInfo> assetInfos = fsmLoader.LoadAllFSMsFromFile(fileName);
             FSMSelectionDialog selector = new FSMSelectionDialog(assetInfos);
@@ -355,6 +363,27 @@ namespace FSMViewAvalonia2
                         .GetMessageBoxStandardWindow("Exception", ex.ToString());
                     await messageBoxStandardWindow.Show();
                 }
+            }
+        }
+
+        private async Task CreateAssetsManagerAndLoader()
+        {
+            if (am == null)
+            {
+                am = FSMAssetHelper.CreateAssetManager();
+                if (am == null)
+                {
+                    await MessageBoxManager
+                        .GetMessageBoxStandardWindow("No classdata",
+                        "You're missing classdata.tpk next to the executable. Please make sure it exists.")
+                        .Show();
+                    Environment.Exit(0);
+                }
+            }
+
+            if (fsmLoader == null)
+            {
+                fsmLoader = new FSMLoader(this, am);
             }
         }
 

@@ -18,4 +18,18 @@ namespace FSMViewAvalonia2
             }
         }
     }
+
+    public struct SceneInfo
+    {
+        public long id;
+        public string name;
+
+        public string Name
+        {
+            get
+            {
+                return name;
+            }
+        }
+    }
 }

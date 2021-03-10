@@ -89,6 +89,9 @@ namespace FSMViewAvalonia2
                 case ParamDataType.FsmBool when dataVersion > 1:
                     ret = actionData.fsmBoolParams[paramDataPos];
                     break;
+                case ParamDataType.FsmInt when dataVersion > 1:
+                    ret = actionData.fsmIntParams[paramDataPos];
+                    break;
                 case ParamDataType.FsmFloat when dataVersion > 1:
                     ret = actionData.fsmFloatParams[paramDataPos];
                     break;

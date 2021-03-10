@@ -1,0 +1,45 @@
+﻿using Avalonia.Controls;
+using MessageBox.Avalonia;
+using MessageBox.Avalonia.DTO;
+using MessageBox.Avalonia.Enums;
+using MessageBox.Avalonia.Models;
+using System.Threading.Tasks;
+
+namespace FSMViewAvalonia2
+{
+    public static class MessageBoxUtil
+    {
+        public static async Task<ButtonResult> ShowDialog(Window window, string header, string message)
+        {
+            return await ShowDialog(window, header, message, ButtonEnum.Ok);
+        }
+
+        public static async Task<ButtonResult> ShowDialog(Window window, string header, string message, ButtonEnum buttons)
+        {
+            return await MessageBoxManager.GetMessageBoxStandardWindow(new MessageBoxStandardParams
+            {
+                ButtonDefinitions = buttons,
+                Style = Style.Windows,
+                ContentHeader = header,
+                ContentMessage = message
+            }).ShowDialog(window);
+        }
+
+        public static async Task<string> ShowDialogCustom(Window window, string header, string message, params string[] buttons)
+        {
+            ButtonDefinition[] definitions = new ButtonDefinition[buttons.Length];
+            for (int i = 0; i < buttons.Length; i++)
+            {
+                definitions[i] = new ButtonDefinition { Name = buttons[i], Type = ButtonType.Default };
+            }
+
+            return await MessageBoxManager.GetMessageBoxCustomWindow(new MessageBoxCustomParams
+            {
+                Style = Style.Windows,
+                ContentHeader = header,
+                ContentMessage = message,
+                ButtonDefinitions = definitions
+            }).ShowDialog(window);
+        }
+    }
+}
