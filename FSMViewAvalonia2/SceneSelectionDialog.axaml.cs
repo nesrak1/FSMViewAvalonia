@@ -40,7 +40,10 @@ namespace FSMViewAvalonia2
                 return;
             }
 
-            listBox.Items = AssetInfos.Where(x => text.Split().All(part => x.Name.Contains(part, StringComparison.OrdinalIgnoreCase)));
+            listBox.Items = AssetInfos
+                            .Select(x => new { FSM = x, Trimmed = x.Name.Substring("Assets/Scenes/".Length - 1) })
+                            .Where(x => text.Split().All(part => x.Trimmed.Contains(part, StringComparison.OrdinalIgnoreCase)))
+                            .Select(x => x.FSM);
         }
 
         public SceneSelectionDialog(List<SceneInfo> assetInfos) : this()
