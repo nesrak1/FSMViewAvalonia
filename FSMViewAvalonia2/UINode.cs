@@ -96,7 +96,9 @@ namespace FSMViewAvalonia2
                 Foreground = Brushes.White,
                 Text = name,
                 FontFamily = font,
+                FontWeight = FontWeight.Bold,
                 HorizontalAlignment = HorizontalAlignment.Stretch,
+                TextAlignment = TextAlignment.Center,
                 Background = new SolidColorBrush(nodeData.stateColor),
                 MaxWidth = transform.Width,
                 MinWidth = transform.Width
@@ -118,6 +120,7 @@ namespace FSMViewAvalonia2
                         Text = transition.fsmEvent.name,
                         FontFamily = font,
                         HorizontalAlignment = HorizontalAlignment.Stretch,
+                        TextAlignment = TextAlignment.Center,
                         MaxWidth = transform.Width,
                         MinWidth = transform.Width
                     });
