@@ -1,7 +1,10 @@
-﻿using Avalonia;
+﻿using System;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
 using System.Collections.Generic;
+using System.Linq;
+using Avalonia.Input;
 
 namespace FSMViewAvalonia2
 {
@@ -23,6 +26,23 @@ namespace FSMViewAvalonia2
             selectButton = this.FindControl<Button>("selectButton");
             //generated events
             selectButton.Click += SelectButton_Click;
+
+            var tbox = this.FindControl<AutoCompleteBox>("searchBox");
+
+            tbox.TextChanged += OnInput;
+        }
+
+        private void OnInput(object? sender, EventArgs eventArgs)
+        {
+            string query = ((AutoCompleteBox) sender)?.Text;
+
+            if (string.IsNullOrEmpty(query))
+            {
+                listBox.Items = AssetInfos;
+                return;
+            }
+
+            listBox.Items = AssetInfos.Where(x => x.Name.Contains(query, StringComparison.OrdinalIgnoreCase));
         }
 
         public FSMSelectionDialog(List<AssetInfo> assetInfos) : this()
