@@ -25,6 +25,7 @@ namespace FSMViewAvalonia2
             selectButton = this.FindControl<Button>("selectButton");
             //generated events
             selectButton.Click += SelectButton_Click;
+            listBox.DoubleTapped += SelectButton_Click;
 
             this.FindControl<AutoCompleteBox>("searchBox").TextChanged += TextChanged;
         }
@@ -60,8 +61,11 @@ namespace FSMViewAvalonia2
 
         private void SelectButton_Click(object sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
-            selectedID = AssetInfos[listBox.SelectedIndex].id;
-            Close();
+            if (listBox.SelectedItem is SceneInfo sceneInfo)
+            {
+                selectedID = sceneInfo.id;
+                Close();
+            }
         }
     }
 }

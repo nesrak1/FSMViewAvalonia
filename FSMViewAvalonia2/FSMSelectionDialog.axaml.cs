@@ -26,13 +26,14 @@ namespace FSMViewAvalonia2
             selectButton = this.FindControl<Button>("selectButton");
             //generated events
             selectButton.Click += SelectButton_Click;
+            listBox.DoubleTapped += SelectButton_Click;
 
             var tbox = this.FindControl<AutoCompleteBox>("searchBox");
 
             tbox.TextChanged += OnInput;
         }
 
-        private void OnInput(object? sender, EventArgs eventArgs)
+        private void OnInput(object sender, EventArgs eventArgs)
         {
             string query = ((AutoCompleteBox) sender)?.Text;
 
@@ -59,8 +60,11 @@ namespace FSMViewAvalonia2
 
         private void SelectButton_Click(object sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
-            selectedID = AssetInfos[listBox.SelectedIndex].id;
-            Close();
+            if (listBox.SelectedItem is AssetInfo assetInfo)
+            {
+                selectedID = assetInfo.id;
+                Close();
+            }
         }
     }
 }
