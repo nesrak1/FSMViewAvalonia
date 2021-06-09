@@ -2,7 +2,6 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Dialogs;
-using Avalonia.Logging.Serilog;
 
 namespace FSMViewAvalonia2
 {
@@ -18,6 +17,6 @@ namespace FSMViewAvalonia2
         public static AppBuilder BuildAvaloniaApp()
             => AppBuilder.Configure<App>()
                 .UsePlatformDetect()
-                .LogToDebug();
+                .LogToTrace();
     }
 }

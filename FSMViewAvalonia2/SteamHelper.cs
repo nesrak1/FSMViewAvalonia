@@ -2,6 +2,7 @@
 using Microsoft.Win32;
 using System;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -11,45 +12,54 @@ namespace FSMViewAvalonia2
     {
         public static readonly int HOLLOWKNIGHT_APP_ID = 367520;
         public static readonly string HOLLOWKNIGHT_GAME_NAME = "Hollow Knight";
+        public static readonly string HOLLOWKNIGHT_PATH_FILE = "hkpath.txt";
 
-        public static async Task<string> FindHollowKnightPath(Window mbWindow)
+        public static async Task<string> FindHollowKnightPath(Window win)
         {
-            //won't work on linux, todo
-            return await FindSteamGamePathRegistry(mbWindow, HOLLOWKNIGHT_APP_ID, HOLLOWKNIGHT_GAME_NAME);
-        }
-
-        public static async Task<string> FindSteamGamePathRegistry(Window mbWindow, int appid, string gameName)
-        {
-            if (ReadRegistrySafe("Software\\Valve\\Steam", "SteamPath") == null)
+            if (File.Exists(HOLLOWKNIGHT_PATH_FILE))
             {
-                await MessageBoxUtil.ShowDialog(mbWindow, "Error", "You either don't have steam installed or your registry variable isn't set.");
-                return "";
-            }
-            
-            string appsPath = Path.Combine((string)ReadRegistrySafe("Software\\Valve\\Steam", "SteamPath"), "steamapps");
-            
-            if (File.Exists(Path.Combine(appsPath, $"appmanifest_{appid}.acf")))
-            {
-                return Path.Combine(Path.Combine(appsPath, "common"), gameName);
-            }
-            
-            string path = SearchAllInstallations(Path.Combine(appsPath, "libraryfolders.vdf"), appid, gameName);
-            if (path == null)
-            {
-                await MessageBoxUtil.ShowDialog(mbWindow, "Error", "Couldn't find installation automatically. Please pick the location manually.");
-                OpenFolderDialog ofd = new OpenFolderDialog();
-                string openPath = await ofd.ShowAsync(mbWindow);
-                if (openPath != null && openPath != string.Empty)
-                {
-                    return openPath;
-                }
+                return File.ReadAllText(HOLLOWKNIGHT_PATH_FILE);
             }
             else
             {
+                string path = await FindSteamGamePath(win, HOLLOWKNIGHT_APP_ID, HOLLOWKNIGHT_GAME_NAME);
+
+                if (path != null)
+                {
+                    File.WriteAllText(HOLLOWKNIGHT_PATH_FILE, path);
+                }
+
                 return path;
             }
+        }
 
-            return "";
+        public static async Task<string> FindSteamGamePath(Window win, int appid, string gameName)
+        {
+            string path = null;
+            if (ReadRegistrySafe("Software\\Valve\\Steam", "SteamPath") != null)
+            {
+                string appsPath = Path.Combine((string)ReadRegistrySafe("Software\\Valve\\Steam", "SteamPath"), "steamapps");
+
+                if (File.Exists(Path.Combine(appsPath, $"appmanifest_{appid}.acf")))
+                {
+                    return Path.Combine(Path.Combine(appsPath, "common"), gameName);
+                }
+
+                path = SearchAllInstallations(Path.Combine(appsPath, "libraryfolders.vdf"), appid, gameName);
+            }
+
+            if (path == null)
+            {
+                await MessageBoxUtil.ShowDialog(win, "Game location", "Couldn't find installation automatically. Please pick the location manually.");
+                OpenFolderDialog ofd = new OpenFolderDialog();
+                string folder = await ofd.ShowAsync(win);
+                if (folder != null)
+                {
+                    path = folder;
+                }
+            }
+
+            return path;
         }
 
         private static string SearchAllInstallations(string libraryfolders, int appid, string gameName)
@@ -81,6 +91,9 @@ namespace FSMViewAvalonia2
 
         private static object ReadRegistrySafe(string path, string key)
         {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                return null;
+
             using (RegistryKey subkey = Registry.CurrentUser.OpenSubKey(path))
             {
                 if (subkey != null)

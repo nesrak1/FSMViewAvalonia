@@ -6,9 +6,49 @@
         Width="800" Height="600"
         x:Class="FSMViewAvalonia2.MainWindow"
         Title="FSMView Avalonia [BETA]">
+  <Window.Styles>
+    <Style Selector="TabControl">
+      <Setter Property="Background" Value="#F0F0F0"/>
+    </Style>
+    <Style Selector="TabControl WrapPanel">
+      <Setter Property="Background" Value="#2B579A"/>
+    </Style>
+
+    <Style Selector="TabItem">
+      <Setter Property="FontSize" Value="12"/>
+      <Setter Property="Height" Value="34"/>
+      <Setter Property="Background" Value="#2B579A"/>
+      <Setter Property="Foreground" Value="#F0F0F0"/>
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="Margin" Value="0 0 0 0"/>
+      <Setter Property="Padding" Value="10 0"/>
+    </Style>
+    <Style Selector="TabItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="#124078"/>
+    </Style>
+
+    <Style Selector="TabItem:focus">
+      <Setter Property="Foreground" Value="#2B579A"/>
+      <Setter Property="Margin" Value="0 0 0 0"/>
+      <Setter Property="Padding" Value="10 0"/>
+    </Style>
+    <Style Selector="TabItem:focus /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="#f0f0f0"/>
+    </Style>
+
+    <Style Selector="TabItem:selected">
+      <Setter Property="Foreground" Value="#2B579A"/>
+      <Setter Property="Margin" Value="0 0 0 0"/>
+      <Setter Property="Padding" Value="10 0"/>
+    </Style>
+    <Style Selector="TabItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="#f0f0f0"/>
+    </Style>
+  </Window.Styles>
+  
   <Grid Background="#3f3f3f">
     <Canvas x:Name="graphCanvas" Height="383" Margin="10,26,10,0" VerticalAlignment="Top">
-      <TextBlock Canvas.Top="50" Canvas.Left="50" Foreground="#ffffff" Name="tipText">Welcome to FSMView Avalonia. Go to File->Open to get started.</TextBlock>
+      <TextBlock Canvas.Top="50" Canvas.Left="50" Foreground="#222222" Background="#ffabab" Padding="4" Name="tipText">Welcome to FSMView Avalonia. Go to File->Open to get started.</TextBlock>
       <Canvas.RenderTransform>
         <MatrixTransform />
       </Canvas.RenderTransform>
@@ -17,10 +57,8 @@
       <MenuItem Header="File">
         <MenuItem Header="Open" Name="fileOpen" />
         <MenuItem Header="Open Scene List" Name="openSceneList" />
+        <MenuItem Header="Open resources.assets" Name="openResources" />
         <MenuItem Header="Open Last" Name="openLast" IsEnabled="False" />
-      </MenuItem>
-      <MenuItem Header="Utilities">
-        <MenuItem Header="Fsm Scanner" Name="scanner" />
       </MenuItem>
     </Menu>
     <Grid Margin="0,21,0,0">
@@ -37,7 +75,7 @@
              Width="4" VerticalAlignment="Stretch"
              HorizontalAlignment="Center" Background="#ffffffff"
              Classes="newSplitter" />
-      <TabControl HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="#ffcfcfcf" Grid.Row="0" Grid.Column="2">
+      <TabControl HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Grid.Row="0" Grid.Column="2">
         <TabItem Header="State">
           <Grid Background="#ffe5e5e5">
             <ScrollViewer>

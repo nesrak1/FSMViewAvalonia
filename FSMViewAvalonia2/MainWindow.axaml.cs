@@ -21,6 +21,7 @@ namespace FSMViewAvalonia2
         private Canvas graphCanvas;
         private MenuItem fileOpen;
         private MenuItem openSceneList;
+        private MenuItem openResources;
         private MenuItem openLast;
         private TextBlock tipText;
         private StackPanel stateList;
@@ -41,12 +42,13 @@ namespace FSMViewAvalonia2
         {
             InitializeComponent();
 #if DEBUG
-            //this.AttachDevTools();
+            this.AttachDevTools();
 #endif
             //generated items
             graphCanvas = this.FindControl<Canvas>("graphCanvas");
             fileOpen = this.FindControl<MenuItem>("fileOpen");
             openSceneList = this.FindControl<MenuItem>("openSceneList");
+            openResources = this.FindControl<MenuItem>("openResources");
             openLast = this.FindControl<MenuItem>("openLast");
             tipText = this.FindControl<TextBlock>("tipText");
             stateList = this.FindControl<StackPanel>("stateList");
@@ -60,6 +62,7 @@ namespace FSMViewAvalonia2
             PointerWheelChanged += MouseScrollCanvas;
             fileOpen.Click += FileOpen_Click;
             openLast.Click += OpenLast_Click;
+            openResources.Click += OpenResources_Click;
             openSceneList.Click += OpenSceneList_Click;
         }
 
@@ -89,12 +92,26 @@ namespace FSMViewAvalonia2
             LoadFsm(lastFileName);
         }
 
+        private async void OpenResources_Click(object sender, RoutedEventArgs e)
+        {
+            await CreateAssetsManagerAndLoader();
+
+            string gamePath = await SteamHelper.FindHollowKnightPath(this);
+            if (gamePath == null)
+                return;
+
+            string dataPath = System.IO.Path.Combine(gamePath, "hollow_knight_Data");
+            string resourcesPath = System.IO.Path.Combine(dataPath, "resources.assets");
+
+            LoadFsm(resourcesPath);
+        }
+
         private async void OpenSceneList_Click(object sender, RoutedEventArgs e)
         {
             await CreateAssetsManagerAndLoader();
 
             string gamePath = await SteamHelper.FindHollowKnightPath(this);
-            if (gamePath == string.Empty)
+            if (gamePath == null)
                 return;
 
             string dataPath = System.IO.Path.Combine(gamePath, "hollow_knight_Data");
@@ -235,6 +252,8 @@ namespace FSMViewAvalonia2
             {
                 Text = text,
                 HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left,
+                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+                Padding = new Thickness(5),
                 Height = 28,
                 FontWeight = FontWeight.Bold
             };
@@ -253,6 +272,8 @@ namespace FSMViewAvalonia2
             {
                 Text = key,
                 HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left,
+                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+                Padding = new Thickness(5),
                 Width = 120
             };
             TextBox valueBox = new TextBox()
@@ -278,6 +299,8 @@ namespace FSMViewAvalonia2
             {
                 Text = key,
                 HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left,
+                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+                Padding = new Thickness(5),
                 Width = 120
             };
             CheckBox valueBox = new CheckBox()
