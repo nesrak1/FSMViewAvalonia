@@ -53,7 +53,7 @@ namespace FSMViewAvalonia2
                 await MessageBoxUtil.ShowDialog(win, "Game location", "Couldn't find installation automatically. Please pick the location manually.");
                 OpenFolderDialog ofd = new OpenFolderDialog();
                 string folder = await ofd.ShowAsync(win);
-                if (folder != null)
+                if (folder != null && folder != "")
                 {
                     path = folder;
                 }
