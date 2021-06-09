@@ -91,7 +91,7 @@ namespace FSMViewAvalonia2
 
         private static object ReadRegistrySafe(string path, string key)
         {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 return null;
 
             using (RegistryKey subkey = Registry.CurrentUser.OpenSubKey(path))
