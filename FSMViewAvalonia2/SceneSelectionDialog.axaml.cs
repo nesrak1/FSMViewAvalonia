@@ -25,6 +25,7 @@ namespace FSMViewAvalonia2
             selectButton = this.FindControl<Button>("selectButton");
             //generated events
             selectButton.Click += SelectButton_Click;
+            listBox.DoubleTapped += SelectButton_Click;
 
             this.FindControl<AutoCompleteBox>("searchBox").TextChanged += TextChanged;
         }
