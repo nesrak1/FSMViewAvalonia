@@ -60,8 +60,11 @@ namespace FSMViewAvalonia2
 
         private void SelectButton_Click(object sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
-            selectedID = ((AssetInfo) listBox.SelectedItem).id;
-            Close();
+            if (listBox.SelectedItem is AssetInfo assetInfo)
+            {
+                selectedID = assetInfo.id;
+                Close();
+            }
         }
     }
 }
