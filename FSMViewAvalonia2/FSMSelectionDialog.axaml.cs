@@ -32,7 +32,7 @@ namespace FSMViewAvalonia2
             tbox.TextChanged += OnInput;
         }
 
-        private void OnInput(object? sender, EventArgs eventArgs)
+        private void OnInput(object sender, EventArgs eventArgs)
         {
             string query = ((AutoCompleteBox) sender)?.Text;
 
@@ -59,7 +59,7 @@ namespace FSMViewAvalonia2
 
         private void SelectButton_Click(object sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
-            selectedID = AssetInfos[listBox.SelectedIndex].id;
+            selectedID = ((AssetInfo) listBox.SelectedItem).id;
             Close();
         }
     }
