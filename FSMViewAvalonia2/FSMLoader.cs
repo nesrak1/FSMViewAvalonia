@@ -54,6 +54,15 @@ namespace FSMViewAvalonia2
             AssetTypeValueField globalTransitions = fsm.Get("globalTransitions");
             AssetTypeValueField dataVersionField = fsm.Get("dataVersion");
 
+            dataInstance.fsmName = fsm.Get("name").GetValue().AsString();
+
+            AssetTypeInstance goAti = am.GetExtAsset(curFile, baseField.Get("m_GameObject")).instance;
+            if (goAti != null)
+            {
+                string m_Name = goAti.GetBaseField().Get("m_Name").GetValue().AsString();
+                dataInstance.goName = m_Name;
+            }
+
             if (dataVersionField.IsDummy())
             {
                 dataInstance.dataVersion = fsm.Get("version").GetValue().AsInt() + 1;

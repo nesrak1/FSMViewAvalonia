@@ -9,6 +9,7 @@ using Avalonia.Media;
 using MessageBox.Avalonia;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -23,10 +24,12 @@ namespace FSMViewAvalonia2
         private MenuItem openSceneList;
         private MenuItem openResources;
         private MenuItem openLast;
+        private MenuItem closeTab;
         private TextBlock tipText;
         private StackPanel stateList;
         private StackPanel eventList;
         private StackPanel variableList;
+        private TabControl fsmTabs;
         private MatrixTransform mt;
 
         //variables
@@ -34,9 +37,11 @@ namespace FSMViewAvalonia2
         private FSMLoader fsmLoader;
         private FsmDataInstance fsmData;
         private string lastFileName;
+        private List<FsmDataInstance> loadedFsmDatas;
+        private bool addingTabs;
 
         //fsm info
-        private List<UINode> nodes;
+        private ObservableCollection<TabItem> tabItems;
 
         public MainWindow()
         {
@@ -50,10 +55,12 @@ namespace FSMViewAvalonia2
             openSceneList = this.FindControl<MenuItem>("openSceneList");
             openResources = this.FindControl<MenuItem>("openResources");
             openLast = this.FindControl<MenuItem>("openLast");
+            closeTab = this.FindControl<MenuItem>("closeTab");
             tipText = this.FindControl<TextBlock>("tipText");
             stateList = this.FindControl<StackPanel>("stateList");
             eventList = this.FindControl<StackPanel>("eventList");
             variableList = this.FindControl<StackPanel>("variableList");
+            fsmTabs = this.FindControl<TabControl>("fsmTabs");
             mt = graphCanvas.RenderTransform as MatrixTransform;
             //generated events
             PointerPressed += MouseDownCanvas;
@@ -62,8 +69,14 @@ namespace FSMViewAvalonia2
             PointerWheelChanged += MouseScrollCanvas;
             fileOpen.Click += FileOpen_Click;
             openLast.Click += OpenLast_Click;
+            closeTab.Click += CloseTab_Click;
             openResources.Click += OpenResources_Click;
             openSceneList.Click += OpenSceneList_Click;
+            fsmTabs.SelectionChanged += FsmTabs_SelectionChanged;
+
+            loadedFsmDatas = new List<FsmDataInstance>();
+            tabItems = new ObservableCollection<TabItem>();
+            fsmTabs.Items = tabItems;
         }
 
         private async void FileOpen_Click(object sender, RoutedEventArgs e)
@@ -90,6 +103,18 @@ namespace FSMViewAvalonia2
         private void OpenLast_Click(object sender, RoutedEventArgs e)
         {
             LoadFsm(lastFileName);
+        }
+
+        private void CloseTab_Click(object sender, RoutedEventArgs e)
+        {
+            TabItem tabItem = (TabItem)fsmTabs.SelectedItem;
+            if (tabItem != null)
+            {
+                FsmDataInstance fsmInst = (FsmDataInstance)tabItem.Tag;
+                tabItems.Remove(tabItem);
+                loadedFsmDatas.Remove(fsmInst);
+                fsmInst.canvasControls.Clear();
+            }
         }
 
         private async void OpenResources_Click(object sender, RoutedEventArgs e)
@@ -134,6 +159,43 @@ namespace FSMViewAvalonia2
             LoadFsm(fullLevelPath);
         }
 
+        private void FsmTabs_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (!addingTabs)
+            {
+                graphCanvas.Children.Clear();
+                stateList.Children.Clear();
+                eventList.Children.Clear();
+                variableList.Children.Clear();
+
+                if (fsmTabs.SelectedItem != null)
+                {
+                    var fsmDataInst = (FsmDataInstance)((TabItem)fsmTabs.SelectedItem).Tag;
+
+                    fsmData = fsmDataInst;
+                    mt.Matrix = fsmData.matrix;
+
+                    foreach (UINode uiNode in fsmData.nodes)
+                    {
+                        if (uiNode.Selected)
+                        {
+                            uiNode.Selected = false;
+                            uiNode.Selected = true;
+                            if (uiNode.stateData != null)
+                            {
+                                StateSidebarData(uiNode.stateData);
+                            }
+                            break;
+                        }
+                    }
+
+                    LoadStates();
+                    LoadEvents();
+                    LoadVariables();
+                }
+            }
+        }
+
         private async void LoadFsm(string fileName)
         {
             await CreateAssetsManagerAndLoader();
@@ -147,9 +209,21 @@ namespace FSMViewAvalonia2
                 return;
 
             fsmData = fsmLoader.LoadFSM(selectedId);
+            loadedFsmDatas.Add(fsmData);
+
+            TabItem newTabItem = new TabItem
+            {
+                Header = $"{fsmData.goName}-{fsmData.fsmName}",
+                Tag = fsmData
+            };
+
+            addingTabs = true;
+            tabItems.Add(newTabItem);
+            fsmTabs.SelectedIndex = tabItems.Count - 1;
+            addingTabs = false;
 
             graphCanvas.Children.Clear();
-            nodes = new List<UINode>();
+            fsmData.matrix = mt.Matrix;
 
             stateList.Children.Clear();
             eventList.Children.Clear();
@@ -162,38 +236,49 @@ namespace FSMViewAvalonia2
 
         private void LoadStates()
         {
-            foreach (FsmStateData stateData in fsmData.states)
+            if (fsmData.canvasControls == null)
             {
-                FsmNodeData node = stateData.node;
-                UINode uiNode = new UINode(node);
-
-                uiNode.grid.PointerPressed += (object sender, PointerPressedEventArgs e) =>
+                fsmData.nodes = new List<UINode>();
+                fsmData.canvasControls = new Controls();
+                foreach (FsmStateData stateData in fsmData.states)
                 {
-                    if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
-                        return;
+                    FsmNodeData node = stateData.node;
+                    UINode uiNode = new UINode(stateData, node);
 
-                    foreach (UINode uiNode2 in nodes)
+                    uiNode.grid.PointerPressed += (object sender, PointerPressedEventArgs e) =>
                     {
-                        uiNode2.Selected = false;
-                    }
-                    uiNode.Selected = true;
-                    StateSidebarData(stateData);
-                };
+                        if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+                            return;
 
-                graphCanvas.Children.Add(uiNode.grid);
-                nodes.Add(uiNode);
+                        foreach (UINode uiNode2 in fsmData.nodes)
+                        {
+                            uiNode2.Selected = false;
+                        }
+                        uiNode.Selected = true;
+                        StateSidebarData(stateData);
+                    };
 
-                PlaceTransitions(node, false);
+                    graphCanvas.Children.Add(uiNode.grid);
+                    fsmData.nodes.Add(uiNode);
+
+                    PlaceTransitions(node, false);
+                }
+                foreach (FsmNodeData globalTransition in fsmData.globalTransitions)
+                {
+                    FsmNodeData node = globalTransition;
+                    UINode uiNode = new UINode(null, node);
+
+                    graphCanvas.Children.Add(uiNode.grid);
+                    fsmData.nodes.Add(uiNode);
+
+                    PlaceTransitions(node, true);
+                }
+                fsmData.canvasControls.AddRange(graphCanvas.Children);
             }
-            foreach (FsmNodeData globalTransition in fsmData.globalTransitions)
+            else
             {
-                FsmNodeData node = globalTransition;
-                UINode uiNode = new UINode(node);
-
-                graphCanvas.Children.Add(uiNode.grid);
-                nodes.Add(uiNode);
-
-                PlaceTransitions(node, true);
+                graphCanvas.Children.Clear();
+                graphCanvas.Children.AddRange(fsmData.canvasControls);
             }
         }
 
@@ -440,6 +525,9 @@ namespace FSMViewAvalonia2
             matrix = new Matrix(matrix.M11, matrix.M12, matrix.M21, matrix.M22, pos.X - _last.X + matrix.M31, pos.Y - _last.Y + matrix.M32);
             mt.Matrix = matrix;
             _last = pos;
+
+            if (fsmData != null)
+                fsmData.matrix = mt.Matrix;
         }
         private void MouseScrollCanvas(object sender, PointerWheelEventArgs args)
         {
@@ -447,9 +535,10 @@ namespace FSMViewAvalonia2
             var matrix = mt.Matrix;
 
             double scale = 1 + args.Delta.Y / 10;
-            //matrix.ScaleAtPrepend(scale, scale, pos.X, pos.Y);
             mt.Matrix = ZoomToLocation(matrix, new Point(pos.X - graphCanvas.Bounds.Width / 2, pos.Y - graphCanvas.Bounds.Height / 2), scale);
-            //mt.Matrix = CreateScaling(matrix, scale, scale, pos.X, pos.Y);
+
+            if (fsmData != null)
+                fsmData.matrix = mt.Matrix;
         }
 
         private Matrix ZoomToLocation(Matrix mat, Point pos, double scale)

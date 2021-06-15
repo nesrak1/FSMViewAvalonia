@@ -13,10 +13,15 @@ namespace FSMViewAvalonia2
     //data to be displayed on the canvas
     public class FsmDataInstance
     {
+        public string fsmName;
+        public string goName;
         public List<FsmStateData> states;
         public List<FsmEventData> events;
         public List<FsmVariableData> variables;
         public List<FsmNodeData> globalTransitions;
+        public List<UINode> nodes;
+        public Controls canvasControls;
+        public Matrix matrix;
         public int dataVersion;
     }
     public class FsmStateData

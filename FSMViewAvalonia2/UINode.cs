@@ -18,6 +18,7 @@ namespace FSMViewAvalonia2
         public Path rectPath;
         public TextBlock label;
         public SolidColorBrush stroke;
+        public FsmStateData stateData;
         public FsmNodeData nodeData;
         public FsmTransition[] transitions;
         public string name;
@@ -67,12 +68,13 @@ namespace FSMViewAvalonia2
             }
         }
     
-        public UINode(FsmNodeData nodeData) :
-                    this(nodeData, new SolidColorBrush(Colors.Black))
+        public UINode(FsmStateData stateData, FsmNodeData nodeData) :
+                    this(stateData, nodeData, new SolidColorBrush(Colors.Black))
         { }
     
-        public UINode(FsmNodeData nodeData, SolidColorBrush stroke)
+        public UINode(FsmStateData stateData, FsmNodeData nodeData, SolidColorBrush stroke)
         {
+            this.stateData = stateData;
             this.nodeData = nodeData;
             this.transitions = nodeData.transitions;
             this.name = nodeData.name;
