@@ -65,11 +65,17 @@ namespace FSMViewAvalonia2
         public FsmNodeData(FsmDataInstance dataInst, FsmGlobalTransition transition)
         {
             isGlobal = true;
-            FsmNodeData toNode = dataInst.states.FirstOrDefault(s => s.state.name == transition.toState).node;
-            if (toNode != null)
+            FsmStateData toState = dataInst.states.FirstOrDefault(s => s.state.name == transition.toState);
+            if (toState != null)
+            {
+                FsmNodeData toNode = toState.node;
                 transform = new Rect(toNode.transform.X, toNode.transform.Y - 50, toNode.transform.Width, 18);
+            }
             else
-                transform = new Rect(-999, -999, 0, 0);
+            {
+                transform = new Rect(-100, -100, 100, 18);
+            }
+
             stateColor = Constants.STATE_COLORS[transition.colorIndex];
             transitionColor = Constants.TRANSITION_COLORS[transition.colorIndex];
             name = transition.fsmEvent.name;
