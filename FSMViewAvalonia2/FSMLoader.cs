@@ -383,7 +383,17 @@ namespace FSMViewAvalonia2
                 sceneInfos.Add(new SceneInfo()
                 {
                     id = i,
-                    name = scenes[i].GetValue().AsString()
+                    name = scenes[i].GetValue().AsString(),
+                    level = true
+                });
+            }
+            for (int i = 0; i < sceneCount; i++)
+            {
+                sceneInfos.Add(new SceneInfo()
+                {
+                    id = i,
+                    name = scenes[i].GetValue().AsString(),
+                    level = false
                 });
             }
             return sceneInfos;

@@ -14,6 +14,7 @@ namespace FSMViewAvalonia2
         public Button selectButton;
 
         public long selectedID = -1;
+        public bool selectedLevel = true;
         public SceneSelectionDialog()
         {
             this.InitializeComponent();
@@ -64,6 +65,7 @@ namespace FSMViewAvalonia2
             if (listBox.SelectedItem is SceneInfo sceneInfo)
             {
                 selectedID = sceneInfo.id;
+                selectedLevel = sceneInfo.level;
                 Close();
             }
         }

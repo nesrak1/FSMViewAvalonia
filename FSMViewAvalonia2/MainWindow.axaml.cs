@@ -147,17 +147,24 @@ namespace FSMViewAvalonia2
             await selector.ShowDialog(this);
 
             long selectedId = selector.selectedID;
+            bool selectedLevelFile = selector.selectedLevel;
 
             if (selectedId == -1)
                 return;
 
-            string levelName = "level" + selectedId;
-            string fullLevelPath = System.IO.Path.Combine(dataPath, levelName);
+            string format;
+            if (selectedLevelFile)
+                format = "level{0}";
+            else
+                format = "sharedassets{0}.assets";
 
-            lastFileName = fullLevelPath;
+            string assetsName = string.Format(format, selectedId);
+            string fullAssetsPath = System.IO.Path.Combine(dataPath, assetsName);
+
+            lastFileName = fullAssetsPath;
             openLast.IsEnabled = true;
 
-            LoadFsm(fullLevelPath);
+            LoadFsm(fullAssetsPath);
         }
 
         private void FsmTabs_SelectionChanged(object sender, SelectionChangedEventArgs e)

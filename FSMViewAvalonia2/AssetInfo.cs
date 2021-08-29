@@ -23,12 +23,16 @@ namespace FSMViewAvalonia2
     {
         public long id;
         public string name;
+        public bool level;
 
         public string Name
         {
             get
             {
-                return name;
+                if (!level)
+                    return name + " (sharedassets)";
+                else
+                    return name;
             }
         }
     }
