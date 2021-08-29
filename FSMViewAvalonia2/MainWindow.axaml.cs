@@ -121,12 +121,11 @@ namespace FSMViewAvalonia2
         {
             await CreateAssetsManagerAndLoader();
 
-            string gamePath = await SteamHelper.FindHollowKnightPath(this);
+            string gamePath = await GameFileHelper.FindHollowKnightPath(this);
             if (gamePath == null)
                 return;
 
-            string dataPath = System.IO.Path.Combine(gamePath, "hollow_knight_Data");
-            string resourcesPath = System.IO.Path.Combine(dataPath, "resources.assets");
+            string resourcesPath = GameFileHelper.FindGameFilePath(gamePath, "resources.assets");
 
             LoadFsm(resourcesPath);
         }
@@ -135,11 +134,13 @@ namespace FSMViewAvalonia2
         {
             await CreateAssetsManagerAndLoader();
 
-            string gamePath = await SteamHelper.FindHollowKnightPath(this);
+            string gamePath = await GameFileHelper.FindHollowKnightPath(this);
             if (gamePath == null)
                 return;
 
-            string dataPath = System.IO.Path.Combine(gamePath, "hollow_knight_Data");
+            //gog and mac could have multiple folders that match, so find the one with a valid assets file (?)
+            string resourcesPath = GameFileHelper.FindGameFilePath(gamePath, "resources.assets");
+            string dataPath = System.IO.Path.GetDirectoryName(resourcesPath);
 
             List<SceneInfo> sceneList = fsmLoader.LoadSceneList(dataPath);
             SceneSelectionDialog selector = new SceneSelectionDialog(sceneList);

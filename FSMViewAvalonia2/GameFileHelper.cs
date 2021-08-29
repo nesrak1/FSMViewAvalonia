@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace FSMViewAvalonia2
 {
-    public static class SteamHelper
+    public static class GameFileHelper
     {
         public static readonly int HOLLOWKNIGHT_APP_ID = 367520;
         public static readonly string HOLLOWKNIGHT_GAME_NAME = "Hollow Knight";
@@ -102,6 +102,27 @@ namespace FSMViewAvalonia2
                 }
             }
 
+            return null;
+        }
+
+        public static string FindGameFilePath(string hkRootPath, string file)
+        {
+            string[] pathTests = new string[]
+            {
+                "hollow_knight_Data",
+                "Hollow Knight_Data",
+                "Hollow_Knight_Data",
+                Path.Combine("Contents", "Resources", "Data")
+            };
+            foreach (string pathTest in pathTests)
+            {
+                string dataPath = Path.Combine(hkRootPath, pathTest);
+                string filePath = Path.Combine(dataPath, file);
+                if (File.Exists(filePath))
+                {
+                    return filePath;
+                }
+            }
             return null;
         }
     }
