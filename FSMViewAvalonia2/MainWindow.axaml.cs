@@ -321,7 +321,7 @@ namespace FSMViewAvalonia2
                 string actionName = entry.Name;
                 var fields = entry.Values;
 
-                stateList.Children.Add(CreateSidebarHeader(actionName));
+                stateList.Children.Add(CreateSidebarHeader(actionName, entry.Enabled));
 
                 foreach (var field in fields)
                 {
@@ -334,12 +334,12 @@ namespace FSMViewAvalonia2
                         valueString = valueString.ToLower();
                     }
 
-                    stateList.Children.Add(CreateSidebarRow(key, valueString));
+                    stateList.Children.Add(CreateSidebarRow(key, valueString, entry.Enabled));
                 }
             }
         }
 
-        private TextBlock CreateSidebarHeader(string text)
+        private TextBlock CreateSidebarHeader(string text, bool enabled = true)
         {
             TextBlock header = new TextBlock()
             {
@@ -350,10 +350,15 @@ namespace FSMViewAvalonia2
                 Height = 28,
                 FontWeight = FontWeight.Bold
             };
+            if (!enabled)
+            {
+                header.Background = Brushes.Red;
+                header.Text = text + " (disabled)";
+            }
             return header;
         }
 
-        private Grid CreateSidebarRow(string key, string value)
+        private Grid CreateSidebarRow(string key, string value, bool enabled = true)
         {
             Grid valueContainer = new Grid()
             {

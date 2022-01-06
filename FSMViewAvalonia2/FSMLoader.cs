@@ -240,6 +240,7 @@ namespace FSMViewAvalonia2
                 }
 
                 entry.Name = actionName;
+                entry.Enabled = actionData.actionEnabled[i];
 
                 list.Add(entry);
             }
