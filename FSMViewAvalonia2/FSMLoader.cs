@@ -218,10 +218,6 @@ namespace FSMViewAvalonia2
         {
             for (int i = 0; i < actionData.actionNames.Count; i++)
             {
-                if (!actionData.actionEnabled[i])
-                {
-                    continue;
-                }
                 string actionName = actionData.actionNames[i];
                 if (actionName.Contains("."))
                     actionName = actionName.Substring(actionName.LastIndexOf(".") + 1);
@@ -244,6 +240,7 @@ namespace FSMViewAvalonia2
                 }
 
                 entry.Name = actionName;
+                entry.Enabled = actionData.actionEnabled[i];
 
                 list.Add(entry);
             }

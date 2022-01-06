@@ -53,6 +53,7 @@ namespace FSMViewAvalonia2
     {
         public string Name { get; set; }
         public List<Tuple<string, object>> Values { get; set; }
+        public bool Enabled { get; set; } = true;
     }
     public class FsmNodeData
     {
