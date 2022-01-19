@@ -1,4 +1,4 @@
-﻿using AssetsTools.NET.Extra;
+using AssetsTools.NET.Extra;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Shapes;
@@ -316,12 +316,13 @@ namespace FSMViewAvalonia2
         {
             stateList.Children.Clear();
             var entries = stateData.ActionData;
-            foreach (var entry in entries)
+            for(int i = 0; i < entries.Count;i++)
             {
+                var entry = entries[i];
                 string actionName = entry.Name;
                 var fields = entry.Values;
 
-                stateList.Children.Add(CreateSidebarHeader(actionName, entry.Enabled));
+                stateList.Children.Add(CreateSidebarHeader(actionName,i, entry.Enabled));
 
                 foreach (var field in fields)
                 {
@@ -339,7 +340,18 @@ namespace FSMViewAvalonia2
             }
         }
 
-        private TextBlock CreateSidebarHeader(string text, bool enabled = true)
+        private TextBlock CreateSidebarHeader(string text,  int index, bool enabled)
+        {
+            var header = CreateSidebarHeader($"{index}) {text}");
+            if (!enabled)
+            {
+                header.Background = Brushes.Red;
+                header.Text += " (disabled)";
+            }
+            return header;
+        }
+
+        private TextBlock CreateSidebarHeader(string text)
         {
             TextBlock header = new TextBlock()
             {
@@ -350,11 +362,6 @@ namespace FSMViewAvalonia2
                 Height = 28,
                 FontWeight = FontWeight.Bold
             };
-            if (!enabled)
-            {
-                header.Background = Brushes.Red;
-                header.Text = text + " (disabled)";
-            }
             return header;
         }
 
