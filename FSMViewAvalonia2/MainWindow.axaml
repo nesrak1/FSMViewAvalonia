@@ -58,7 +58,8 @@
         <MenuItem Header="Open" Name="fileOpen" />
         <MenuItem Header="Open Scene List" Name="openSceneList" />
         <MenuItem Header="Open resources.assets" Name="openResources" />
-        <MenuItem Header="Open Last" Name="openLast" IsEnabled="False" />
+		<MenuItem Header="Open Json" Name="openJson" />
+		<MenuItem Header="Open Last" Name="openLast" IsEnabled="False" />
       </MenuItem>
       <MenuItem Header="Close Tab" Name="closeTab"></MenuItem>
     </Menu>
