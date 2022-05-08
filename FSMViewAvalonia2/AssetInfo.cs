@@ -9,12 +9,12 @@ namespace FSMViewAvalonia2
         public long id;
         public uint size;
         public string name;
-
+        public string path;
         public string Name
         {
             get
             {
-                return name;
+                return path + name;
             }
         }
     }

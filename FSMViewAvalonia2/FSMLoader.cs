@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Linq;
 
 namespace FSMViewAvalonia2
 {
@@ -199,11 +200,27 @@ namespace FSMViewAvalonia2
                         string fsmName = Encoding.UTF8.GetString(reader.ReadBytes((int)length2));
                         reader.BaseStream.Position = oldPos;
 
+                        StringBuilder pathBuilder = new StringBuilder();
+
+                        AssetTypeInstance c_Transform = am.GetExtAsset(curFile, goAti.GetBaseField().Get("m_Component").Get(0).Get(0).Get(0)).instance;
+                        while(true)
+                        {
+                            var father = c_Transform.GetBaseField().children.FirstOrDefault(x => x.GetName() == "m_Father");
+                            if(father == null) break;
+                            c_Transform = am.GetExtAsset(curFile, father).instance;
+                            if(c_Transform == null) break;
+                            var m_GameObject = am.GetExtAsset(curFile, c_Transform.GetBaseField().Get("m_GameObject")).instance;
+                            string name = m_GameObject.GetBaseField().Get("m_Name").GetValue().AsString();
+                            pathBuilder.Insert(0, name + "/");
+                        }
+
+
                         assetInfos.Add(new AssetInfo()
                         {
                             id = info.index,
                             size = info.curFileSize,
-                            name = m_Name + "-" + fsmName
+                            name = m_Name + "-" + fsmName,
+                            path = pathBuilder.ToString()
                         });
                     }
                 }

@@ -223,7 +223,7 @@ namespace FSMViewAvalonia2
         public override string ToString()
         {
             if (value.name != "")
-                return $"GameObject {value.name}";
+                return $"[{value}]";
             else
                 return $"GameObject {name}";
         }
@@ -244,7 +244,7 @@ namespace FSMViewAvalonia2
             if (ownerOption == OwnerDefaultOption.UseOwner)
                 return "OwnerDefault FSM Owner";
             else
-                return $"OwnerDefault {gameObject.name}";
+                return $"OwnerDefault {(gameObject.name == null ? gameObject.ToString() : gameObject.name)}";
         }
     }
 
@@ -516,9 +516,9 @@ namespace FSMViewAvalonia2
                 if (value.name == "")
                     return $"object {name}";
                 else
-                    return $"object {name} = [{value.name}]";
+                    return $"object {name} = [{value}]";
             else
-                return $"[{value.name}]";
+                return $"[{value}]";
         }
     }
 
