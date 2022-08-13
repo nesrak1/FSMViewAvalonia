@@ -16,6 +16,8 @@ jobs:
       run: dotnet restore
     - name: Build
       run: dotnet build --no-restore
+    - name: Copy
+      run: cp ./classdata.tpk ./FSMViewAvalonia2/bin/Debug/netcoreapp3.1/classdata.tpk
     - name: Compress
       run: zip -r FSMViewAvalonia.zip ./FSMViewAvalonia2/bin/Debug/netcoreapp3.1
     - name: Info
