@@ -23,6 +23,7 @@ jobs:
     - name: Release
       uses: softprops/action-gh-release@v1
       with:
+        body: New release
         files: |
           ./FSMViewAvalonia.zip
       
