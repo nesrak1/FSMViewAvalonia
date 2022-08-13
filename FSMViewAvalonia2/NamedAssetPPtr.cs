@@ -34,4 +34,9 @@ namespace FSMViewAvalonia2
                 return $"{name} ({file})";
         }
     }
+    public class GameObjectPPtrHolder
+    {
+        public NamedAssetPPtr pptr;
+        public override string ToString() => pptr.ToString();
+    }
 }

@@ -25,6 +25,7 @@ namespace FSMViewAvalonia2
         private MenuItem openResources;
         private MenuItem openLast;
         private MenuItem closeTab;
+        private MenuItem closeAllTab;
         private TextBlock tipText;
         private StackPanel stateList;
         private StackPanel eventList;
@@ -56,6 +57,7 @@ namespace FSMViewAvalonia2
             openResources = this.FindControl<MenuItem>("openResources");
             openLast = this.FindControl<MenuItem>("openLast");
             closeTab = this.FindControl<MenuItem>("closeTab");
+            closeAllTab = this.FindControl<MenuItem>("closeAllTab");
             tipText = this.FindControl<TextBlock>("tipText");
             stateList = this.FindControl<StackPanel>("stateList");
             eventList = this.FindControl<StackPanel>("eventList");
@@ -70,6 +72,7 @@ namespace FSMViewAvalonia2
             fileOpen.Click += FileOpen_Click;
             openLast.Click += OpenLast_Click;
             closeTab.Click += CloseTab_Click;
+            closeAllTab.Click += CloseAllTab_Click;
             openResources.Click += OpenResources_Click;
             openSceneList.Click += OpenSceneList_Click;
             fsmTabs.SelectionChanged += FsmTabs_SelectionChanged;
@@ -78,6 +81,8 @@ namespace FSMViewAvalonia2
             tabItems = new ObservableCollection<TabItem>();
             fsmTabs.Items = tabItems;
         }
+
+        
 
         private async void FileOpen_Click(object sender, RoutedEventArgs e)
         {
@@ -115,6 +120,17 @@ namespace FSMViewAvalonia2
                 loadedFsmDatas.Remove(fsmInst);
                 fsmInst.canvasControls.Clear();
             }
+        }
+        private void CloseAllTab_Click(object sender, RoutedEventArgs e)
+        {
+            TabItem tabItem = (TabItem)fsmTabs.SelectedItem;
+            if (tabItem != null)
+            {
+                FsmDataInstance fsmInst = (FsmDataInstance)tabItem.Tag;
+                fsmInst.canvasControls.Clear();
+            }
+            tabItems.Clear();
+            loadedFsmDatas.Clear();
         }
 
         private async void OpenResources_Click(object sender, RoutedEventArgs e)
@@ -204,30 +220,42 @@ namespace FSMViewAvalonia2
             }
         }
 
-        private async void LoadFsm(string fileName)
+        private async void LoadFsm(string fileName, string defaultSearch = "")
         {
             await CreateAssetsManagerAndLoader();
 
             List<AssetInfo> assetInfos = fsmLoader.LoadAllFSMsFromFile(fileName);
-            FSMSelectionDialog selector = new FSMSelectionDialog(assetInfos);
+            FSMSelectionDialog selector = new FSMSelectionDialog(assetInfos, System.IO.Path.GetFileName(fileName));
+            if(!string.IsNullOrEmpty(defaultSearch))
+            {
+                var tex = selector.FindControl<AutoCompleteBox>("searchBox");
+                tex.Text = defaultSearch;
+                selector.RefreshFilter(defaultSearch);
+            }
             await selector.ShowDialog(this);
-            long selectedId = selector.selectedID;
+            long selectedId = selector.selectedAssetInfo.id;
 
             if (selectedId == 0)
                 return;
 
-            fsmData = fsmLoader.LoadFSM(selectedId);
-            loadedFsmDatas.Add(fsmData);
-
-            TabItem newTabItem = new TabItem
+            fsmData = loadedFsmDatas.FirstOrDefault(x => x.info.assetFile == selector.selectedAssetInfo.assetFile && x.info.Name == selector.selectedAssetInfo.Name);
+            if (fsmData == null)
             {
-                Header = $"{fsmData.goName}-{fsmData.fsmName}",
-                Tag = fsmData
-            };
+                fsmData = fsmLoader.LoadFSM(selectedId, selector.selectedAssetInfo);
+                loadedFsmDatas.Add(fsmData);
+                fsmData.tabIndex = tabItems.Count;
 
-            addingTabs = true;
-            tabItems.Add(newTabItem);
-            fsmTabs.SelectedIndex = tabItems.Count - 1;
+                TabItem newTabItem = new TabItem
+                {
+                    Header = $"{fsmData.goName}-{fsmData.fsmName}",
+                    Tag = fsmData
+                };
+
+                addingTabs = true;
+                tabItems.Add(newTabItem);
+            }
+
+            fsmTabs.SelectedIndex = fsmData.tabIndex;
             addingTabs = false;
 
             graphCanvas.Children.Clear();
@@ -307,7 +335,7 @@ namespace FSMViewAvalonia2
                 variableList.Children.Add(CreateSidebarHeader(variableType));
                 foreach (Tuple<string, object> value in varData.Values)
                 {
-                    variableList.Children.Add(CreateSidebarRow(value.Item1, value.Item2.ToString()));
+                    variableList.Children.Add(CreateSidebarRow(value.Item1, value.Item2));
                 }
             }
         }
@@ -328,14 +356,8 @@ namespace FSMViewAvalonia2
                 {
                     string key = field.Item1;
                     object value = field.Item2;
-                    string valueString = value.ToString();
 
-                    if (value is bool)
-                    {
-                        valueString = valueString.ToLower();
-                    }
-
-                    stateList.Children.Add(CreateSidebarRow(key, valueString, entry.Enabled));
+                    stateList.Children.Add(CreateSidebarRow(key, value, entry.Enabled));
                 }
             }
         }
@@ -365,25 +387,59 @@ namespace FSMViewAvalonia2
             return header;
         }
 
-        private Grid CreateSidebarRow(string key, string value, bool enabled = true)
+        private Grid CreateSidebarRow(string key, object rawvalue, bool enabled = true)
         {
+            var value = rawvalue.ToString();
+            if(rawvalue is bool)
+            {
+                value = value.ToLower();
+            }
             Grid valueContainer = new Grid()
             {
                 Height = 28,
                 VerticalAlignment = Avalonia.Layout.VerticalAlignment.Top,
                 Background = Brushes.LightGray
             };
+            int marginRight = 0;
+            NamedAssetPPtr pptr = null;
+            if (rawvalue is GameObjectPPtrHolder ptr) pptr = ptr.pptr;
+            if (rawvalue is FsmGameObject go) pptr = go.value;
+            if (pptr != null)
+            {
+                if (!string.IsNullOrEmpty(pptr.file))
+                {
+                    Button btn = new Button()
+                    {
+                        Width = 50,
+                        Padding = new Thickness(5),
+                        HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right,
+                        VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
+                    };
+                    marginRight = 55;
+                    btn.Content = "Search";
+                    btn.Click += async (sender, ev) =>
+                    {
+                        string gamePath = await GameFileHelper.FindHollowKnightPath(this);
+                        if (gamePath == null)
+                            return;
+
+                        LoadFsm(GameFileHelper.FindGameFilePath(gamePath, pptr.file), pptr.name);
+                    };
+                    valueContainer.Children.Add(btn);
+                }
+            }
             TextBlock valueLabel = new TextBlock()
             {
                 Text = key,
                 HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left,
                 VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
                 Padding = new Thickness(5),
+                Margin = new Thickness(0, 0, 0, 0),
                 Width = 120
             };
             TextBox valueBox = new TextBox()
             {
-                Margin = new Thickness(125, 0, 0, 0),
+                Margin = new Thickness(125, 0, marginRight, 0),
                 IsReadOnly = true,
                 Text = value
             };

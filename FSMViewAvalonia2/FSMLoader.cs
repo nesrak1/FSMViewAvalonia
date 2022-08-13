@@ -37,16 +37,17 @@ namespace FSMViewAvalonia2
             deserializer.Read("PlayMakerFSM", MonoDeserializer.GetAssemblyWithDependencies(assemblyPath), file.header.format);
             bool hasDataField = deserializer.children[0].children[0].name == "dataVersion";
             
-            return GetFSMInfos(file, table, hasDataField);
+            return GetFSMInfos(file, table, curFile, hasDataField);
         }
 
-        public FsmDataInstance LoadFSM(long id)
+        public FsmDataInstance LoadFSM(long id, AssetInfo assetInfo)
         {
             AssetFileInfoEx info = curFile.table.GetAssetInfo(id);
             AssetTypeValueField baseField = am.GetMonoBaseFieldCached(curFile, info, Path.Combine(Path.GetDirectoryName(curFile.path), "Managed"));
             AssetNameResolver namer = new AssetNameResolver(am, curFile);
 
             FsmDataInstance dataInstance = new FsmDataInstance();
+            dataInstance.info = assetInfo;
 
             AssetTypeValueField fsm = baseField.Get("fsm");
             AssetTypeValueField states = fsm.Get("states");
@@ -135,7 +136,7 @@ namespace FSMViewAvalonia2
             return dataInstance;
         }
 
-        private List<AssetInfo> GetFSMInfos(AssetsFile file, AssetsFileTable table, bool hasDataField)
+        private List<AssetInfo> GetFSMInfos(AssetsFile file, AssetsFileTable table, AssetsFileInstance assetsFile, bool hasDataField)
         {
             List<AssetInfo> assetInfos = new List<AssetInfo>();
             uint assetCount = table.assetFileInfoCount;
@@ -220,7 +221,9 @@ namespace FSMViewAvalonia2
                             id = info.index,
                             size = info.curFileSize,
                             name = m_Name + "-" + fsmName,
-                            path = pathBuilder.ToString()
+                            path = pathBuilder.ToString(),
+                            assetFile = assetsFile.path,
+                            
                         });
                     }
                 }
@@ -378,7 +381,7 @@ namespace FSMViewAvalonia2
                     if (pptr.pathID == 0)
                         value = "[null]";
                     else
-                        value = pptr;
+                        value = header == "GameObjects" ? (object)(new GameObjectPPtrHolder() { pptr = pptr }) : pptr;
                     genericData.Values.Add(new Tuple<string, object>(name, value));
                 }
             }
@@ -401,7 +404,7 @@ namespace FSMViewAvalonia2
                 sceneInfos.Add(new SceneInfo()
                 {
                     id = i,
-                    name = scenes[i].GetValue().AsString(),
+                    name = scenes[i].GetValue().AsString() + " (level" + i + ")",
                     level = true
                 });
             }
@@ -410,7 +413,7 @@ namespace FSMViewAvalonia2
                 sceneInfos.Add(new SceneInfo()
                 {
                     id = i,
-                    name = scenes[i].GetValue().AsString(),
+                    name = scenes[i].GetValue().AsString()  + " (sharedassets" + i + ".assets)",
                     level = false
                 });
             }

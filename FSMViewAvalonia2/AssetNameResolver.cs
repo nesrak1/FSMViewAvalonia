@@ -1,6 +1,7 @@
 ﻿using AssetsTools.NET;
 using AssetsTools.NET.Extra;
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Text;
 
@@ -34,15 +35,30 @@ namespace FSMViewAvalonia2
                 return new NamedAssetPPtr(pptr.fileID, pptr.pathID, string.Empty, string.Empty);
             }
             AssetExternal extObj = am.GetExtAsset(inst, pptr.fileID, pptr.pathID, true);
-            string name = GetAssetNameFastModded(extObj.file.file, am.classFile, extObj.info);
+            StringBuilder nameBuilder = new StringBuilder();
+            nameBuilder.Append(GetAssetNameFastModded(extObj.file.file, am.classFile, extObj.info));
+            if (extObj.instance != null)
+            {
+                AssetTypeInstance c_Transform = am.GetExtAsset(extObj.file, extObj.instance.GetBaseField().Get("m_Component").Get(0).Get(0).Get(0)).instance;
+                while (true)
+                {
+                    var father = c_Transform.GetBaseField().children.FirstOrDefault(x => x.GetName() == "m_Father");
+                    if (father == null) break;
+                    c_Transform = am.GetExtAsset(extObj.file, father).instance;
+                    if (c_Transform == null) break;
+                    var m_GameObject = am.GetExtAsset(extObj.file, c_Transform.GetBaseField().Get("m_GameObject")).instance;
+                    string name = m_GameObject.GetBaseField().Get("m_Name").GetValue().AsString();
+                    nameBuilder.Insert(0, name + "/");
+                }
+            }
+
             string file = extObj.file.name;
-            return new NamedAssetPPtr(pptr.fileID, pptr.pathID, name, file);
+            return new NamedAssetPPtr(pptr.fileID, pptr.pathID, nameBuilder.ToString(), file);
         }
 
         private string GetAssetNameFastModded(AssetsFile file, ClassDatabaseFile cldb, AssetFileInfoEx info)
         {
             ClassDatabaseType type = AssetHelper.FindAssetClassByID(cldb, info.curFileType);
-
             AssetsFileReader reader = file.reader;
 
             if (type.fields.Count == 0) return type.name.GetString(cldb);

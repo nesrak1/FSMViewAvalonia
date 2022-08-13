@@ -14,7 +14,7 @@ namespace FSMViewAvalonia2
         public ListBox listBox;
         public Button selectButton;
 
-        public long selectedID;
+        public AssetInfo selectedAssetInfo;
         public FSMSelectionDialog()
         {
             this.InitializeComponent();
@@ -37,6 +37,11 @@ namespace FSMViewAvalonia2
         {
             string query = ((AutoCompleteBox) sender)?.Text;
 
+            RefreshFilter(query);
+        }
+
+        public void RefreshFilter(string query)
+        {
             if (string.IsNullOrEmpty(query))
             {
                 listBox.Items = AssetInfos;
@@ -46,11 +51,13 @@ namespace FSMViewAvalonia2
             listBox.Items = AssetInfos.Where(x => x.Name.Contains(query, StringComparison.OrdinalIgnoreCase));
         }
 
-        public FSMSelectionDialog(List<AssetInfo> assetInfos) : this()
+        public FSMSelectionDialog(List<AssetInfo> assetInfos, string name) : this()
         {
             AssetInfos = assetInfos;
 
             listBox.Items = AssetInfos;
+
+            Title = $"Select FSM({name})";
         }
 
         private void InitializeComponent()
@@ -62,7 +69,7 @@ namespace FSMViewAvalonia2
         {
             if (listBox.SelectedItem is AssetInfo assetInfo)
             {
-                selectedID = assetInfo.id;
+                selectedAssetInfo = assetInfo;
                 Close();
             }
         }

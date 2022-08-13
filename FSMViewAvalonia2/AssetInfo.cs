@@ -10,6 +10,7 @@ namespace FSMViewAvalonia2
         public uint size;
         public string name;
         public string path;
+        public string assetFile;
         public string Name
         {
             get
@@ -29,10 +30,7 @@ namespace FSMViewAvalonia2
         {
             get
             {
-                if (!level)
-                    return name + " (sharedassets)";
-                else
-                    return name;
+                return name;
             }
         }
     }

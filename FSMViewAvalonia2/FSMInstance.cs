@@ -15,6 +15,8 @@ namespace FSMViewAvalonia2
     {
         public string fsmName;
         public string goName;
+        public int tabIndex;
+        public AssetInfo info;
         public List<FsmStateData> states;
         public List<FsmEventData> events;
         public List<FsmVariableData> variables;

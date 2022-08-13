@@ -241,10 +241,14 @@ namespace FSMViewAvalonia2
         }
         public override string ToString()
         {
+            return $"OwnerDefault {ToStringWithNoHead()}";
+        }
+        public string ToStringWithNoHead()
+        {
             if (ownerOption == OwnerDefaultOption.UseOwner)
-                return "OwnerDefault FSM Owner";
+                return "FSM Owner";
             else
-                return $"OwnerDefault {(gameObject.name == null ? gameObject.ToString() : gameObject.name)}";
+                return $"{(gameObject.name == null ? gameObject.ToString() : gameObject.name)}";
         }
     }
 
@@ -407,7 +411,20 @@ namespace FSMViewAvalonia2
         }
         public override string ToString()
         {
-            return $"EventTarget {target.ToString()} {(excludeSelf.value ? "!" : "")}{gameObject}";
+            StringBuilder flags = new StringBuilder();
+            if(excludeSelf.value)
+            {
+                flags.Append("[ExcludeSelf]");
+            }
+            if(sendToChildren.value)
+            {
+                flags.Append("[SendToChildren]");
+            }
+            if (!string.IsNullOrEmpty(fsmName.value))
+            {
+                flags.Append($"[SendToFSM: {fsmName.value}]");
+            }
+            return $"EventTarget({target}){flags}:{gameObject.ToStringWithNoHead()}";
         }
     }
 

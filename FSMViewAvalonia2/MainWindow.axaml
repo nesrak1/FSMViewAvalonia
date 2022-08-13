@@ -61,6 +61,7 @@
         <MenuItem Header="Open Last" Name="openLast" IsEnabled="False" />
       </MenuItem>
       <MenuItem Header="Close Tab" Name="closeTab"></MenuItem>
+      <MenuItem Header="Close All Tab" Name="closeAllTab"></MenuItem>
     </Menu>
     <Grid Margin="0,24,0,0">
       <Grid.RowDefinitions>
