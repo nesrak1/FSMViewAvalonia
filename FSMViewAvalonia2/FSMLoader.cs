@@ -1,11 +1,4 @@
-﻿using AssetsTools.NET;
-using AssetsTools.NET.Extra;
-using Avalonia;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
-using System.Linq;
+﻿using Path = System.IO.Path;
 
 namespace FSMViewAvalonia2
 {

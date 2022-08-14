@@ -1,12 +1,5 @@
-﻿using AssetsTools.NET;
-using Avalonia;
-using Avalonia.Controls;
-using Avalonia.Controls.Shapes;
-using Avalonia.Layout;
-using Avalonia.Media;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿
+using Path = Avalonia.Controls.Shapes.Path;
 
 namespace FSMViewAvalonia2
 {

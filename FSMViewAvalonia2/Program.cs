@@ -1,12 +1,4 @@
-﻿using System;
-using System.IO;
-using System.IO.Pipes;
-using System.Text;
-using System.Threading;
-using Avalonia;
-using Avalonia.Threading;
-using Avalonia.Controls.ApplicationLifetimes;
-using Avalonia.Dialogs;
+﻿
 
 namespace FSMViewAvalonia2
 {
@@ -116,7 +108,7 @@ namespace FSMViewAvalonia2
                 var filename = args[0];
                 if(!File.Exists(filename))
                 {
-                    filename = Path.GetFileName(filename);
+                    filename = System.IO.Path.GetFileName(filename);
                     string gamePath = await GameFileHelper.FindHollowKnightPath(App.mainWindow);
                     if (gamePath == null)
                         return;

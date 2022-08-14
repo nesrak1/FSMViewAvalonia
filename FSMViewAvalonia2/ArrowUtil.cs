@@ -1,10 +1,4 @@
-﻿using Avalonia;
-using Avalonia.Controls;
-using Avalonia.Controls.Shapes;
-using Avalonia.Media;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using Path = Avalonia.Controls.Shapes.Path;
 
 namespace FSMViewAvalonia2
 {

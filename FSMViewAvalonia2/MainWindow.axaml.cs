@@ -1,18 +1,4 @@
-using AssetsTools.NET.Extra;
-using Avalonia;
-using Avalonia.Controls;
-using Avalonia.Controls.Shapes;
-using Avalonia.Input;
-using Avalonia.Interactivity;
-using Avalonia.Markup.Xaml;
-using Avalonia.Media;
-using MessageBox.Avalonia;
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Windows.Input;
+
 
 namespace FSMViewAvalonia2
 {
@@ -544,7 +530,7 @@ namespace FSMViewAvalonia2
                         Color color = Constants.TRANSITION_COLORS[trans.colorIndex];
                         SolidColorBrush brush = new(color);
 
-                        Path line = ArrowUtil.CreateLine(start, startMiddle, endMiddle, end, brush);
+                        Avalonia.Controls.Shapes.Path line = ArrowUtil.CreateLine(start, startMiddle, endMiddle, end, brush);
 
                         line.PointerMoved += (object sender, PointerEventArgs e) =>
                         {
