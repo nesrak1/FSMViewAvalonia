@@ -13,7 +13,7 @@ namespace FSMViewAvalonia2
     {
         public static object GetFsmObject(this ActionData actionData, int index, int dataVersion)
         {
-            BinaryReader r = new BinaryReader(new MemoryStream(actionData.byteData.ToArray()));
+            BinaryReader r = new(new MemoryStream(actionData.byteData.ToArray()));
             //string actionName = actionData.actionNames[index];
             ParamDataType paramDataType = actionData.paramDataType[index];
             int paramDataPos = actionData.paramDataPos[index];

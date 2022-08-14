@@ -35,7 +35,7 @@ namespace FSMViewAvalonia2
                 return new NamedAssetPPtr(pptr.fileID, pptr.pathID, string.Empty, string.Empty);
             }
             AssetExternal extObj = am.GetExtAsset(inst, pptr.fileID, pptr.pathID, true);
-            StringBuilder nameBuilder = new StringBuilder();
+            StringBuilder nameBuilder = new();
             nameBuilder.Append(GetAssetNameFastModded(extObj.file.file, am.classFile, extObj.info, out var isGameObject));
             if (isGameObject && extObj.instance != null)
             {

@@ -19,30 +19,30 @@ namespace FSMViewAvalonia2
     public class MainWindow : Window
     {
         //controls
-        private Canvas graphCanvas;
-        private MenuItem fileOpen;
-        private MenuItem openSceneList;
-        private MenuItem openResources;
-        private MenuItem openLast;
-        private MenuItem closeTab;
-        private MenuItem closeAllTab;
+        private readonly Canvas graphCanvas;
+        private readonly MenuItem fileOpen;
+        private readonly MenuItem openSceneList;
+        private readonly MenuItem openResources;
+        private readonly MenuItem openLast;
+        private readonly MenuItem closeTab;
+        private readonly MenuItem closeAllTab;
         private TextBlock tipText;
-        private StackPanel stateList;
-        private StackPanel eventList;
-        private StackPanel variableList;
-        private TabControl fsmTabs;
-        private MatrixTransform mt;
+        private readonly StackPanel stateList;
+        private readonly StackPanel eventList;
+        private readonly StackPanel variableList;
+        private readonly TabControl fsmTabs;
+        private readonly MatrixTransform mt;
 
         //variables
         private AssetsManager am;
         private FSMLoader fsmLoader;
         private FsmDataInstance fsmData;
         private string lastFileName;
-        private List<FsmDataInstance> loadedFsmDatas;
+        private readonly List<FsmDataInstance> loadedFsmDatas;
         private bool addingTabs;
 
         //fsm info
-        private ObservableCollection<TabItem> tabItems;
+        private readonly ObservableCollection<TabItem> tabItems;
 
         public MainWindow()
         {
@@ -80,13 +80,15 @@ namespace FSMViewAvalonia2
             loadedFsmDatas = new List<FsmDataInstance>();
             tabItems = new ObservableCollection<TabItem>();
             fsmTabs.Items = tabItems;
+
+            App.mainWindow = this;
         }
 
         
 
         private async void FileOpen_Click(object sender, RoutedEventArgs e)
         {
-            OpenFileDialog openFileDialog = new OpenFileDialog();
+            OpenFileDialog openFileDialog = new();
             string[] result = await openFileDialog.ShowAsync(this);
             
             if (result == null || result.Length == 0)
@@ -102,12 +104,12 @@ namespace FSMViewAvalonia2
             lastFileName = fileName;
             openLast.IsEnabled = true;
 
-            LoadFsm(fileName);
+            await LoadFsm(fileName);
         }
 
-        private void OpenLast_Click(object sender, RoutedEventArgs e)
+        private async void OpenLast_Click(object sender, RoutedEventArgs e)
         {
-            LoadFsm(lastFileName);
+            await LoadFsm(lastFileName);
         }
 
         private void CloseTab_Click(object sender, RoutedEventArgs e)
@@ -143,7 +145,7 @@ namespace FSMViewAvalonia2
 
             string resourcesPath = GameFileHelper.FindGameFilePath(gamePath, "resources.assets");
 
-            LoadFsm(resourcesPath);
+            await LoadFsm(resourcesPath);
         }
 
         private async void OpenSceneList_Click(object sender, RoutedEventArgs e)
@@ -159,7 +161,7 @@ namespace FSMViewAvalonia2
             string dataPath = System.IO.Path.GetDirectoryName(resourcesPath);
 
             List<SceneInfo> sceneList = fsmLoader.LoadSceneList(dataPath);
-            SceneSelectionDialog selector = new SceneSelectionDialog(sceneList);
+            SceneSelectionDialog selector = new(sceneList);
             await selector.ShowDialog(this);
 
             long selectedId = selector.selectedID;
@@ -180,7 +182,7 @@ namespace FSMViewAvalonia2
             lastFileName = fullAssetsPath;
             openLast.IsEnabled = true;
 
-            LoadFsm(fullAssetsPath);
+            await LoadFsm(fullAssetsPath);
         }
 
         private void FsmTabs_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -219,33 +221,51 @@ namespace FSMViewAvalonia2
                 }
             }
         }
-
-        private async void LoadFsm(string fileName, string defaultSearch = "")
+        public async Task<bool> LoadFsm(string fileName, string defaultSearch = "")
         {
             await CreateAssetsManagerAndLoader();
 
             List<AssetInfo> assetInfos = fsmLoader.LoadAllFSMsFromFile(fileName);
-            FSMSelectionDialog selector = new FSMSelectionDialog(assetInfos, System.IO.Path.GetFileName(fileName));
-            if(!string.IsNullOrEmpty(defaultSearch))
+            FSMSelectionDialog selector = new(assetInfos, System.IO.Path.GetFileName(fileName));
+            if (!string.IsNullOrEmpty(defaultSearch))
             {
                 var tex = selector.FindControl<AutoCompleteBox>("searchBox");
                 tex.Text = defaultSearch;
                 selector.RefreshFilter(defaultSearch);
             }
             await selector.ShowDialog(this);
-            long selectedId = selector.selectedAssetInfo.id;
+
+            var assetInfo = selector.selectedAssetInfo;
+            return LoadFsm(assetInfo);
+        }
+        public async Task<bool> LoadFsm(string fileName, string fullname, bool fallback)
+        {
+            await CreateAssetsManagerAndLoader();
+
+            List<AssetInfo> assetInfos = fsmLoader.LoadAllFSMsFromFile(fileName);
+            var assetInfo = assetInfos.FirstOrDefault(x => x.assetFile == fileName && x.Name == fullname);
+            if(assetInfo is null)
+            {
+                if (fallback) return await LoadFsm(fileName, "");
+                else return false;
+            }
+            return LoadFsm(assetInfo);
+        }
+        public bool LoadFsm(AssetInfo assetInfo)
+        {
+            if(assetInfo == null) return false;
+            long selectedId = assetInfo.id;
 
             if (selectedId == 0)
-                return;
-
-            fsmData = loadedFsmDatas.FirstOrDefault(x => x.info.assetFile == selector.selectedAssetInfo.assetFile && x.info.Name == selector.selectedAssetInfo.Name);
+                return false;
+            fsmData = loadedFsmDatas.FirstOrDefault(x => x.info.assetFile == assetInfo.assetFile && x.info.Name == assetInfo.Name);
             if (fsmData == null)
             {
-                fsmData = fsmLoader.LoadFSM(selectedId, selector.selectedAssetInfo);
+                fsmData = fsmLoader.LoadFSM(selectedId, assetInfo);
                 loadedFsmDatas.Add(fsmData);
                 fsmData.tabIndex = tabItems.Count;
 
-                TabItem newTabItem = new TabItem
+                TabItem newTabItem = new()
                 {
                     Header = $"{fsmData.goName}-{fsmData.fsmName}",
                     Tag = fsmData
@@ -268,6 +288,7 @@ namespace FSMViewAvalonia2
             LoadStates();
             LoadEvents();
             LoadVariables();
+            return true;
         }
 
         private void LoadStates()
@@ -279,7 +300,7 @@ namespace FSMViewAvalonia2
                 foreach (FsmStateData stateData in fsmData.states)
                 {
                     FsmNodeData node = stateData.node;
-                    UINode uiNode = new UINode(stateData, node);
+                    UINode uiNode = new(stateData, node);
 
                     uiNode.grid.PointerPressed += (object sender, PointerPressedEventArgs e) =>
                     {
@@ -302,7 +323,7 @@ namespace FSMViewAvalonia2
                 foreach (FsmNodeData globalTransition in fsmData.globalTransitions)
                 {
                     FsmNodeData node = globalTransition;
-                    UINode uiNode = new UINode(null, node);
+                    UINode uiNode = new(null, node);
 
                     graphCanvas.Children.Add(uiNode.grid);
                     fsmData.nodes.Add(uiNode);
@@ -375,7 +396,7 @@ namespace FSMViewAvalonia2
 
         private TextBlock CreateSidebarHeader(string text)
         {
-            TextBlock header = new TextBlock()
+            TextBlock header = new()
             {
                 Text = text,
                 HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left,
@@ -394,7 +415,7 @@ namespace FSMViewAvalonia2
             {
                 value = value.ToLower();
             }
-            Grid valueContainer = new Grid()
+            Grid valueContainer = new()
             {
                 Height = 28,
                 VerticalAlignment = Avalonia.Layout.VerticalAlignment.Top,
@@ -408,7 +429,7 @@ namespace FSMViewAvalonia2
             {
                 if (!string.IsNullOrEmpty(pptr.file))
                 {
-                    Button btn = new Button()
+                    Button btn = new()
                     {
                         Width = 50,
                         Padding = new Thickness(5),
@@ -423,12 +444,12 @@ namespace FSMViewAvalonia2
                         if (gamePath == null)
                             return;
 
-                        LoadFsm(GameFileHelper.FindGameFilePath(gamePath, pptr.file), pptr.name);
+                        await LoadFsm(GameFileHelper.FindGameFilePath(gamePath, pptr.file), pptr.name);
                     };
                     valueContainer.Children.Add(btn);
                 }
             }
-            TextBlock valueLabel = new TextBlock()
+            TextBlock valueLabel = new()
             {
                 Text = key,
                 HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left,
@@ -437,7 +458,7 @@ namespace FSMViewAvalonia2
                 Margin = new Thickness(0, 0, 0, 0),
                 Width = 120
             };
-            TextBox valueBox = new TextBox()
+            TextBox valueBox = new()
             {
                 Margin = new Thickness(125, 0, marginRight, 0),
                 IsReadOnly = true,
@@ -450,13 +471,13 @@ namespace FSMViewAvalonia2
 
         private Grid CreateSidebarRowEvent(string key, bool value)
         {
-            Grid valueContainer = new Grid()
+            Grid valueContainer = new()
             {
                 Height = 28,
                 VerticalAlignment = Avalonia.Layout.VerticalAlignment.Top,
                 Background = Brushes.LightGray
             };
-            TextBlock valueLabel = new TextBlock()
+            TextBlock valueLabel = new()
             {
                 Text = key,
                 HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left,
@@ -464,7 +485,7 @@ namespace FSMViewAvalonia2
                 Padding = new Thickness(5),
                 Width = 120
             };
-            CheckBox valueBox = new CheckBox()
+            CheckBox valueBox = new()
             {
                 Margin = new Thickness(125, 0, 0, 0),
                 IsEnabled = false,
@@ -521,7 +542,7 @@ namespace FSMViewAvalonia2
                         }
 
                         Color color = Constants.TRANSITION_COLORS[trans.colorIndex];
-                        SolidColorBrush brush = new SolidColorBrush(color);
+                        SolidColorBrush brush = new(color);
 
                         Path line = ArrowUtil.CreateLine(start, startMiddle, endMiddle, end, brush);
 
@@ -621,9 +642,9 @@ namespace FSMViewAvalonia2
         {
             Matrix matrix = mat;
 
-            Matrix step1 = new Matrix(1, 0, 0, 1, -pos.X, -pos.Y);
-            Matrix step2 = new Matrix(scale, 0, 0, scale, 0, 0);
-            Matrix step3 = new Matrix(1, 0, 0, 1, pos.X, pos.Y);
+            Matrix step1 = new(1, 0, 0, 1, -pos.X, -pos.Y);
+            Matrix step2 = new(scale, 0, 0, scale, 0, 0);
+            Matrix step3 = new(1, 0, 0, 1, pos.X, pos.Y);
 
             matrix *= step1;
             matrix *= step2;

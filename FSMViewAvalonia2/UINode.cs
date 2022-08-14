@@ -89,9 +89,9 @@ namespace FSMViewAvalonia2
             grid.SetValue(Canvas.LeftProperty, transform.X);
             grid.SetValue(Canvas.TopProperty, transform.Y);
     
-            FontFamily font = new FontFamily("Segoe UI Bold");
+            FontFamily font = new("Segoe UI Bold");
     
-            StackPanel stack = new StackPanel();
+            StackPanel stack = new();
     
             label = new TextBlock
             {

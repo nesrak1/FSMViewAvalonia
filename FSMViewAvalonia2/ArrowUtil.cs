@@ -19,7 +19,7 @@ namespace FSMViewAvalonia2
             double midy1 = nodetfm1.Y + nodetfm1.Height / 2;
             double midy2 = nodetfm2.Y + nodetfm2.Height / 2;
 
-            Point loc = new Point(
+            Point loc = new(
                 nodetfm1.X + nodetfm1.Width / 2,
                 nodetfm1.Y + yPos
             );
@@ -53,7 +53,7 @@ namespace FSMViewAvalonia2
 
         private static PathFigure BezierFromIntersection(Point startPt, Point int1, Point int2, Point endPt)
         {
-            PathFigure p = new PathFigure { StartPoint = startPt };
+            PathFigure p = new() { StartPoint = startPt };
             p.Segments.Add(new BezierSegment { Point1 = int1, Point2 = int2, Point3 = endPt });
             p.IsClosed = false;
             return p;
@@ -61,12 +61,12 @@ namespace FSMViewAvalonia2
 
         public static Path CreateLine(Point startPt, Point int1, Point int2, Point endPt, SolidColorBrush brush)
         {
-            PathGeometry pathGeometry = new PathGeometry
+            PathGeometry pathGeometry = new()
             {
                 Figures = new PathFigures { BezierFromIntersection(startPt, int1, int2, endPt) }
             };
 
-            Path path = new Path
+            Path path = new()
             {
                 Data = pathGeometry,
                 Stroke = brush,

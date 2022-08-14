@@ -33,7 +33,7 @@ namespace FSMViewAvalonia2
             //we read manually with binaryreader to speed up reading, but sometimes the dataVersion field won't exist
             //so here we read the template manually to see whether it exists and back up a bit if it doesn't
             string assemblyPath = Path.Combine(Path.GetDirectoryName(curFile.path), "Managed", "PlayMaker.dll");
-            MonoDeserializer deserializer = new MonoDeserializer();
+            MonoDeserializer deserializer = new();
             deserializer.Read("PlayMakerFSM", MonoDeserializer.GetAssemblyWithDependencies(assemblyPath), file.header.format);
             bool hasDataField = deserializer.children[0].children[0].name == "dataVersion";
             
@@ -44,9 +44,9 @@ namespace FSMViewAvalonia2
         {
             AssetFileInfoEx info = curFile.table.GetAssetInfo(id);
             AssetTypeValueField baseField = am.GetMonoBaseFieldCached(curFile, info, Path.Combine(Path.GetDirectoryName(curFile.path), "Managed"));
-            AssetNameResolver namer = new AssetNameResolver(am, curFile);
+            AssetNameResolver namer = new(am, curFile);
 
-            FsmDataInstance dataInstance = new FsmDataInstance();
+            FsmDataInstance dataInstance = new();
             dataInstance.info = assetInfo;
 
             AssetTypeValueField fsm = baseField.Get("fsm");
@@ -77,7 +77,7 @@ namespace FSMViewAvalonia2
             dataInstance.states = new List<FsmStateData>();
             for (int i = 0; i < states.GetChildrenCount(); i++)
             {
-                FsmStateData stateData = new FsmStateData();
+                FsmStateData stateData = new();
                 stateData.ActionData = new List<ActionScriptEntry>();
                 stateData.state = new FsmState(namer, states[i]);
                 stateData.node = new FsmNodeData(stateData.state);
@@ -90,7 +90,7 @@ namespace FSMViewAvalonia2
             dataInstance.events = new List<FsmEventData>();
             for (int i = 0; i < events.GetChildrenCount(); i++)
             {
-                FsmEventData eventData = new FsmEventData();
+                FsmEventData eventData = new();
                 eventData.Global = events[i].Get("isGlobal").GetValue().AsBool();
                 eventData.Name = events[i].Get("name").GetValue().AsString();
 
@@ -104,7 +104,7 @@ namespace FSMViewAvalonia2
             for (int i = 0; i < globalTransitions.GetChildrenCount(); i++)
             {
                 AssetTypeValueField globalTransitionField = globalTransitions[i];
-                FsmGlobalTransition globalTransition = new FsmGlobalTransition()
+                FsmGlobalTransition globalTransition = new()
                 {
                     fsmEvent = new FsmEvent(globalTransitionField.Get("fsmEvent")),
                     toState = globalTransitionField.Get("toState").GetValue().AsString(),
@@ -113,7 +113,7 @@ namespace FSMViewAvalonia2
                     colorIndex = (byte)globalTransitionField.Get("colorIndex").GetValue().AsInt()
                 };
 
-                FsmNodeData node = new FsmNodeData(dataInstance, globalTransition);
+                FsmNodeData node = new(dataInstance, globalTransition);
                 dataInstance.globalTransitions.Add(node);
             }
 
@@ -138,7 +138,7 @@ namespace FSMViewAvalonia2
 
         private List<AssetInfo> GetFSMInfos(AssetsFile file, AssetsFileTable table, AssetsFileInstance assetsFile, bool hasDataField)
         {
-            List<AssetInfo> assetInfos = new List<AssetInfo>();
+            List<AssetInfo> assetInfos = new();
             uint assetCount = table.assetFileInfoCount;
             uint fsmTypeId = 0;
             foreach (AssetFileInfoEx info in table.assetFileInfo)
@@ -201,7 +201,7 @@ namespace FSMViewAvalonia2
                         string fsmName = Encoding.UTF8.GetString(reader.ReadBytes((int)length2));
                         reader.BaseStream.Position = oldPos;
 
-                        StringBuilder pathBuilder = new StringBuilder();
+                        StringBuilder pathBuilder = new();
 
                         AssetTypeInstance c_Transform = am.GetExtAsset(curFile, goAti.GetBaseField().Get("m_Component").Get(0).Get(0).Get(0)).instance;
                         while(true)
@@ -249,7 +249,7 @@ namespace FSMViewAvalonia2
                 else
                     endIndex = actionData.actionStartIndex[i + 1];
 
-                ActionScriptEntry entry = new ActionScriptEntry();
+                ActionScriptEntry entry = new();
                 entry.Values = new List<Tuple<string, object>>();
                 for (int j = startIndex; j < endIndex; j++)
                 {
@@ -283,7 +283,7 @@ namespace FSMViewAvalonia2
             AssetTypeValueField textureVariables = variables.Get("textureVariables");
             AssetTypeValueField arrayVariables = variables.Get("arrayVariables");
             AssetTypeValueField enumVariables = variables.Get("enumVariables");
-            FsmVariableData floats = new FsmVariableData() { Type = "Floats", Values = new List<Tuple<string, object>>() };
+            FsmVariableData floats = new() { Type = "Floats", Values = new List<Tuple<string, object>>() };
             varData.Add(floats);
             for (int i = 0; i < floatVariables.GetValue().AsArray().size; i++)
             {
@@ -291,7 +291,7 @@ namespace FSMViewAvalonia2
                 object value = floatVariables.Get(i).Get("value").GetValue().AsFloat();
                 floats.Values.Add(new Tuple<string, object>(name, value));
             }
-            FsmVariableData ints = new FsmVariableData() { Type = "Ints", Values = new List<Tuple<string, object>>() };
+            FsmVariableData ints = new() { Type = "Ints", Values = new List<Tuple<string, object>>() };
             varData.Add(ints);
             for (int i = 0; i < intVariables.GetValue().AsArray().size; i++)
             {
@@ -299,7 +299,7 @@ namespace FSMViewAvalonia2
                 object value = intVariables.Get(i).Get("value").GetValue().AsInt();
                 ints.Values.Add(new Tuple<string, object>(name, value));
             }
-            FsmVariableData bools = new FsmVariableData() { Type = "Bools", Values = new List<Tuple<string, object>>() };
+            FsmVariableData bools = new() { Type = "Bools", Values = new List<Tuple<string, object>>() };
             varData.Add(bools);
             for (int i = 0; i < boolVariables.GetValue().AsArray().size; i++)
             {
@@ -307,7 +307,7 @@ namespace FSMViewAvalonia2
                 object value = boolVariables.Get(i).Get("value").GetValue().AsBool().ToString();
                 bools.Values.Add(new Tuple<string, object>(name, value));
             }
-            FsmVariableData strings = new FsmVariableData() { Type = "Strings", Values = new List<Tuple<string, object>>() };
+            FsmVariableData strings = new() { Type = "Strings", Values = new List<Tuple<string, object>>() };
             varData.Add(strings);
             for (int i = 0; i < stringVariables.GetValue().AsArray().size; i++)
             {
@@ -315,7 +315,7 @@ namespace FSMViewAvalonia2
                 object value = stringVariables.Get(i).Get("value").GetValue().AsString();
                 strings.Values.Add(new Tuple<string, object>(name, value));
             }
-            FsmVariableData vector2s = new FsmVariableData() { Type = "Vector2s", Values = new List<Tuple<string, object>>() };
+            FsmVariableData vector2s = new() { Type = "Vector2s", Values = new List<Tuple<string, object>>() };
             varData.Add(vector2s);
             for (int i = 0; i < vector2Variables.GetValue().AsArray().size; i++)
             {
@@ -324,7 +324,7 @@ namespace FSMViewAvalonia2
                 object value = new Vector2(vector2);
                 vector2s.Values.Add(new Tuple<string, object>(name, value));
             }
-            FsmVariableData vector3s = new FsmVariableData() { Type = "Vector3s", Values = new List<Tuple<string, object>>() };
+            FsmVariableData vector3s = new() { Type = "Vector3s", Values = new List<Tuple<string, object>>() };
             varData.Add(vector3s);
             for (int i = 0; i < vector3Variables.GetValue().AsArray().size; i++)
             {
@@ -333,7 +333,7 @@ namespace FSMViewAvalonia2
                 object value = new Vector2(vector3);
                 vector3s.Values.Add(new Tuple<string, object>(name, value));
             }
-            FsmVariableData colors = new FsmVariableData() { Type = "Colors", Values = new List<Tuple<string, object>>() };
+            FsmVariableData colors = new() { Type = "Colors", Values = new List<Tuple<string, object>>() };
             varData.Add(colors);
             for (int i = 0; i < colorVariables.GetValue().AsArray().size; i++)
             {
@@ -342,7 +342,7 @@ namespace FSMViewAvalonia2
                 object value = new UnityColor(color);
                 colors.Values.Add(new Tuple<string, object>(name, value));
             }
-            FsmVariableData rects = new FsmVariableData() { Type = "Rects", Values = new List<Tuple<string, object>>() };
+            FsmVariableData rects = new() { Type = "Rects", Values = new List<Tuple<string, object>>() };
             varData.Add(rects);
             for (int i = 0; i < rectVariables.GetValue().AsArray().size; i++)
             {
@@ -351,7 +351,7 @@ namespace FSMViewAvalonia2
                 object value = new UnityRect(rect);
                 rects.Values.Add(new Tuple<string, object>(name, value));
             }
-            FsmVariableData quaternions = new FsmVariableData() { Type = "Quaternions", Values = new List<Tuple<string, object>>() };
+            FsmVariableData quaternions = new() { Type = "Quaternions", Values = new List<Tuple<string, object>>() };
             varData.Add(quaternions);
             for (int i = 0; i < quaternionVariables.GetValue().AsArray().size; i++)
             {
@@ -370,7 +370,7 @@ namespace FSMViewAvalonia2
                 if (field.IsDummy())
                     continue;
 
-                FsmVariableData genericData = new FsmVariableData() { Type = header, Values = new List<Tuple<string, object>>() };
+                FsmVariableData genericData = new() { Type = header, Values = new List<Tuple<string, object>>() };
                 varData.Add(genericData);
                 for (int i = 0; i < field.GetValue().AsArray().size; i++)
                 {
@@ -398,7 +398,7 @@ namespace FSMViewAvalonia2
             AssetTypeValueField scenes = buildSettings.Get("scenes").Get("Array");
             int sceneCount = scenes.GetValue().AsArray().size;
 
-            List<SceneInfo> sceneInfos = new List<SceneInfo>();
+            List<SceneInfo> sceneInfos = new();
             for (int i = 0; i < sceneCount; i++)
             {
                 sceneInfos.Add(new SceneInfo()

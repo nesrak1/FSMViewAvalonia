@@ -4,7 +4,7 @@ using System.Text;
 
 namespace FSMViewAvalonia2
 {
-    public struct AssetInfo
+    public class AssetInfo
     {
         public long id;
         public uint size;

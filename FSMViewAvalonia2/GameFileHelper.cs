@@ -51,7 +51,7 @@ namespace FSMViewAvalonia2
             if (path == null)
             {
                 await MessageBoxUtil.ShowDialog(win, "Game location", "Couldn't find installation automatically. Please pick the location manually.");
-                OpenFolderDialog ofd = new OpenFolderDialog();
+                OpenFolderDialog ofd = new();
                 string folder = await ofd.ShowAsync(win);
                 if (folder != null && folder != "")
                 {
@@ -68,7 +68,7 @@ namespace FSMViewAvalonia2
             {
                 return null;
             }
-            StreamReader file = new StreamReader(libraryfolders);
+            StreamReader file = new(libraryfolders);
             string line;
             while ((line = file.ReadLine()) != null)
             {

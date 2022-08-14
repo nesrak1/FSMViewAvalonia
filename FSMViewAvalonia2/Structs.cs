@@ -52,7 +52,7 @@ namespace FSMViewAvalonia2
         }
         public static List<T> ReadAssetList<T>(AssetNameResolver namer, AssetTypeValueField field)
         {
-            List<T> data = new List<T>();
+            List<T> data = new();
             int size = field.GetChildrenCount();
             switch (typeof(T))
             {
@@ -411,7 +411,7 @@ namespace FSMViewAvalonia2
         }
         public override string ToString()
         {
-            StringBuilder flags = new StringBuilder();
+            StringBuilder flags = new();
             if(excludeSelf.value)
             {
                 flags.Append("[ExcludeSelf]");
