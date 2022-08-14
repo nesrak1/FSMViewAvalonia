@@ -24,7 +24,7 @@ namespace FSMViewAvalonia2
                 return string.Empty;
             }
             AssetExternal extObj = am.GetExtAsset(inst, pptr.fileID, pptr.pathID, true);
-            string name = GetAssetNameFastModded(extObj.file.file, am.classFile, extObj.info);
+            string name = GetAssetNameFastModded(extObj.file.file, am.classFile, extObj.info, out _);
             return name;
         }
 
@@ -36,8 +36,8 @@ namespace FSMViewAvalonia2
             }
             AssetExternal extObj = am.GetExtAsset(inst, pptr.fileID, pptr.pathID, true);
             StringBuilder nameBuilder = new StringBuilder();
-            nameBuilder.Append(GetAssetNameFastModded(extObj.file.file, am.classFile, extObj.info));
-            if (extObj.instance != null)
+            nameBuilder.Append(GetAssetNameFastModded(extObj.file.file, am.classFile, extObj.info, out var isGameObject));
+            if (isGameObject && extObj.instance != null)
             {
                 AssetTypeInstance c_Transform = am.GetExtAsset(extObj.file, extObj.instance.GetBaseField().Get("m_Component").Get(0).Get(0).Get(0)).instance;
                 while (true)
@@ -56,11 +56,11 @@ namespace FSMViewAvalonia2
             return new NamedAssetPPtr(pptr.fileID, pptr.pathID, nameBuilder.ToString(), file);
         }
 
-        private string GetAssetNameFastModded(AssetsFile file, ClassDatabaseFile cldb, AssetFileInfoEx info)
+        private string GetAssetNameFastModded(AssetsFile file, ClassDatabaseFile cldb, AssetFileInfoEx info, out bool isGameObject)
         {
             ClassDatabaseType type = AssetHelper.FindAssetClassByID(cldb, info.curFileType);
             AssetsFileReader reader = file.reader;
-
+            isGameObject = false;
             if (type.fields.Count == 0) return type.name.GetString(cldb);
             if (type.fields.Count > 1 && type.fields[1].fieldName.GetString(cldb) == "m_Name")
             {
@@ -69,6 +69,7 @@ namespace FSMViewAvalonia2
             }
             else if (type.name.GetString(cldb) == "GameObject")
             {
+                isGameObject = true;
                 reader.Position = info.absoluteFilePos;
                 int size = reader.ReadInt32();
                 int componentSize = file.header.format > 0x10 ? 0xC : 0x10;
