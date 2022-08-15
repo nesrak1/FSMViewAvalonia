@@ -96,7 +96,7 @@ namespace FSMViewAvalonia2.Data
                 var providers = new IDataProvider[field.childrenCount];
                 for (int i = 0; i < providers.Length; i++)
                 {
-                    providers[i] = new AssetsDataProvider(field.children[i], _resovler);
+                    providers[i] = field.children[i].IsDummy() ? null : new AssetsDataProvider(field.children[i], _resovler);
                 }
                 return (T)(object)providers;
             }

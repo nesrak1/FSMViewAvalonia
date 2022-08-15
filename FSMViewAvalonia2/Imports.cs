@@ -30,3 +30,9 @@ global using MessageBox.Avalonia.Models;
 global using Avalonia.Layout;
 
 global using FSMViewAvalonia2.Data;
+global using FSMViewAvalonia2.Json;
+
+global using Newtonsoft;
+global using Newtonsoft.Json;
+global using Newtonsoft.Json.Linq;
+

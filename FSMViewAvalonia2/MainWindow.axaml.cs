@@ -6,7 +6,7 @@ namespace FSMViewAvalonia2
     {
         //controls
         private readonly Canvas graphCanvas;
-        private readonly MenuItem fileOpen;
+        private readonly MenuItem fileOpen, openJson;
         private readonly MenuItem openSceneList;
         private readonly MenuItem openResources;
         private readonly MenuItem openLast;
@@ -39,6 +39,7 @@ namespace FSMViewAvalonia2
             //generated items
             graphCanvas = this.FindControl<Canvas>("graphCanvas");
             fileOpen = this.FindControl<MenuItem>("fileOpen");
+            openJson = this.FindControl<MenuItem>("openJson");
             openSceneList = this.FindControl<MenuItem>("openSceneList");
             openResources = this.FindControl<MenuItem>("openResources");
             openLast = this.FindControl<MenuItem>("openLast");
@@ -55,6 +56,7 @@ namespace FSMViewAvalonia2
             PointerReleased += MouseUpCanvas;
             PointerMoved += MouseMoveCanvas;
             PointerWheelChanged += MouseScrollCanvas;
+            openJson.Click += OpenJson_Click;
             fileOpen.Click += FileOpen_Click;
             openLast.Click += OpenLast_Click;
             closeTab.Click += CloseTab_Click;
@@ -91,6 +93,37 @@ namespace FSMViewAvalonia2
             openLast.IsEnabled = true;
 
             await LoadFsm(fileName);
+        }
+
+        private async void OpenJson_Click(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog openFileDialog = new();
+            string[] result = await openFileDialog.ShowAsync(this);
+
+            if (result == null || result.Length == 0)
+                return;
+
+            if (tipText != null)
+            {
+                graphCanvas.Children.Remove(tipText);
+                tipText = null;
+            }
+
+            string fileName = result[0];
+            lastFileName = fileName;
+            openLast.IsEnabled = true;
+
+            IDataProvider jsonProvider = new JsonDataProvider(File.ReadAllText(fileName));
+            var assetInfo = new AssetInfo()
+            {
+                id = 1,
+                size = 999,
+                name = jsonProvider.Get<string>("goName"),
+                nameBase = jsonProvider.Get<string>("goName"),
+                assetFile = fileName,
+                path = jsonProvider.Get<string>("goPath")
+            };
+            LoadFsm(assetInfo, jsonProvider);
         }
 
         private async void OpenLast_Click(object sender, RoutedEventArgs e)
@@ -237,17 +270,19 @@ namespace FSMViewAvalonia2
             }
             return LoadFsm(assetInfo);
         }
-        public bool LoadFsm(AssetInfo assetInfo)
+        public bool LoadFsm(AssetInfo assetInfo, IDataProvider dataProvider = null)
         {
             if(assetInfo == null) return false;
             long selectedId = assetInfo.id;
-
-            if (selectedId == 0)
-                return false;
+            if (dataProvider == null)
+            {
+                if (selectedId == 0)
+                    return false;
+            }
             fsmData = loadedFsmDatas.FirstOrDefault(x => x.info.assetFile == assetInfo.assetFile && x.info.Name == assetInfo.Name);
             if (fsmData == null)
             {
-                fsmData = fsmLoader.LoadFSMWithAssets(selectedId, assetInfo);
+                fsmData = dataProvider == null ? fsmLoader.LoadFSMWithAssets(selectedId, assetInfo) : fsmLoader.LoadFSM(assetInfo, dataProvider);
                 loadedFsmDatas.Add(fsmData);
                 fsmData.tabIndex = tabItems.Count;
 

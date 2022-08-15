@@ -40,6 +40,10 @@ namespace FSMViewAvalonia2
             AssetTypeValueField fsm = baseField.Get("fsm");
             return LoadFSM(assetInfo, new AssetsDataProvider(fsm, namer));
         }
+        public FsmDataInstance LoadJsonFSM(string text, AssetInfo assetInfo)
+        {
+            return LoadFSM(assetInfo, new JsonDataProvider(JToken.Parse(text)));
+        }
         public FsmDataInstance LoadFSM(AssetInfo assetInfo, IDataProvider fsm)
         {
             FsmDataInstance dataInstance = new();
