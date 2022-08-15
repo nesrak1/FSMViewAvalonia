@@ -32,47 +32,46 @@ namespace FSMViewAvalonia2
             
             return GetFSMInfos(file, table, curFile, hasDataField);
         }
-
-        public FsmDataInstance LoadFSM(long id, AssetInfo assetInfo)
+        public FsmDataInstance LoadFSMWithAssets(long id, AssetInfo assetInfo)
         {
             AssetFileInfoEx info = curFile.table.GetAssetInfo(id);
             AssetTypeValueField baseField = am.GetMonoBaseFieldCached(curFile, info, Path.Combine(Path.GetDirectoryName(curFile.path), "Managed"));
             AssetNameResolver namer = new(am, curFile);
-
+            AssetTypeValueField fsm = baseField.Get("fsm");
+            return LoadFSM(assetInfo, new AssetsDataProvider(fsm, namer));
+        }
+        public FsmDataInstance LoadFSM(AssetInfo assetInfo, IDataProvider fsm)
+        {
             FsmDataInstance dataInstance = new();
+
             dataInstance.info = assetInfo;
 
-            AssetTypeValueField fsm = baseField.Get("fsm");
-            AssetTypeValueField states = fsm.Get("states");
-            AssetTypeValueField events = fsm.Get("events");
-            AssetTypeValueField variables = fsm.Get("variables");
-            AssetTypeValueField globalTransitions = fsm.Get("globalTransitions");
-            AssetTypeValueField dataVersionField = fsm.Get("dataVersion");
+            
+            var states = fsm.Get<IDataProvider[]>("states");
+            var events = fsm.Get<IDataProvider[]>("events");
+            var variables = fsm.Get<IDataProvider>("variables");
+            var globalTransitions = fsm.Get<IDataProvider[]>("globalTransitions");
+            var dataVersionField = fsm.Get<IDataProvider>("dataVersion");
 
-            dataInstance.fsmName = fsm.Get("name").GetValue().AsString();
+            dataInstance.fsmName = fsm.Get<string>("name");
 
-            AssetTypeInstance goAti = am.GetExtAsset(curFile, baseField.Get("m_GameObject")).instance;
-            if (goAti != null)
+            dataInstance.goName = assetInfo.nameBase;
+
+            if (dataVersionField == null)
             {
-                string m_Name = goAti.GetBaseField().Get("m_Name").GetValue().AsString();
-                dataInstance.goName = m_Name;
-            }
-
-            if (dataVersionField.IsDummy())
-            {
-                dataInstance.dataVersion = fsm.Get("version").GetValue().AsInt() + 1;
+                dataInstance.dataVersion = fsm.Get<int>("version") + 1;
             }
             else
             {
-                dataInstance.dataVersion = dataVersionField.GetValue().AsInt();
+                dataInstance.dataVersion = dataVersionField.As<int>();
             }
 
             dataInstance.states = new List<FsmStateData>();
-            for (int i = 0; i < states.GetChildrenCount(); i++)
-            {
+            for (int i = 0; i < states.Length; i++)
+            { 
                 FsmStateData stateData = new();
                 stateData.ActionData = new List<ActionScriptEntry>();
-                stateData.state = new FsmState(namer, states[i]);
+                stateData.state = new FsmState(states[i]);
                 stateData.node = new FsmNodeData(stateData.state);
 
                 GetActionData(stateData.ActionData, stateData.state.actionData, dataInstance.dataVersion);
@@ -81,29 +80,29 @@ namespace FSMViewAvalonia2
             }
 
             dataInstance.events = new List<FsmEventData>();
-            for (int i = 0; i < events.GetChildrenCount(); i++)
+            for (int i = 0; i < events.Length; i++)
             {
                 FsmEventData eventData = new();
-                eventData.Global = events[i].Get("isGlobal").GetValue().AsBool();
-                eventData.Name = events[i].Get("name").GetValue().AsString();
+                eventData.Global = events[i].Get<bool>("isGlobal");
+                eventData.Name = events[i].Get<string>("name");
 
                 dataInstance.events.Add(eventData);
             }
 
             dataInstance.variables = new List<FsmVariableData>();
-            GetVariableValues(dataInstance.variables, namer, variables);
+            GetVariableValues(dataInstance.variables, variables);
 
             dataInstance.globalTransitions = new List<FsmNodeData>();
-            for (int i = 0; i < globalTransitions.GetChildrenCount(); i++)
+            for (int i = 0; i < globalTransitions.Length; i++)
             {
-                AssetTypeValueField globalTransitionField = globalTransitions[i];
+                var globalTransitionField = globalTransitions[i];
                 FsmGlobalTransition globalTransition = new()
                 {
-                    fsmEvent = new FsmEvent(globalTransitionField.Get("fsmEvent")),
-                    toState = globalTransitionField.Get("toState").GetValue().AsString(),
-                    linkStyle = globalTransitionField.Get("linkStyle").GetValue().AsInt(),
-                    linkConstraint = globalTransitionField.Get("linkConstraint").GetValue().AsInt(),
-                    colorIndex = (byte)globalTransitionField.Get("colorIndex").GetValue().AsInt()
+                    fsmEvent = new FsmEvent(globalTransitionField.Get<IDataProvider>("fsmEvent")),
+                    toState = globalTransitionField.Get<string>("toState"),
+                    linkStyle = globalTransitionField.Get<int>("linkStyle"),
+                    linkConstraint = globalTransitionField.Get<int>("linkConstraint"),
+                    colorIndex = (byte)globalTransitionField.Get<int>("colorIndex")
                 };
 
                 FsmNodeData node = new(dataInstance, globalTransition);
@@ -216,7 +215,7 @@ namespace FSMViewAvalonia2
                             name = m_Name + "-" + fsmName,
                             path = pathBuilder.ToString(),
                             assetFile = assetsFile.path,
-                            
+                            nameBase = m_Name
                         });
                     }
                 }
@@ -259,119 +258,120 @@ namespace FSMViewAvalonia2
             }
         }
 
-        private void GetVariableValues(List<FsmVariableData> varData, AssetNameResolver namer, AssetTypeValueField variables)
+        private void GetVariableValues(List<FsmVariableData> varData, IDataProvider variables)
         {
-            AssetTypeValueField floatVariables = variables.Get("floatVariables");
-            AssetTypeValueField intVariables = variables.Get("intVariables");
-            AssetTypeValueField boolVariables = variables.Get("boolVariables");
-            AssetTypeValueField stringVariables = variables.Get("stringVariables");
-            AssetTypeValueField vector2Variables = variables.Get("vector2Variables");
-            AssetTypeValueField vector3Variables = variables.Get("vector3Variables");
-            AssetTypeValueField colorVariables = variables.Get("colorVariables");
-            AssetTypeValueField rectVariables = variables.Get("rectVariables");
-            AssetTypeValueField quaternionVariables = variables.Get("quaternionVariables");
-            AssetTypeValueField gameObjectVariables = variables.Get("gameObjectVariables");
-            AssetTypeValueField objectVariables = variables.Get("objectVariables");
-            AssetTypeValueField materialVariables = variables.Get("materialVariables");
-            AssetTypeValueField textureVariables = variables.Get("textureVariables");
-            AssetTypeValueField arrayVariables = variables.Get("arrayVariables");
-            AssetTypeValueField enumVariables = variables.Get("enumVariables");
+            var floatVariables = variables.Get<IDataProvider[]>("floatVariables");
+            var intVariables = variables.Get<IDataProvider[]>("intVariables");
+            var boolVariables = variables.Get<IDataProvider[]>("boolVariables");
+            var stringVariables = variables.Get<IDataProvider[]>("stringVariables");
+            var vector2Variables = variables.Get<IDataProvider[]>("vector2Variables");
+            var vector3Variables = variables.Get<IDataProvider[]>("vector3Variables");
+            var colorVariables = variables.Get<IDataProvider[]>("colorVariables");
+            var rectVariables = variables.Get<IDataProvider[]>("rectVariables");
+            var quaternionVariables = variables.Get<IDataProvider[]>("quaternionVariables");
+            var gameObjectVariables = variables.Get<IDataProvider[]>("gameObjectVariables");
+            var objectVariables = variables.Get<IDataProvider[]>("objectVariables");
+            var materialVariables = variables.Get<IDataProvider[]>("materialVariables");
+            var textureVariables = variables.Get<IDataProvider[]>("textureVariables");
+            var arrayVariables = variables.Get<IDataProvider[]>("arrayVariables");
+            var enumVariables = variables.Get<IDataProvider[]>("enumVariables");
+
             FsmVariableData floats = new() { Type = "Floats", Values = new List<Tuple<string, object>>() };
             varData.Add(floats);
-            for (int i = 0; i < floatVariables.GetValue().AsArray().size; i++)
+            for (int i = 0; i < floatVariables.Length; i++)
             {
-                string name = floatVariables.Get(i).Get("name").GetValue().AsString();
-                object value = floatVariables.Get(i).Get("value").GetValue().AsFloat();
+                string name = floatVariables[i].Get<string>("name");
+                object value = floatVariables[i].Get<float>("value");
                 floats.Values.Add(new Tuple<string, object>(name, value));
             }
             FsmVariableData ints = new() { Type = "Ints", Values = new List<Tuple<string, object>>() };
             varData.Add(ints);
-            for (int i = 0; i < intVariables.GetValue().AsArray().size; i++)
+            for (int i = 0; i < intVariables.Length; i++)
             {
-                string name = intVariables.Get(i).Get("name").GetValue().AsString();
-                object value = intVariables.Get(i).Get("value").GetValue().AsInt();
+                string name = intVariables[i].Get<string>("name");
+                object value = intVariables[i].Get<int>("value");
                 ints.Values.Add(new Tuple<string, object>(name, value));
             }
             FsmVariableData bools = new() { Type = "Bools", Values = new List<Tuple<string, object>>() };
             varData.Add(bools);
-            for (int i = 0; i < boolVariables.GetValue().AsArray().size; i++)
+            for (int i = 0; i < boolVariables.Length; i++)
             {
-                string name = boolVariables.Get(i).Get("name").GetValue().AsString();
-                object value = boolVariables.Get(i).Get("value").GetValue().AsBool().ToString();
+                string name = boolVariables[i].Get<string>("name");
+                object value = boolVariables[i].Get<bool>("value");
                 bools.Values.Add(new Tuple<string, object>(name, value));
             }
             FsmVariableData strings = new() { Type = "Strings", Values = new List<Tuple<string, object>>() };
             varData.Add(strings);
-            for (int i = 0; i < stringVariables.GetValue().AsArray().size; i++)
+            for (int i = 0; i < stringVariables.Length; i++)
             {
-                string name = stringVariables.Get(i).Get("name").GetValue().AsString();
-                object value = stringVariables.Get(i).Get("value").GetValue().AsString();
+                string name = stringVariables[i].Get<string>("name");
+                object value = stringVariables[i].Get<string>("value");
                 strings.Values.Add(new Tuple<string, object>(name, value));
             }
             FsmVariableData vector2s = new() { Type = "Vector2s", Values = new List<Tuple<string, object>>() };
             varData.Add(vector2s);
-            for (int i = 0; i < vector2Variables.GetValue().AsArray().size; i++)
+            for (int i = 0; i < vector2Variables.Length; i++)
             {
-                string name = vector2Variables.Get(i).Get("name").GetValue().AsString();
-                AssetTypeValueField vector2 = vector2Variables.Get(i).Get("value");
+                string name = vector2Variables[i].Get<string>("name");
+                var vector2 = vector2Variables[i].Get<IDataProvider>("value");
                 object value = new Vector2(vector2);
                 vector2s.Values.Add(new Tuple<string, object>(name, value));
             }
             FsmVariableData vector3s = new() { Type = "Vector3s", Values = new List<Tuple<string, object>>() };
             varData.Add(vector3s);
-            for (int i = 0; i < vector3Variables.GetValue().AsArray().size; i++)
+            for (int i = 0; i < vector3Variables.Length; i++)
             {
-                string name = vector3Variables.Get(i).Get("name").GetValue().AsString();
-                AssetTypeValueField vector3 = vector3Variables.Get(i).Get("value");
+                string name = vector3Variables[i].Get<string>("name");
+                var vector3 = vector3Variables[i].Get<IDataProvider>("value");
                 object value = new Vector2(vector3);
                 vector3s.Values.Add(new Tuple<string, object>(name, value));
             }
             FsmVariableData colors = new() { Type = "Colors", Values = new List<Tuple<string, object>>() };
             varData.Add(colors);
-            for (int i = 0; i < colorVariables.GetValue().AsArray().size; i++)
+            for (int i = 0; i < colorVariables.Length; i++)
             {
-                string name = colorVariables.Get(i).Get("name").GetValue().AsString();
-                AssetTypeValueField color = colorVariables.Get(i).Get("value");
+                string name = colorVariables[i].Get<string>("name");
+                var color = colorVariables[i].Get<IDataProvider>("value");
                 object value = new UnityColor(color);
                 colors.Values.Add(new Tuple<string, object>(name, value));
             }
             FsmVariableData rects = new() { Type = "Rects", Values = new List<Tuple<string, object>>() };
             varData.Add(rects);
-            for (int i = 0; i < rectVariables.GetValue().AsArray().size; i++)
+            for (int i = 0; i < rectVariables.Length; i++)
             {
-                string name = rectVariables.Get(i).Get("name").GetValue().AsString();
-                AssetTypeValueField rect = rectVariables.Get(i).Get("value");
+                string name = rectVariables[i].Get<string>("name");
+                var rect = rectVariables[i].Get<IDataProvider>("value");
                 object value = new UnityRect(rect);
                 rects.Values.Add(new Tuple<string, object>(name, value));
             }
             FsmVariableData quaternions = new() { Type = "Quaternions", Values = new List<Tuple<string, object>>() };
             varData.Add(quaternions);
-            for (int i = 0; i < quaternionVariables.GetValue().AsArray().size; i++)
+            for (int i = 0; i < quaternionVariables.Length; i++)
             {
-                string name = quaternionVariables.Get(i).Get("name").GetValue().AsString();
-                AssetTypeValueField quaternion = quaternionVariables.Get(i).Get("value");
+                string name = quaternionVariables[i].Get<string>("name");
+                var quaternion = quaternionVariables[i].Get<IDataProvider>("value");
                 object value = new Quaternion(quaternion);
                 quaternions.Values.Add(new Tuple<string, object>(name, value));
             }
             string[] pptrTypeHeaders = new[] { "GameObjects", "Objects", "Materials", "Textures" };
-            AssetTypeValueField[] pptrTypeFields = new[] { gameObjectVariables, objectVariables, materialVariables, textureVariables };
+            IDataProvider[][] pptrTypeFields = new[] { gameObjectVariables, objectVariables, materialVariables, textureVariables };
             for (int j = 0; j < pptrTypeHeaders.Length; j++)
             {
                 string header = pptrTypeHeaders[j];
-                AssetTypeValueField field = pptrTypeFields[j];
+                var field = pptrTypeFields[j];
 
-                if (field.IsDummy())
+                if (field == null)
                     continue;
 
                 FsmVariableData genericData = new() { Type = header, Values = new List<Tuple<string, object>>() };
                 varData.Add(genericData);
-                for (int i = 0; i < field.GetValue().AsArray().size; i++)
+                for (int i = 0; i < field.Length; i++)
                 {
-                    string name = field.Get(i).Get("name").GetValue().AsString();
-                    AssetTypeValueField valueField = field.Get(i).Get("value");
-                    NamedAssetPPtr pptr = StructUtil.ReadNamedAssetPPtr(namer, valueField);
+                    string name = field[i].Get<string>("name");
+                    var valueField = field[i].Get<IDataProvider>("value");
+                    INamedAssetProvider pptr = valueField.As<INamedAssetProvider>();
                     object value;
-                    if (pptr.pathID == 0)
+                    if (pptr.isNull)
                         value = "[null]";
                     else
                         value = header == "GameObjects" ? (object)(new GameObjectPPtrHolder() { pptr = pptr }) : pptr;

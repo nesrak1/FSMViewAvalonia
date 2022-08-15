@@ -28,3 +28,5 @@ global using MessageBox.Avalonia.DTO;
 global using MessageBox.Avalonia.Enums;
 global using MessageBox.Avalonia.Models;
 global using Avalonia.Layout;
+
+global using FSMViewAvalonia2.Data;

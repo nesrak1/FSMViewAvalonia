@@ -247,7 +247,7 @@ namespace FSMViewAvalonia2
             fsmData = loadedFsmDatas.FirstOrDefault(x => x.info.assetFile == assetInfo.assetFile && x.info.Name == assetInfo.Name);
             if (fsmData == null)
             {
-                fsmData = fsmLoader.LoadFSM(selectedId, assetInfo);
+                fsmData = fsmLoader.LoadFSMWithAssets(selectedId, assetInfo);
                 loadedFsmDatas.Add(fsmData);
                 fsmData.tabIndex = tabItems.Count;
 
@@ -408,7 +408,7 @@ namespace FSMViewAvalonia2
                 Background = Brushes.LightGray
             };
             int marginRight = 0;
-            NamedAssetPPtr pptr = null;
+            INamedAssetProvider pptr = null;
             if (rawvalue is GameObjectPPtrHolder ptr) pptr = ptr.pptr;
             if (rawvalue is FsmGameObject go) pptr = go.value;
             if (pptr != null)

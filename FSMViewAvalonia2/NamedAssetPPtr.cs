@@ -2,7 +2,7 @@
 
 namespace FSMViewAvalonia2
 {
-    public class NamedAssetPPtr : AssetPPtr
+    public class NamedAssetPPtr : AssetPPtr, INamedAssetProvider
     {
         public string file;
         public string name;
@@ -23,6 +23,12 @@ namespace FSMViewAvalonia2
             this.name = name;
         }
 
+        string INamedAssetProvider.name => name;
+
+        bool INamedAssetProvider.isNull => pathID == 0;
+
+        string INamedAssetProvider.file => file;
+
         public override string ToString()
         {
             if (file == string.Empty)
@@ -33,7 +39,7 @@ namespace FSMViewAvalonia2
     }
     public class GameObjectPPtrHolder
     {
-        public NamedAssetPPtr pptr;
+        public INamedAssetProvider pptr;
         public override string ToString() => pptr.ToString();
     }
 }

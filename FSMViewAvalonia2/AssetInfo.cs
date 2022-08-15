@@ -7,6 +7,7 @@ namespace FSMViewAvalonia2
         public long id;
         public uint size;
         public string name;
+        public string nameBase;
         public string path;
         public string assetFile;
         public string Name
