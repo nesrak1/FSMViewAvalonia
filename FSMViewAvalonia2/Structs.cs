@@ -196,11 +196,11 @@ namespace FSMViewAvalonia2
         {
             value = field.Get<INamedAssetProvider>("value");
             if (name == "")
-                name = value.name;
+                name = value?.name ?? "";
         }
         public override string ToString()
         {
-            if (value.name != "")
+            if (!string.IsNullOrEmpty(value?.name))
                 return $"[{value}]";
             else
                 return $"GameObject {name}";
@@ -504,7 +504,7 @@ namespace FSMViewAvalonia2
         public override string ToString()
         {
             if (name != "")
-                if (value.name == "")
+                if (string.IsNullOrEmpty(value?.name))
                     return $"object {name}";
                 else
                     return $"object {name} = [{value}]";

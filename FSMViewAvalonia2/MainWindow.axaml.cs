@@ -113,7 +113,7 @@ namespace FSMViewAvalonia2
             lastFileName = fileName;
             openLast.IsEnabled = true;
 
-            IDataProvider jsonProvider = new JsonDataProvider(File.ReadAllText(fileName));
+            IDataProvider jsonProvider = new JsonDataProvider(JToken.Parse(File.ReadAllText(fileName)));
             var assetInfo = new AssetInfo()
             {
                 id = 1,

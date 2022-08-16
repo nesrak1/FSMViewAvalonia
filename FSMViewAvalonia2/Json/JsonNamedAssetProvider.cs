@@ -6,18 +6,19 @@ namespace FSMViewAvalonia2.Json
     {
         public JsonNamedAssetProvider(JToken token)
         {
-            if(token == null)
+            if(token == null || !token.HasValues)
             {
                 isNull = true;
                 return;
             }
             name = token["objName"].ToString();
-            file = token["objFile"].ToString();
+            file = token["objFile"]?.ToString();
         }
         public bool isNull { get; init; }
 
         public string name { get; init; }
 
         public string file { get; init; }
+        public override string ToString() => name + (file == null ? $"[{file}]" : "");
     }
 }

@@ -373,9 +373,9 @@ namespace FSMViewAvalonia2
                 {
                     string name = field[i].Get<string>("name");
                     var valueField = field[i].Get<IDataProvider>("value");
-                    INamedAssetProvider pptr = valueField.As<INamedAssetProvider>();
+                    INamedAssetProvider pptr = valueField?.As<INamedAssetProvider>();
                     object value;
-                    if (pptr.isNull)
+                    if (pptr?.isNull ?? true)
                         value = "[null]";
                     else
                         value = header == "GameObjects" ? (object)(new GameObjectPPtrHolder() { pptr = pptr }) : pptr;
