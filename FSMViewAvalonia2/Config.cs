@@ -33,6 +33,6 @@ namespace FSMViewAvalonia2
         }
 
         public string hkPath = "";
-        public string dnSpyPath = "";
+        public string SpyPath = "";
     }
 }

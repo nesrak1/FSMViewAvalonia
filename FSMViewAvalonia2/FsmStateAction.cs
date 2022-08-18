@@ -82,21 +82,31 @@ namespace FSMViewAvalonia2
                 HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right,
                 VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
             };
-            btn.Content = "Open in DnSpy";
+            btn.Content = "Open in ...";
             btn.Click += Btn_Click;
+            var filename = System.IO.Path.GetFileName(Config.config.SpyPath);
+            if (filename.Equals("dnspy.exe", StringComparison.OrdinalIgnoreCase))
+            {
+                btn.Content = "Open in DnSpy";
+            }
+            else if (filename.Equals("ilspy.exe", StringComparison.OrdinalIgnoreCase))
+            {
+                btn.Content = "Open in ILSpy";
+            }
             valueContainer.Children.Add(btn);
             return valueContainer;
         }
 
         private async void Btn_Click(object sender, RoutedEventArgs e)
         {
-            if(string.IsNullOrEmpty(Config.config.dnSpyPath) || !File.Exists(Config.config.dnSpyPath))
+            SELECT:
+            if (string.IsNullOrEmpty(Config.config.SpyPath) || !File.Exists(Config.config.SpyPath))
             {
                 OpenFileDialog ofd = new();
                 ofd.AllowMultiple = false;
                 ofd.Filters.Add(new()
                 {
-                    Name = "DnSpy",
+                    Name = @"DnSpy\ILSpy",
                     Extensions = new()
                     {
                         "exe"
@@ -104,11 +114,27 @@ namespace FSMViewAvalonia2
                 });
                 string[] dnspy = await ofd.ShowAsync(App.mainWindow);
                 if (dnspy == null || dnspy.Length == 0) return;
-                Config.config.dnSpyPath = dnspy[0];
+                Config.config.SpyPath = dnspy[0];
             }
-            System.Diagnostics.Process.Start(Config.config.dnSpyPath, "\"" + GameFileHelper.FindGameFilePath(await GameFileHelper.FindHollowKnightPath(App.mainWindow), 
-                System.IO.Path.Combine("Managed", "Assembly-CSharp.dll")) + 
-                    "\" --select T:" + FullName);
+            var filename = System.IO.Path.GetFileName(Config.config.SpyPath);
+            if (!filename.Equals("dnspy.exe", StringComparison.OrdinalIgnoreCase) && !filename.Equals("ilspy.exe", StringComparison.OrdinalIgnoreCase))
+            {
+                await MessageBoxUtil.ShowDialog(App.mainWindow, "DnSpy/ILSpy", "Invalid DnSpy or ILSpy path");
+                Config.config.SpyPath = null;
+                goto SELECT;
+            }
+
+            string arg = " \"" + GameFileHelper.FindGameFilePath(await GameFileHelper.FindHollowKnightPath(App.mainWindow),
+                System.IO.Path.Combine("Managed", "Assembly-CSharp.dll")) + "\" ";
+            if (filename.Equals("dnspy.exe", StringComparison.OrdinalIgnoreCase))
+            {
+                arg = arg + "--select T:" + FullName;
+            }
+            else
+            {
+                arg = arg + "/navigateTo:T:" + FullName;
+            }
+            System.Diagnostics.Process.Start(Config.config.SpyPath, arg);
         }
     }
 }
