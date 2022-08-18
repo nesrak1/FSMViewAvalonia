@@ -22,7 +22,7 @@ namespace FSMViewAvalonia2
     public class FsmStateData
     {
         public string Name { get { return state.name; } }
-        public List<ActionScriptEntry> ActionData { get; set; }
+        public List<IActionScriptEntry> ActionData { get; set; }
         public FsmState state;
         public FsmNodeData node;
     }
@@ -44,11 +44,12 @@ namespace FSMViewAvalonia2
         public int linkConstraint;
         public byte colorIndex;
     }
-    public class ActionScriptEntry
+    public interface IActionScriptEntry
     {
-        public string Name { get; set; }
-        public List<Tuple<string, object>> Values { get; set; }
-        public bool Enabled { get; set; } = true;
+        string Name { get; set; }
+        List<Tuple<string, object>> Values { get; set; }
+        bool Enabled { get; set; }
+        void BuildView(StackPanel state, int index);
     }
     public class FsmNodeData
     {

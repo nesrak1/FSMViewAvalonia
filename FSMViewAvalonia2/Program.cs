@@ -30,16 +30,17 @@ namespace FSMViewAvalonia2
                             bw.Write((byte)args.Length);
                             foreach (var v in args)
                             {
-                                bw.Write((byte)v.Length);
+                                bw.Write((byte)1);
+                                bw.Write((int)v.Length);
                                 bw.Write(v.ToCharArray());
+                                bw.Flush();
+                                pipe.Flush();
                             }
                         }
                         else
                         {
                             bw.Write((byte)0);
                         }
-                        bw.Flush();
-                        pipe.Flush();
                     }
                 }
                 Environment.Exit(0);
@@ -92,6 +93,7 @@ namespace FSMViewAvalonia2
                             {
                                 Thread.Sleep(0);
                             }
+                            strLength = bw.ReadInt32();
                             args[i] = new(bw.ReadChars(strLength));
                         }
                         ParseArgs(args);
@@ -105,7 +107,22 @@ namespace FSMViewAvalonia2
             Dispatcher.UIThread.Post(async () =>
             {
                 if (args.Length < 2) return;
+
                 var filename = args[0];
+                if(filename.Equals("-JSON", StringComparison.OrdinalIgnoreCase) || filename.Equals("-JSONRAW", StringComparison.OrdinalIgnoreCase))
+                {
+                    string text;
+                    if(filename.Equals("-JSON", StringComparison.OrdinalIgnoreCase))
+                    {
+                        text = File.ReadAllText(args[1]);
+                    }
+                    else
+                    {
+                        text = Encoding.UTF8.GetString(Convert.FromBase64String(args[1]));
+                    }
+                    App.mainWindow.LoadJsonFSM(text);
+                    return;
+                }
                 if(!File.Exists(filename))
                 {
                     filename = System.IO.Path.GetFileName(filename);

@@ -10,9 +10,15 @@ namespace FSMViewAvalonia2
 
         public static async Task<string> FindHollowKnightPath(Window win)
         {
+            if(!string.IsNullOrEmpty(Config.config.hkPath))
+            {
+                return Config.config.hkPath;
+            }
             if (File.Exists(HOLLOWKNIGHT_PATH_FILE))
             {
-                return File.ReadAllText(HOLLOWKNIGHT_PATH_FILE);
+                var result = Config.config.hkPath = File.ReadAllText(HOLLOWKNIGHT_PATH_FILE);
+                File.Delete(HOLLOWKNIGHT_PATH_FILE);
+                return result;
             }
             else
             {
@@ -20,7 +26,7 @@ namespace FSMViewAvalonia2
 
                 if (path != null)
                 {
-                    File.WriteAllText(HOLLOWKNIGHT_PATH_FILE, path);
+                    Config.config.hkPath = path;
                 }
 
                 return path;

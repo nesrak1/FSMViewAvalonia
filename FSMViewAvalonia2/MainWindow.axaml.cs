@@ -112,15 +112,21 @@ namespace FSMViewAvalonia2
             string fileName = result[0];
             lastFileName = fileName;
             openLast.IsEnabled = true;
+            string data = File.ReadAllText(fileName);
+            LoadJsonFSM(data, fileName);
+            //System.Diagnostics.Process.Start(Environment.ProcessPath, "-Json \"" + fileName + "\"");
+        }
 
-            IDataProvider jsonProvider = new JsonDataProvider(JToken.Parse(File.ReadAllText(fileName)));
+        public void LoadJsonFSM(string data, string fileName = null)
+        {
+            IDataProvider jsonProvider = new JsonDataProvider(JToken.Parse(data));
             var assetInfo = new AssetInfo()
             {
                 id = 1,
                 size = 999,
                 name = jsonProvider.Get<string>("goName"),
                 nameBase = jsonProvider.Get<string>("goName"),
-                assetFile = fileName,
+                assetFile = fileName ?? Guid.NewGuid().ToString(),
                 path = jsonProvider.Get<string>("goPath")
             };
             LoadFsm(assetInfo, jsonProvider);
@@ -389,22 +395,11 @@ namespace FSMViewAvalonia2
             for(int i = 0; i < entries.Count;i++)
             {
                 var entry = entries[i];
-                string actionName = entry.Name;
-                var fields = entry.Values;
-
-                stateList.Children.Add(CreateSidebarHeader(actionName,i, entry.Enabled));
-
-                foreach (var field in fields)
-                {
-                    string key = field.Item1;
-                    object value = field.Item2;
-
-                    stateList.Children.Add(CreateSidebarRow(key, value, entry.Enabled));
-                }
+                entry.BuildView(stateList, i);
             }
         }
 
-        private TextBlock CreateSidebarHeader(string text,  int index, bool enabled)
+        public TextBlock CreateSidebarHeader(string text,  int index, bool enabled)
         {
             var header = CreateSidebarHeader($"{index}) {text}");
             if (!enabled)
@@ -415,7 +410,7 @@ namespace FSMViewAvalonia2
             return header;
         }
 
-        private TextBlock CreateSidebarHeader(string text)
+        public TextBlock CreateSidebarHeader(string text)
         {
             TextBlock header = new()
             {
@@ -429,7 +424,7 @@ namespace FSMViewAvalonia2
             return header;
         }
 
-        private Grid CreateSidebarRow(string key, object rawvalue, bool enabled = true)
+        public Grid CreateSidebarRow(string key, object rawvalue)
         {
             var value = rawvalue.ToString();
             if(rawvalue is bool)
@@ -490,7 +485,7 @@ namespace FSMViewAvalonia2
             return valueContainer;
         }
 
-        private Grid CreateSidebarRowEvent(string key, bool value)
+        public Grid CreateSidebarRowEvent(string key, bool value)
         {
             Grid valueContainer = new()
             {

@@ -74,7 +74,7 @@ namespace FSMViewAvalonia2
             for (int i = 0; i < states.Length; i++)
             { 
                 FsmStateData stateData = new();
-                stateData.ActionData = new List<ActionScriptEntry>();
+                stateData.ActionData = new List<IActionScriptEntry>();
                 stateData.state = new FsmState(states[i]);
                 stateData.node = new FsmNodeData(stateData.state);
 
@@ -230,35 +230,11 @@ namespace FSMViewAvalonia2
             return assetInfos;
         }
 
-        private void GetActionData(List<ActionScriptEntry> list, ActionData actionData, int dataVersion)
+        private void GetActionData(List<IActionScriptEntry> list, ActionData actionData, int dataVersion)
         {
             for (int i = 0; i < actionData.actionNames.Count; i++)
             {
-                string actionName = actionData.actionNames[i];
-                if (actionName.Contains("."))
-                    actionName = actionName.Substring(actionName.LastIndexOf(".") + 1);
-
-                int startIndex = actionData.actionStartIndex[i];
-                int endIndex;
-                if (i == actionData.actionNames.Count - 1)
-                    endIndex = actionData.paramDataType.Count;
-                else
-                    endIndex = actionData.actionStartIndex[i + 1];
-
-                ActionScriptEntry entry = new();
-                entry.Values = new List<Tuple<string, object>>();
-                for (int j = startIndex; j < endIndex; j++)
-                {
-                    string paramName = actionData.paramName[j];
-                    object obj = ActionReader.GetFsmObject(actionData, j, dataVersion);
-
-                    entry.Values.Add(new Tuple<string, object>(paramName, obj));
-                }
-
-                entry.Name = actionName;
-                entry.Enabled = actionData.actionEnabled[i];
-
-                list.Add(entry);
+                list.Add(new FsmStateAction(actionData, i, dataVersion));
             }
         }
 
