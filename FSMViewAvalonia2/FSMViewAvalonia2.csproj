@@ -21,6 +21,9 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <None Update="classdata.tpk">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="GridSplitter.xaml">
       <Generator>MSBuild:Compile</Generator>
     </None>
