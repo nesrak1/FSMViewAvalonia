@@ -17,8 +17,8 @@ jobs:
         dotnet publish -r linux-x64 -p:PublishSingleFile=true -p:Configuration=Release --self-contained true
     - name: Compress
       run: |
-        zip -jr linux-x64.zip ./FSMViewAvalonia2/bin/Release/net6.0/linux-x64/publish/*
-        zip -jr win-x64.zip ./FSMViewAvalonia2/bin/Release/net6.0/win-x64/publish/*
+        zip -jr linux-x64.zip ./FSMViewAvalonia2/bin/Release/net6/linux-x64/publish/*
+        zip -jr win-x64.zip ./FSMViewAvalonia2/bin/Release/net6/win-x64/publish/*
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v3.1.0
       with:
