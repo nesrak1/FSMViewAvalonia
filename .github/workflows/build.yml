@@ -36,6 +36,7 @@ jobs:
         name: linux-x64
         path: ./FSMViewAvalonia2/bin/Release/net6/linux-x64/publish/
   build:
+    needs: [build-win, build-linux]
     runs-on: windows-latest
     if: startsWith(github.ref, 'refs/tags/')
     steps:
