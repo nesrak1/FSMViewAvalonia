@@ -8,7 +8,7 @@ namespace FSMViewAvalonia2
 {
     public class FsmStateAction : IActionScriptEntry
     {
-        public FsmStateAction(ActionData actionData, int index, int dataVersion)
+        public FsmStateAction(ActionData actionData, int index, int dataVersion, FsmState state)
         {
             string actionName = actionData.actionNames[index];
             FullName = actionName;
@@ -29,7 +29,7 @@ namespace FSMViewAvalonia2
 
                 Values.Add(new Tuple<string, object>(paramName, obj));
             }
-
+            State = state;
             Name = actionName;
             Enabled = actionData.actionEnabled[index];
         }
@@ -37,9 +37,11 @@ namespace FSMViewAvalonia2
         public string Name { get; set; }
         public List<Tuple<string, object>> Values { get; set; } = new();
         public bool Enabled { get; set; } = true;
-
-        public virtual void BuildView(StackPanel stack, int index)
+        public int Index { get; set; }
+        public FsmState State { get; init; }
+        public async virtual void BuildView(StackPanel stack, int index)
         {
+            Index = index;
             string actionName = Name;
             var fields = Values;
 
@@ -50,7 +52,7 @@ namespace FSMViewAvalonia2
                 string key = field.Item1;
                 object value = field.Item2;
 
-                stack.Children.Add(App.mainWindow.CreateSidebarRow(key, value));
+                stack.Children.Add(await App.mainWindow.CreateSidebarRow(key, value));
             }
         }
 
@@ -63,7 +65,7 @@ namespace FSMViewAvalonia2
             };
             var header = new TextBlock()
             {
-                Text = text,
+                Text = "(" + index + ") " + text,
                 HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left,
                 VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
                 Padding = new Thickness(5),
@@ -76,11 +78,28 @@ namespace FSMViewAvalonia2
                 header.Text += " (disabled)";
             }
             valueContainer.Children.Add(header);
+            #region Inspect
+            if (UEPConnect.UEPConnected && State.fsm.info.providerType == AssetInfo.DataProviderType.Json)
+            {
+                Button inspect_btn = new()
+                {
+                    Padding = new Thickness(5),
+                    HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right,
+                    VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+                    Content = "Inspect",
+                    Margin = new Thickness(0,0,100,0)
+                };
+                inspect_btn.Click += Inspect_btn_Click;
+                valueContainer.Children.Add(inspect_btn);
+            }
+            #endregion
+            #region Open in Dnspy
             Button btn = new()
             {
                 Padding = new Thickness(5),
                 HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right,
-                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
+                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+                Width = 100
             };
             btn.Content = "Open in ...";
             btn.Click += Btn_Click;
@@ -94,7 +113,13 @@ namespace FSMViewAvalonia2
                 btn.Content = "Open in ILSpy";
             }
             valueContainer.Children.Add(btn);
+            #endregion
             return valueContainer;
+        }
+
+        private void Inspect_btn_Click(object sender, RoutedEventArgs e)
+        {
+            UEPConnect.Send("INSPECT-ACTION\n" + State.fsm.info.id + "\n" + State.name + "\n" + Index);
         }
 
         private async void Btn_Click(object sender, RoutedEventArgs e)

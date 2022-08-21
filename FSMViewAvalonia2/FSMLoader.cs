@@ -75,10 +75,10 @@ namespace FSMViewAvalonia2
             { 
                 FsmStateData stateData = new();
                 stateData.ActionData = new List<IActionScriptEntry>();
-                stateData.state = new FsmState(states[i]);
+                stateData.state = new FsmState(states[i], dataInstance);
                 stateData.node = new FsmNodeData(stateData.state);
 
-                GetActionData(stateData.ActionData, stateData.state.actionData, dataInstance.dataVersion);
+                GetActionData(stateData.ActionData, stateData.state.actionData, dataInstance.dataVersion, stateData.state);
 
                 dataInstance.states.Add(stateData);
             }
@@ -159,7 +159,7 @@ namespace FSMViewAvalonia2
                 }
                 if (isMono)
                 {
-                    AssetTypeInstance monoAti = am.GetATI(file, info);
+                    AssetTypeInstance monoAti = am.GetTypeInstance(file, info);
                     AssetExternal ext = am.GetExtAsset(curFile, monoAti.GetBaseField().Get("m_Script"));
                     AssetTypeInstance scriptAti = am.GetExtAsset(curFile, monoAti.GetBaseField().Get("m_Script")).instance;
                     AssetTypeInstance goAti = am.GetExtAsset(curFile, monoAti.GetBaseField().Get("m_GameObject")).instance;
@@ -230,11 +230,11 @@ namespace FSMViewAvalonia2
             return assetInfos;
         }
 
-        private void GetActionData(List<IActionScriptEntry> list, ActionData actionData, int dataVersion)
+        private void GetActionData(List<IActionScriptEntry> list, ActionData actionData, int dataVersion, FsmState state)
         {
             for (int i = 0; i < actionData.actionNames.Count; i++)
             {
-                list.Add(new FsmStateAction(actionData, i, dataVersion));
+                list.Add(new FsmStateAction(actionData, i, dataVersion, state));
             }
         }
 

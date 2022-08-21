@@ -122,7 +122,8 @@ namespace FSMViewAvalonia2
             IDataProvider jsonProvider = new JsonDataProvider(JToken.Parse(data));
             var assetInfo = new AssetInfo()
             {
-                id = 1,
+                id = jsonProvider.Get<int>("fsmId"),
+                providerType = AssetInfo.DataProviderType.Json,
                 size = 999,
                 name = jsonProvider.Get<string>("goName"),
                 nameBase = jsonProvider.Get<string>("goName"),
@@ -374,7 +375,7 @@ namespace FSMViewAvalonia2
             }
         }
 
-        private void LoadVariables()
+        private async void LoadVariables()
         {
             foreach (FsmVariableData varData in fsmData.variables)
             {
@@ -383,7 +384,7 @@ namespace FSMViewAvalonia2
                 variableList.Children.Add(CreateSidebarHeader(variableType));
                 foreach (Tuple<string, object> value in varData.Values)
                 {
-                    variableList.Children.Add(CreateSidebarRow(value.Item1, value.Item2));
+                    variableList.Children.Add(await CreateSidebarRow(value.Item1, value.Item2));
                 }
             }
         }
@@ -424,10 +425,10 @@ namespace FSMViewAvalonia2
             return header;
         }
 
-        public Grid CreateSidebarRow(string key, object rawvalue)
+        public async Task<Grid> CreateSidebarRow(string key, object rawvalue)
         {
             var value = rawvalue.ToString();
-            if(rawvalue is bool)
+            if (rawvalue is bool)
             {
                 value = value.ToLower();
             }
@@ -441,13 +442,28 @@ namespace FSMViewAvalonia2
             INamedAssetProvider pptr = null;
             if (rawvalue is GameObjectPPtrHolder ptr) pptr = ptr.pptr;
             if (rawvalue is FsmGameObject go) pptr = go.value;
+            if(rawvalue is FsmOwnerDefault fsmOwnerDefault)
+            {
+                if(fsmOwnerDefault.ownerOption == OwnerDefaultOption.SpecifyGameObject)
+                {
+                    pptr = fsmOwnerDefault.gameObject?.value;
+                }
+            }
+            if (rawvalue is FsmEventTarget eventTarget)
+            {
+                if (eventTarget.gameObject?.ownerOption == OwnerDefaultOption.SpecifyGameObject)
+                {
+                    pptr = eventTarget.gameObject.gameObject?.value;
+                }
+            }
             if (pptr != null)
             {
-                if (!string.IsNullOrEmpty(pptr.file))
+                string assetPath = pptr.file;
+                if (!string.IsNullOrEmpty(pptr.file) && (File.Exists(pptr.file) || 
+                    !string.IsNullOrEmpty(assetPath = GameFileHelper.FindGameFilePath(await GameFileHelper.FindHollowKnightPath(this), pptr.file))))
                 {
                     Button btn = new()
                     {
-                        Width = 50,
                         Padding = new Thickness(5),
                         HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right,
                         VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
@@ -456,11 +472,27 @@ namespace FSMViewAvalonia2
                     btn.Content = "Search";
                     btn.Click += async (sender, ev) =>
                     {
-                        string gamePath = await GameFileHelper.FindHollowKnightPath(this);
-                        if (gamePath == null)
-                            return;
-
-                        await LoadFsm(GameFileHelper.FindGameFilePath(gamePath, pptr.file), pptr.name);
+                        await LoadFsm(assetPath, pptr.name);
+                    };
+                    valueContainer.Children.Add(btn);
+                }
+            }
+            if (UEPConnect.UEPConnected)
+            {
+                JsonNamedAssetProvider provider = (pptr ?? (rawvalue as JsonNamedAssetProvider)) as JsonNamedAssetProvider;
+                if (provider is not null && provider.instanceId is not null)
+                {
+                    Button btn = new()
+                    {
+                        Padding = new Thickness(5),
+                        HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right,
+                        VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
+                    };
+                    marginRight = 55;
+                    btn.Content = "Inspect";
+                    btn.Click += (sender, ev) =>
+                    {
+                        UEPConnect.Send("INSPECT-UOBJ\n" + provider.instanceId);
                     };
                     valueContainer.Children.Add(btn);
                 }

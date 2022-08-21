@@ -4,6 +4,12 @@ global using System.IO;
 global using System.IO.Pipes;
 global using System.Text;
 global using System.Threading;
+
+
+global using System.Net.WebSockets;
+global using System.Net;
+
+
 global using Avalonia;
 global using Avalonia.Threading;
 global using Avalonia.Controls.ApplicationLifetimes;

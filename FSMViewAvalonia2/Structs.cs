@@ -82,7 +82,8 @@ namespace FSMViewAvalonia2
         public bool hideUnused;
         public FsmTransition[] transitions;
         public ActionData actionData;
-        public FsmState(IDataProvider provider)
+        public FsmDataInstance fsm;
+        public FsmState(IDataProvider provider, FsmDataInstance fsm = null)
         {
             name = provider.GetValue<string>("name");
             description = provider.GetValue<string>("description");
@@ -98,6 +99,8 @@ namespace FSMViewAvalonia2
                 transitions[i] = new FsmTransition(transitionsData[i]);
             }
             actionData = new ActionData(provider.GetValue<IDataProvider>("actionData"));
+            this.fsm = fsm;
+
         }
         public override string ToString()
         {

@@ -13,11 +13,11 @@ namespace FSMViewAvalonia2.Json
             }
             name = token["objName"].ToString();
             file = token["objFile"]?.ToString();
+            instanceId = token["objId"]?.ToObject<long>();
         }
         public bool isNull { get; init; }
-
         public string name { get; init; }
-
+        public long? instanceId { get; init; }
         public string file { get; init; }
         public override string ToString() => name + (file == null ? $"[{file}]" : "");
     }

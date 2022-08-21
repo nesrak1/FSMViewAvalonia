@@ -11,6 +11,7 @@ namespace FSMViewAvalonia2
         // yet and stuff might break.
         public static void Main(string[] args)
         {
+            RETRY:
             if (!mutex.WaitOne(1))
             {
                 using (NamedPipeClientStream pipe = new(PipeName))
@@ -19,9 +20,9 @@ namespace FSMViewAvalonia2
                     {
                         pipe.Connect(100);
                     }
-                    catch (Exception)
+                    catch (TimeoutException)
                     {
-                        Environment.Exit(0);
+                        goto RETRY;
                     }
                     using (BinaryWriter bw = new(pipe))
                     {
@@ -109,10 +110,18 @@ namespace FSMViewAvalonia2
                 if (args.Length < 2) return;
 
                 var filename = args[0];
-                if(filename.Equals("-JSON", StringComparison.OrdinalIgnoreCase) || filename.Equals("-JSONRAW", StringComparison.OrdinalIgnoreCase))
+                if (filename.Equals("--UEP", StringComparison.OrdinalIgnoreCase))
+                {
+                    var pipeName = args[1];
+                    _ = Task.Run(() => UEPConnect.Init(int.Parse(pipeName)));
+                    return;
+                }
+
+                if (filename.Equals("--NONE", StringComparison.OrdinalIgnoreCase)) return;
+                if (filename.Equals("--JSON", StringComparison.OrdinalIgnoreCase) || filename.Equals("--JSONRAW", StringComparison.OrdinalIgnoreCase))
                 {
                     string text;
-                    if(filename.Equals("-JSON", StringComparison.OrdinalIgnoreCase))
+                    if (filename.Equals("-JSON", StringComparison.OrdinalIgnoreCase))
                     {
                         text = File.ReadAllText(args[1]);
                     }
@@ -123,7 +132,7 @@ namespace FSMViewAvalonia2
                     App.mainWindow.LoadJsonFSM(text);
                     return;
                 }
-                if(!File.Exists(filename))
+                if (!File.Exists(filename))
                 {
                     filename = System.IO.Path.GetFileName(filename);
                     string gamePath = await GameFileHelper.FindHollowKnightPath(App.mainWindow);
