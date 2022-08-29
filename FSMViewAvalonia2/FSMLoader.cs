@@ -138,46 +138,25 @@ namespace FSMViewAvalonia2
         {
             List<AssetInfo> assetInfos = new List<AssetInfo>();
             uint assetCount = table.assetFileInfoCount;
-            uint fsmTypeId = 0;
+
             foreach (AssetFileInfoEx info in table.assetFileInfo)
             {
-                bool isMono = false;
-                if (fsmTypeId == 0)
+                if (AssetHelper.GetScriptIndex(file, info) != 0xffff)
                 {
-                    ushort monoType;
-                    if (file.header.format <= 0x10)
-                        monoType = info.scriptIndex;
-                    else
-                        monoType = file.typeTree.unity5Types[info.curFileTypeOrIndex].scriptIndex;
+                    AssetTypeValueField monoBf = am.GetTypeInstance(file, info).GetBaseField();
+                    AssetExternal ext = am.GetExtAsset(curFile, monoBf.Get("m_Script"));
+                    AssetTypeInstance scriptAti = am.GetExtAsset(curFile, monoBf.Get("m_Script")).instance;
+                    AssetTypeInstance goAti = am.GetExtAsset(curFile, monoBf.Get("m_GameObject")).instance;
 
-                    if (monoType != 0xFFFF)
+                    string m_Name = "Unnamed";
+                    if (goAti != null)
                     {
-                        isMono = true;
+                        m_Name = goAti.GetBaseField().Get("m_Name").GetValue().AsString();
                     }
-                }
-                else if (info.curFileType == fsmTypeId)
-                {
-                    isMono = true;
-                }
-                if (isMono)
-                {
-                    AssetTypeInstance monoAti = am.GetATI(file, info);
-                    AssetExternal ext = am.GetExtAsset(curFile, monoAti.GetBaseField().Get("m_Script"));
-                    AssetTypeInstance scriptAti = am.GetExtAsset(curFile, monoAti.GetBaseField().Get("m_Script")).instance;
-                    AssetTypeInstance goAti = am.GetExtAsset(curFile, monoAti.GetBaseField().Get("m_GameObject")).instance;
-                    if (goAti == null) //found a scriptable object, oops
-                    {
-                        fsmTypeId = 0;
-                        continue;
-                    }
-                    string m_Name = goAti.GetBaseField().Get("m_Name").GetValue().AsString();
                     string m_ClassName = scriptAti.GetBaseField().Get("m_ClassName").GetValue().AsString();
 
                     if (m_ClassName == "PlayMakerFSM")
                     {
-                        if (fsmTypeId == 0)
-                            fsmTypeId = info.curFileType;
-
                         AssetsFileReader reader = file.reader;
 
                         long oldPos = reader.BaseStream.Position;
@@ -204,6 +183,38 @@ namespace FSMViewAvalonia2
                             id = info.index,
                             size = info.curFileSize,
                             name = m_Name + "-" + fsmName
+                        });
+                    }
+                    else if (m_ClassName == "FsmTemplate")
+                    {
+                        AssetsFileReader reader = file.reader;
+
+                        long oldPos = reader.BaseStream.Position;
+                        reader.BaseStream.Position = info.absoluteFilePos;
+                        reader.BaseStream.Position += 28;
+
+                        // m_Name
+                        reader.ReadCountStringInt32();
+                        reader.Align();
+                        // category
+                        reader.ReadCountStringInt32();
+                        reader.Align();
+
+                        reader.BaseStream.Position += 16;
+
+                        if (!hasDataField)
+                        {
+                            reader.BaseStream.Position -= 4;
+                        }
+
+                        string fsmName = reader.ReadCountStringInt32();
+                        reader.BaseStream.Position = oldPos;
+
+                        assetInfos.Add(new AssetInfo()
+                        {
+                            id = info.index,
+                            size = info.curFileSize,
+                            name = fsmName + " (template)"
                         });
                     }
                 }
