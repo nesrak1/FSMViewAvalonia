@@ -187,6 +187,7 @@ namespace FSMViewAvalonia2
                     }
                     else if (m_ClassName == "FsmTemplate")
                     {
+                        string m_MonoName = monoBf.Get("m_Name").GetValue().AsString();
                         AssetsFileReader reader = file.reader;
 
                         long oldPos = reader.BaseStream.Position;
@@ -214,7 +215,7 @@ namespace FSMViewAvalonia2
                         {
                             id = info.index,
                             size = info.curFileSize,
-                            name = fsmName + " (template)"
+                            name = m_MonoName + " - " + fsmName + " (template)"
                         });
                     }
                 }
