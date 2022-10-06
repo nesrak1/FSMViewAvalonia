@@ -2,6 +2,7 @@
 using Microsoft.Win32;
 using System;
 using System.IO;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -16,9 +17,9 @@ namespace FSMViewAvalonia2
 
         public static async Task<string> FindHollowKnightPath(Window win)
         {
-            if (File.Exists(HOLLOWKNIGHT_PATH_FILE))
+            if (File.Exists(Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), HOLLOWKNIGHT_PATH_FILE)))
             {
-                return File.ReadAllText(HOLLOWKNIGHT_PATH_FILE);
+                return File.ReadAllText(Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), HOLLOWKNIGHT_PATH_FILE));
             }
             else
             {
@@ -26,7 +27,7 @@ namespace FSMViewAvalonia2
 
                 if (path != null)
                 {
-                    File.WriteAllText(HOLLOWKNIGHT_PATH_FILE, path);
+                    File.WriteAllText(Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), HOLLOWKNIGHT_PATH_FILE), path);
                 }
 
                 return path;
