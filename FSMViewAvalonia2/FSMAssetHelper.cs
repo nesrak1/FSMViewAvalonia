@@ -3,6 +3,7 @@ using MessageBox.Avalonia;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 using System.Text;
 
 namespace FSMViewAvalonia2
@@ -14,11 +15,11 @@ namespace FSMViewAvalonia2
             AssetsManager am = new AssetsManager();
             am.updateAfterLoad = false;
             am.useTemplateFieldCache = true;
-            if (!File.Exists("classdata.tpk"))
+            if (!File.Exists(Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "classdata.tpk")))
             {
                 return null;
             }
-            am.LoadClassPackage("classdata.tpk");
+            am.LoadClassPackage(Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "classdata.tpk"));
             return am;
         }
     }
