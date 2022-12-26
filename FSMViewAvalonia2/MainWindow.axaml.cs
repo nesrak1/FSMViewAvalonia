@@ -411,7 +411,7 @@ namespace FSMViewAvalonia2
             return header;
         }
 
-        public TextBlock CreateSidebarHeader(string text)
+        public static TextBlock CreateSidebarHeader(string text)
         {
             TextBlock header = new()
             {
@@ -517,7 +517,7 @@ namespace FSMViewAvalonia2
             return valueContainer;
         }
 
-        public Grid CreateSidebarRowEvent(string key, bool value)
+        public static Grid CreateSidebarRowEvent(string key, bool value)
         {
             Grid valueContainer = new()
             {
@@ -634,10 +634,7 @@ namespace FSMViewAvalonia2
                 }
             }
 
-            if (fsmLoader == null)
-            {
-                fsmLoader = new FSMLoader(this, am);
-            }
+            fsmLoader ??= new FSMLoader(this, am);
         }
 
         #region Drag
@@ -686,7 +683,7 @@ namespace FSMViewAvalonia2
                 fsmData.matrix = mt.Matrix;
         }
 
-        private Matrix ZoomToLocation(Matrix mat, Point pos, double scale)
+        private static Matrix ZoomToLocation(Matrix mat, Point pos, double scale)
         {
             Matrix matrix = mat;
 

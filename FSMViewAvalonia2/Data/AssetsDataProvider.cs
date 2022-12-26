@@ -48,7 +48,7 @@ namespace FSMViewAvalonia2.Data
             return new NamedAssetPPtr(pptr.fileID, pptr.pathID, nameBuilder.ToString(), file);
         }
 
-        private string GetAssetNameFastModded(AssetsFile file, ClassDatabaseFile cldb, AssetFileInfoEx info, out bool isGameObject)
+        private static string GetAssetNameFastModded(AssetsFile file, ClassDatabaseFile cldb, AssetFileInfoEx info, out bool isGameObject)
         {
             ClassDatabaseType type = AssetHelper.FindAssetClassByID(cldb, info.curFileType);
             AssetsFileReader reader = file.reader;

@@ -201,12 +201,13 @@ namespace FSMViewAvalonia2
             if (name == "")
                 name = value?.name ?? "";
         }
-        public override string ToString()
+        public override string MyToString()
         {
-            if (!string.IsNullOrEmpty(value?.name))
-                return $"[{value}]";
-            else
-                return $"GameObject {name}";
+            var namepart = string.IsNullOrEmpty(name) ? "" : $"GameObject {name}";
+            var valuepart = string.IsNullOrEmpty(value?.name) ? "" : $"[{value}]";
+            if (namepart == "" || name == value?.name) return valuepart;
+            if(valuepart == "") return namepart;
+            return $"{valuepart}";
         }
     }
 
@@ -229,7 +230,7 @@ namespace FSMViewAvalonia2
             if (ownerOption == OwnerDefaultOption.UseOwner)
                 return "FSM Owner";
             else
-                return $"{(gameObject.name == null ? gameObject.ToString() : gameObject.name)}";
+                return $"{gameObject.name ?? gameObject.ToString()}";
         }
     }
 
@@ -467,12 +468,12 @@ namespace FSMViewAvalonia2
             floatParam = new FsmFloat(field.Get<IDataProvider>("floatParam"));
             boolParam = new FsmBool(field.Get<IDataProvider>("boolParam"));
         }
-        public override string ToString()
+        public override string MyToString()
         {
             if (name != "")
-                return $"LayoutOption {name} = {option.ToString()}";
+                return $"LayoutOption {name} = {option}";
             else
-                return $"LayoutOption.{option.ToString()}";
+                return $"LayoutOption.{option}";
         }
     }
 
@@ -484,7 +485,7 @@ namespace FSMViewAvalonia2
         {
             value = field.Get<string>("value");
         }
-        public override string ToString()
+        public override string MyToString()
         {
             if (name != "")
                 if (value == "")
@@ -504,7 +505,7 @@ namespace FSMViewAvalonia2
         {
             value = field.Get<INamedAssetProvider>("value");
         }
-        public override string ToString()
+        public override string MyToString()
         {
             if (name != "")
                 if (string.IsNullOrEmpty(value?.name))
@@ -629,7 +630,7 @@ namespace FSMViewAvalonia2
             stringValues = field.Get<IDataProvider[]>("stringValues").Select(x => x.As<string>()).ToArray();
             vector4Values = field.Get<IDataProvider[]>("vector4Values").Select(x => new Vector4(x)).ToArray();
         }
-        public override string ToString()
+        public override string MyToString()
         {
             if (name != "")
                 return $"Array {name}";
@@ -646,7 +647,7 @@ namespace FSMViewAvalonia2
         {
             value = field.Get<float>("value");
         }
-        public override string ToString()
+        public override string MyToString()
         {
             if (name != "")
                 return $"float {name}";
@@ -663,7 +664,7 @@ namespace FSMViewAvalonia2
         {
             value = field.Get<int>("value");
         }
-        public override string ToString()
+        public override string MyToString()
         {
             if (name != "")
                 return $"int {name}";
@@ -680,7 +681,7 @@ namespace FSMViewAvalonia2
         {
             value = field.Get<bool>("value");
         }
-        public override string ToString()
+        public override string MyToString()
         {
             if (name != "")
                 return $"bool {name}";
@@ -697,7 +698,7 @@ namespace FSMViewAvalonia2
         {
             value = new Vector2(field.Get<IDataProvider>("value"));
         }
-        public override string ToString()
+        public override string MyToString()
         {
             if (name != "")
                 return $"Vector2 {name}";
@@ -714,7 +715,7 @@ namespace FSMViewAvalonia2
         {
             value = new Vector3(field.Get<IDataProvider>("value"));
         }
-        public override string ToString()
+        public override string MyToString()
         {
             if (name != "")
                 return $"Vector3 {name}";
@@ -731,7 +732,7 @@ namespace FSMViewAvalonia2
         {
             value = new UnityColor(field.Get<IDataProvider>("value"));
         }
-        public override string ToString()
+        public override string MyToString()
         {
             if (name != "")
                 return $"Color {name}";
@@ -748,7 +749,7 @@ namespace FSMViewAvalonia2
         {
             value = new UnityRect(field.Get<IDataProvider>("value"));
         }
-        public override string ToString()
+        public override string MyToString()
         {
             if (name != "")
                 return $"Rect {name}";
@@ -765,7 +766,7 @@ namespace FSMViewAvalonia2
         {
             value = new Quaternion(field.Get<IDataProvider>("value"));
         }
-        public override string ToString()
+        public override string MyToString()
         {
             if (name != "")
                 return $"Quaternion {name}";
@@ -783,6 +784,7 @@ namespace FSMViewAvalonia2
         public string tooltip;
         public bool showInInspector;
         public bool networkSync;
+        public bool isGlobal;
         public NamedVariable() { }
         public NamedVariable(IDataProvider field)
         {
@@ -791,6 +793,18 @@ namespace FSMViewAvalonia2
             tooltip = field.Get<string>("tooltip");
             showInInspector = field.Get<bool>("showInInspector");
             networkSync = field.Get<bool>("networkSync");
+        }
+        public virtual string MyToString() => base.ToString();
+        public override sealed string ToString()
+        {
+            if (isGlobal)
+            {
+                return "[Global] " + MyToString();
+            }
+            else
+            {
+                return MyToString();
+            }
         }
     }
 
@@ -955,7 +969,7 @@ namespace FSMViewAvalonia2
             enumName = field.Get<string>("enumName");
             intValue = field.Get<int>("intValue");
         }
-        public override string ToString()
+        public override string MyToString()
         {
             if (name != "")
                 return $"Enum {name}";

@@ -8,12 +8,13 @@ namespace FSMViewAvalonia2
 {
     public class FsmStateAction : IActionScriptEntry
     {
-        public FsmStateAction(ActionData actionData, int index, int dataVersion, FsmState state)
+        public FsmStateAction(ActionData actionData, int index, int dataVersion, FsmState state, FsmDataInstance dataInstance)
         {
             string actionName = actionData.actionNames[index];
             FullName = actionName;
-            if (actionName.Contains("."))
-                actionName = actionName.Substring(actionName.LastIndexOf(".") + 1);
+            Type = FSMLoader.mainAssembly?.MainModule?.GetType(FullName);
+            if (actionName.Contains('.'))
+                actionName = actionName[(actionName.LastIndexOf(".") + 1)..];
 
             int startIndex = actionData.actionStartIndex[index];
             int endIndex;
@@ -26,7 +27,37 @@ namespace FSMViewAvalonia2
             {
                 string paramName = actionData.paramName[j];
                 object obj = ActionReader.GetFsmObject(actionData, j, dataVersion);
-
+                var field = Type?.Fields?.FirstOrDefault(x => x.Name == paramName);
+                
+                if(obj is NamedVariable nv)
+                {
+                    if(!string.IsNullOrEmpty(nv.name))
+                    {
+                        if(!dataInstance.variableNames.Contains(nv.name))
+                        {
+                            nv.isGlobal = true;
+                        }
+                    }
+                }
+                if(field != null)
+                {
+                    var ftype = field.FieldType.Resolve();
+                    if(ftype.IsEnum && obj is int val)
+                    {
+                        foreach(var v in ftype.Fields.Where(x => x.IsLiteral && x.Constant is int))
+                        {
+                            var fv = (int)v.Constant;
+                            if(fv == val)
+                            {
+                                obj = $"{ftype.FullName}.{v.Name}";
+                            }
+                        }
+                        if(obj is int)
+                        {
+                            obj = $"({ftype.FullName}) {val}";
+                        }
+                    }
+                }
                 Values.Add(new Tuple<string, object>(paramName, obj));
             }
             State = state;
@@ -39,6 +70,7 @@ namespace FSMViewAvalonia2
         public bool Enabled { get; set; } = true;
         public int Index { get; set; }
         public FsmState State { get; init; }
+        public TypeDefinition Type { get; set; }
         public async virtual void BuildView(StackPanel stack, int index)
         {
             Index = index;
@@ -99,9 +131,9 @@ namespace FSMViewAvalonia2
                 Padding = new Thickness(5),
                 HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right,
                 VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
-                Width = 100
+                Width = 100,
+                Content = "Open in ..."
             };
-            btn.Content = "Open in ...";
             btn.Click += Btn_Click;
             var filename = System.IO.Path.GetFileName(Config.config.SpyPath);
             if (filename.Equals("dnspy.exe", StringComparison.OrdinalIgnoreCase))
@@ -127,8 +159,10 @@ namespace FSMViewAvalonia2
             SELECT:
             if (string.IsNullOrEmpty(Config.config.SpyPath) || !File.Exists(Config.config.SpyPath))
             {
-                OpenFileDialog ofd = new();
-                ofd.AllowMultiple = false;
+                OpenFileDialog ofd = new()
+                {
+                    AllowMultiple = false
+                };
                 ofd.Filters.Add(new()
                 {
                     Name = @"DnSpy\ILSpy",

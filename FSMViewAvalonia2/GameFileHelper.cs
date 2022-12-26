@@ -77,7 +77,7 @@ namespace FSMViewAvalonia2
                 Match regMatch = Regex.Match(line, "\"(.*)\"\\s*\"(.*)\"");
                 string key = regMatch.Groups[1].Value;
                 string value = regMatch.Groups[2].Value;
-                if (int.TryParse(key, out int _))
+                if (key == "path")
                 {
                     if (File.Exists(Path.Combine(value, "steamapps", $"appmanifest_{appid}.acf")))
                     {

@@ -4,6 +4,7 @@ namespace FSMViewAvalonia2
 {
     public class FSMLoader
     {
+        public static AssemblyDefinition mainAssembly;
         private MainWindow window;
         private AssetsManager am;
         private AssetsFileInstance curFile;
@@ -23,6 +24,14 @@ namespace FSMViewAvalonia2
             AssetsFile file = curFile.file;
             AssetsFileTable table = curFile.table;
 
+            if(mainAssembly == null)
+            {
+                var map = Path.Combine(Path.GetDirectoryName(curFile.path), "Managed", "Assembly-CSharp.dll");
+                mainAssembly = AssemblyDefinition.ReadAssembly(map, new()
+                {
+                    AssemblyResolver = new AssemblyResolver(Path.Combine(Path.GetDirectoryName(curFile.path), "Managed"))
+                });
+            }
             //we read manually with binaryreader to speed up reading, but sometimes the dataVersion field won't exist
             //so here we read the template manually to see whether it exists and back up a bit if it doesn't
             string assemblyPath = Path.Combine(Path.GetDirectoryName(curFile.path), "Managed", "PlayMaker.dll");
@@ -46,11 +55,12 @@ namespace FSMViewAvalonia2
         }
         public FsmDataInstance LoadFSM(AssetInfo assetInfo, IDataProvider fsm)
         {
-            FsmDataInstance dataInstance = new();
+            FsmDataInstance dataInstance = new()
+            {
+                info = assetInfo
+            };
 
-            dataInstance.info = assetInfo;
 
-            
             var states = fsm.Get<IDataProvider[]>("states");
             var events = fsm.Get<IDataProvider[]>("events");
             var variables = fsm.Get<IDataProvider>("variables");
@@ -70,31 +80,41 @@ namespace FSMViewAvalonia2
                 dataInstance.dataVersion = dataVersionField.As<int>();
             }
 
-            dataInstance.states = new List<FsmStateData>();
-            for (int i = 0; i < states.Length; i++)
-            { 
-                FsmStateData stateData = new();
-                stateData.ActionData = new List<IActionScriptEntry>();
-                stateData.state = new FsmState(states[i], dataInstance);
-                stateData.node = new FsmNodeData(stateData.state);
-
-                GetActionData(stateData.ActionData, stateData.state.actionData, dataInstance.dataVersion, stateData.state);
-
-                dataInstance.states.Add(stateData);
-            }
-
             dataInstance.events = new List<FsmEventData>();
             for (int i = 0; i < events.Length; i++)
             {
-                FsmEventData eventData = new();
-                eventData.Global = events[i].Get<bool>("isGlobal");
-                eventData.Name = events[i].Get<string>("name");
+                FsmEventData eventData = new()
+                {
+                    Global = events[i].Get<bool>("isGlobal"),
+                    Name = events[i].Get<string>("name")
+                };
 
                 dataInstance.events.Add(eventData);
             }
 
             dataInstance.variables = new List<FsmVariableData>();
+            dataInstance.variableNames = new HashSet<string>();
             GetVariableValues(dataInstance.variables, variables);
+            foreach(var v in dataInstance.variables.SelectMany(x => x.Values).Select(x => x.Item1))
+            {
+                dataInstance.variableNames.Add(v);
+            }
+
+            dataInstance.states = new List<FsmStateData>();
+            for (int i = 0; i < states.Length; i++)
+            {
+                FsmStateData stateData = new()
+                {
+                    ActionData = new List<IActionScriptEntry>(),
+                    state = new FsmState(states[i], dataInstance)
+                };
+                stateData.node = new FsmNodeData(stateData.state);
+
+                GetActionData(stateData.ActionData, stateData.state.actionData, dataInstance.dataVersion, stateData.state, dataInstance);
+
+                dataInstance.states.Add(stateData);
+            }
+
 
             dataInstance.globalTransitions = new List<FsmNodeData>();
             for (int i = 0; i < globalTransitions.Length; i++)
@@ -230,15 +250,15 @@ namespace FSMViewAvalonia2
             return assetInfos;
         }
 
-        private void GetActionData(List<IActionScriptEntry> list, ActionData actionData, int dataVersion, FsmState state)
+        private static void GetActionData(List<IActionScriptEntry> list, ActionData actionData, int dataVersion, FsmState state, FsmDataInstance inst)
         {
             for (int i = 0; i < actionData.actionNames.Count; i++)
             {
-                list.Add(new FsmStateAction(actionData, i, dataVersion, state));
+                list.Add(new FsmStateAction(actionData, i, dataVersion, state, inst));
             }
         }
 
-        private void GetVariableValues(List<FsmVariableData> varData, IDataProvider variables)
+        private static void GetVariableValues(List<FsmVariableData> varData, IDataProvider variables)
         {
             var floatVariables = variables.Get<IDataProvider[]>("floatVariables");
             var intVariables = variables.Get<IDataProvider[]>("intVariables");
@@ -256,6 +276,23 @@ namespace FSMViewAvalonia2
             var arrayVariables = variables.Get<IDataProvider[]>("arrayVariables");
             var enumVariables = variables.Get<IDataProvider[]>("enumVariables");
 
+            FsmVariableData enums = new() { Type = "Enums", Values = new List<Tuple<string, object>>() };
+            varData.Add(enums);
+            for (int i = 0; i < enumVariables.Length; i++)
+            {
+                string name = enumVariables[i].Get<string>("name");
+                object value = enumVariables[i].Get<float>("value");
+                enums.Values.Add(new Tuple<string, object>(name, value));
+            }
+
+            FsmVariableData arrays = new() { Type = "Arrays", Values = new List<Tuple<string, object>>() };
+            varData.Add(arrays);
+            for (int i = 0; i < arrayVariables.Length; i++)
+            {
+                string name = arrayVariables[i].Get<string>("name");
+                object value = arrayVariables[i].Get<float>("value");
+                arrays.Values.Add(new Tuple<string, object>(name, value));
+            }
             FsmVariableData floats = new() { Type = "Floats", Values = new List<Tuple<string, object>>() };
             varData.Add(floats);
             for (int i = 0; i < floatVariables.Length; i++)

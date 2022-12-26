@@ -11,7 +11,7 @@ namespace FSMViewAvalonia2.Json
             _token = token;
         }
 
-        private T Convert<T>(JToken token)
+        private static T Convert<T>(JToken token)
         {
             if(typeof(T) == typeof(INamedAssetProvider))
             {

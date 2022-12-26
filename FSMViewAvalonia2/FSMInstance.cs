@@ -13,6 +13,7 @@ namespace FSMViewAvalonia2
         public List<FsmStateData> states;
         public List<FsmEventData> events;
         public List<FsmVariableData> variables;
+        public HashSet<string> variableNames;
         public List<FsmNodeData> globalTransitions;
         public List<UINode> nodes;
         public Controls canvasControls;

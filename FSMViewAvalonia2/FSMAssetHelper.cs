@@ -6,9 +6,11 @@ namespace FSMViewAvalonia2
     {
         public static AssetsManager CreateAssetManager()
         {
-            AssetsManager am = new();
-            am.updateAfterLoad = false;
-            am.useTemplateFieldCache = true;
+            AssetsManager am = new()
+            {
+                updateAfterLoad = false,
+                useTemplateFieldCache = true
+            };
             if (!File.Exists("classdata.tpk"))
             {
                 return null;
