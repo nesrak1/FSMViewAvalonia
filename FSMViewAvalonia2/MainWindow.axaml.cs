@@ -1,5 +1,8 @@
 
 
+using Mono.Cecil.Rocks;
+using System.Linq;
+
 namespace FSMViewAvalonia2
 {
     public class MainWindow : Window
@@ -377,14 +380,16 @@ namespace FSMViewAvalonia2
 
         private async void LoadVariables()
         {
+            fsmData.variables.Sort((a,b) => a.Type.CompareTo(b.Type));
             foreach (FsmVariableData varData in fsmData.variables)
             {
+                if (varData.Values.Count == 0) continue;
                 string variableType = varData.Type;
 
                 variableList.Children.Add(CreateSidebarHeader(variableType));
                 foreach (Tuple<string, object> value in varData.Values)
                 {
-                    variableList.Children.Add(await CreateSidebarRow(value.Item1, value.Item2));
+                    await CreateSidebarRow(value.Item1, value.Item2, variableList);
                 }
             }
         }
@@ -425,7 +430,44 @@ namespace FSMViewAvalonia2
             return header;
         }
 
-        public async Task<Grid> CreateSidebarRow(string key, object rawvalue)
+        public static string GetFsmEnumString(TypeDefinition enumType, int val)
+        {
+            var fn = enumType.FullName;
+            if (enumType.IsEnum)
+            {
+                var isFlag = enumType.CustomAttributes.Any(x => x.AttributeType.FullName == "System.FlagAttribute");
+                StringBuilder sb = isFlag ? new() : null;
+                foreach (var v in enumType.Fields.Where(x => x.IsLiteral && x.Constant is int))
+                {
+                    var fv = (int)v.Constant;
+                    if (isFlag)
+                    {
+                        if((fv & val) == val)
+                        {
+                            if(sb.Length != 0)
+                            {
+                                sb.Append(",");
+                            }
+                            sb.Append(v.Name);
+                        }
+                    }
+                    else
+                    {
+                        if (fv == val)
+                        {
+                            return $"{fn}::{v.Name}";
+                        }
+                    }
+                }
+                if(sb?.Length != 0)
+                {
+                    return $"{fn}::{sb}";
+                }
+            }
+            return $"({fn}) {val}";
+        }
+
+        public async Task<Grid> CreateSidebarRow(string key, object rawvalue, StackPanel panel)
         {
             var value = rawvalue.ToString();
             if (rawvalue is bool)
@@ -438,6 +480,7 @@ namespace FSMViewAvalonia2
                 VerticalAlignment = Avalonia.Layout.VerticalAlignment.Top,
                 Background = Brushes.LightGray
             };
+            panel.Children.Add(valueContainer);
             int marginRight = 0;
             INamedAssetProvider pptr = null;
             if (rawvalue is GameObjectPPtrHolder ptr) pptr = ptr.pptr;
@@ -455,6 +498,42 @@ namespace FSMViewAvalonia2
                 {
                     pptr = eventTarget.gameObject.gameObject?.value;
                 }
+            }
+            if(rawvalue is FsmArray array)
+            {
+                int id = 0;
+                foreach(var v in array)
+                {
+                    await CreateSidebarRow($"[{id++}]", v, panel);
+                }
+            }
+            if(rawvalue is FsmArray2 array2)
+            {
+                value = $"[Array {array2.type}] {array2.array?.Length}";
+                int id = 0;
+                foreach (var v in array2.array)
+                {
+                    await CreateSidebarRow($"[{id++}]", v, panel);
+                }
+            }
+            if(FSMLoader.mainAssembly != null)
+            {
+                if(rawvalue is FsmEnum @enum)
+                {
+                    if(!string.IsNullOrEmpty(@enum.enumName))
+                    {
+                        var enumType = FSMLoader.mainAssembly.MainModule.AssemblyReferences
+                            .Select(x => FSMLoader.mainAssembly.MainModule.AssemblyResolver.Resolve(x).MainModule)
+                            .Append(FSMLoader.mainAssembly.MainModule)
+                            .Select(
+                                x => x.GetType(@enum.enumName.Replace('+', '/'))
+                                ).FirstOrDefault(x => x != null);
+                        if(enumType != null)
+                        {
+                            value = GetFsmEnumString(enumType, @enum.intValue);
+                        }
+                    }
+                } 
             }
             if (pptr != null)
             {

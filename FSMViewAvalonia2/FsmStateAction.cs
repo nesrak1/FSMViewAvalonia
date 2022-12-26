@@ -26,7 +26,7 @@ namespace FSMViewAvalonia2
             for (int j = startIndex; j < endIndex; j++)
             {
                 string paramName = actionData.paramName[j];
-                object obj = ActionReader.GetFsmObject(actionData, j, dataVersion);
+                object obj = ActionReader.GetFsmObject(actionData, ref j, dataVersion);
                 var field = Type?.Fields?.FirstOrDefault(x => x.Name == paramName);
                 
                 if(obj is NamedVariable nv)
@@ -44,18 +44,7 @@ namespace FSMViewAvalonia2
                     var ftype = field.FieldType.Resolve();
                     if(ftype.IsEnum && obj is int val)
                     {
-                        foreach(var v in ftype.Fields.Where(x => x.IsLiteral && x.Constant is int))
-                        {
-                            var fv = (int)v.Constant;
-                            if(fv == val)
-                            {
-                                obj = $"{ftype.FullName}.{v.Name}";
-                            }
-                        }
-                        if(obj is int)
-                        {
-                            obj = $"({ftype.FullName}) {val}";
-                        }
+                        obj = MainWindow.GetFsmEnumString(ftype, val);
                     }
                 }
                 Values.Add(new Tuple<string, object>(paramName, obj));
@@ -84,7 +73,7 @@ namespace FSMViewAvalonia2
                 string key = field.Item1;
                 object value = field.Item2;
 
-                stack.Children.Add(await App.mainWindow.CreateSidebarRow(key, value));
+                await App.mainWindow.CreateSidebarRow(key, value, stack);
             }
         }
 

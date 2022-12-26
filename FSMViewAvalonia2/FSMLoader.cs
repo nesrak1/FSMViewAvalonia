@@ -281,7 +281,7 @@ namespace FSMViewAvalonia2
             for (int i = 0; i < enumVariables.Length; i++)
             {
                 string name = enumVariables[i].Get<string>("name");
-                object value = enumVariables[i].Get<float>("value");
+                object value = enumVariables[i].Get<int>("value");
                 enums.Values.Add(new Tuple<string, object>(name, value));
             }
 
@@ -289,9 +289,8 @@ namespace FSMViewAvalonia2
             varData.Add(arrays);
             for (int i = 0; i < arrayVariables.Length; i++)
             {
-                string name = arrayVariables[i].Get<string>("name");
-                object value = arrayVariables[i].Get<float>("value");
-                arrays.Values.Add(new Tuple<string, object>(name, value));
+                var arr = new FsmArray(arrayVariables[i]);
+                arrays.Values.Add(new(arr.name, arr));
             }
             FsmVariableData floats = new() { Type = "Floats", Values = new List<Tuple<string, object>>() };
             varData.Add(floats);

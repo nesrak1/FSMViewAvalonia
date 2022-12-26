@@ -4,146 +4,100 @@ namespace FSMViewAvalonia2
 {
     public static class ActionReader
     {
-        public static object GetFsmObject(this ActionData actionData, int index, int dataVersion)
+        public static Dictionary<string, ParamDataType> ParamDataTypes = new()
+        {
+
+        };
+        static ActionReader()
+        {
+            foreach (var v in Enum.GetNames(typeof(ParamDataType)))
+            {
+                ParamDataTypes.Add($"HutongGames.PlayMaker.{v}", (ParamDataType)Enum.Parse(typeof(ParamDataType), v));
+            }
+        }
+        public static object GetFsmArray(this ActionData actionData, ref int index, int dataVersion)
+        {
+            var type = actionData.arrayParamTypes[actionData.paramDataPos[index]];
+            var size = actionData.arrayParamSizes[actionData.paramDataPos[index]];
+            if (!ParamDataTypes.TryGetValue(type, out var pdt))
+            {
+                return $"[{size}]({type}[])";
+            }
+            var result = new FsmArray2
+            {
+                type = pdt
+            };
+            var array = result.array = new object[size];
+            for (int i = 0; i < size; i++)
+            {
+                index++;
+                array[i] = GetFsmObject(actionData, ref index, dataVersion, pdt);
+            }
+            return result;
+        }
+        public static object GetFsmObject(this ActionData actionData, ref int index, int dataVersion)
+        {
+            //string actionName = actionData.actionNames[index];
+            ParamDataType paramDataType = actionData.paramDataType[index];
+            object ret = GetFsmObject(actionData, ref index, dataVersion, paramDataType);
+            return ret;
+        }
+
+        private static object GetFsmObject(ActionData actionData, ref int index, int dataVersion,
+            ParamDataType paramDataType)
         {
             try
             {
-                BinaryReader r = new(new MemoryStream(actionData.byteData.ToArray()));
-                //string actionName = actionData.actionNames[index];
-                ParamDataType paramDataType = actionData.paramDataType[index];
                 int paramDataPos = actionData.paramDataPos[index];
                 int paramByteDataSize = actionData.paramByteDataSize[index];
-
+                BinaryReader r = new(new MemoryStream(actionData.byteData.ToArray()));
                 r.BaseStream.Position = paramDataPos;
-
-                object ret;
-                switch (paramDataType)
+                object ret = paramDataType switch
                 {
-                    case ParamDataType.Integer:
-                        ret = r.ReadInt32();
-                        break;
-                    case ParamDataType.FsmInt when dataVersion == 1:
-                        ret = new FsmInt() { value = r.ReadInt32() };
-                        break;
-                    case ParamDataType.Enum:
-                        ret = r.ReadInt32();
-                        //ret = ((Enum)AssemblyHelper.GetPublicFields(typeDef)[index])[ret];
-                        break;
-                    case ParamDataType.Boolean:
-                        ret = r.ReadBoolean();
-                        break;
-                    case ParamDataType.FsmBool when dataVersion == 1:
-                        ret = new FsmBool { value = r.ReadBoolean() };
-                        break;
-                    case ParamDataType.Float:
-                        ret = r.ReadSingle();
-                        break;
-                    case ParamDataType.FsmFloat when dataVersion == 1:
-                        ret = new FsmFloat { value = r.ReadSingle() };
-                        break;
-                    case ParamDataType.String:
-                        ret = Encoding.UTF8.GetString(r.ReadBytes(paramByteDataSize));
-                        break;
-                    case ParamDataType.FsmEvent when dataVersion == 1:
-                        ret = new FsmEvent { name = Encoding.UTF8.GetString(r.ReadBytes(paramByteDataSize)) };
-                        break;
-                    case ParamDataType.Vector2:
-                        ret = new Vector2 { x = r.ReadSingle(), y = r.ReadSingle() };
-                        break;
-                    case ParamDataType.FsmVector2 when dataVersion == 1:
-                        ret = new FsmVector2 { value = new Vector2 { x = r.ReadSingle(), y = r.ReadSingle() } };
-                        break;
-                    case ParamDataType.Vector3:
-                        ret = new Vector3 { x = r.ReadSingle(), y = r.ReadSingle(), z = r.ReadSingle() };
-                        break;
-                    case ParamDataType.FsmVector3 when dataVersion == 1:
-                        ret = new FsmVector3 { value = new Vector3 { x = r.ReadSingle(), y = r.ReadSingle(), z = r.ReadSingle() } };
-                        break;
-                    case ParamDataType.Quaternion:
-                        ret = new Quaternion { x = r.ReadSingle(), y = r.ReadSingle(), z = r.ReadSingle(), w = r.ReadSingle() };
-                        break;
-                    case ParamDataType.FsmQuaternion when dataVersion == 1:
-                        ret = new FsmQuaternion { value = new Quaternion { x = r.ReadSingle(), y = r.ReadSingle(), z = r.ReadSingle(), w = r.ReadSingle() } };
-                        break;
-                    case ParamDataType.Color:
-                        ret = new UnityColor { r = r.ReadSingle(), g = r.ReadSingle(), b = r.ReadSingle(), a = r.ReadSingle() };
-                        break;
-                    case ParamDataType.FsmColor when dataVersion == 1:
-                        ret = new FsmColor { value = new UnityColor { r = r.ReadSingle(), g = r.ReadSingle(), b = r.ReadSingle(), a = r.ReadSingle() } };
-                        break;
-                    case ParamDataType.Rect:
-                        ret = new UnityRect { x = r.ReadSingle(), y = r.ReadSingle(), width = r.ReadSingle(), height = r.ReadSingle() };
-                        break;
-                    case ParamDataType.FsmRect when dataVersion == 1:
-                        ret = new FsmRect { value = new UnityRect { x = r.ReadSingle(), y = r.ReadSingle(), width = r.ReadSingle(), height = r.ReadSingle() } };
-                        break;
+                    ParamDataType.Integer => r.ReadInt32(),
+                    ParamDataType.FsmInt when dataVersion == 1 => new FsmInt() { value = r.ReadInt32() },
+                    ParamDataType.Enum => r.ReadInt32(),
+                    ParamDataType.Boolean => r.ReadBoolean(),
+                    ParamDataType.FsmBool when dataVersion == 1 => new FsmBool { value = r.ReadBoolean() },
+                    ParamDataType.Float => r.ReadSingle(),
+                    ParamDataType.FsmFloat when dataVersion == 1 => new FsmFloat { value = r.ReadSingle() },
+                    ParamDataType.String => Encoding.UTF8.GetString(r.ReadBytes(paramByteDataSize)),
+                    ParamDataType.FsmEvent when dataVersion == 1 => new FsmEvent { name = Encoding.UTF8.GetString(r.ReadBytes(paramByteDataSize)) },
+                    ParamDataType.Vector2 => new Vector2 { x = r.ReadSingle(), y = r.ReadSingle() },
+                    ParamDataType.FsmVector2 when dataVersion == 1 => new FsmVector2 { value = new Vector2 { x = r.ReadSingle(), y = r.ReadSingle() } },
+                    ParamDataType.Vector3 => new Vector3 { x = r.ReadSingle(), y = r.ReadSingle(), z = r.ReadSingle() },
+                    ParamDataType.FsmVector3 when dataVersion == 1 => new FsmVector3 { value = new Vector3 { x = r.ReadSingle(), y = r.ReadSingle(), z = r.ReadSingle() } },
+                    ParamDataType.Quaternion => new Quaternion { x = r.ReadSingle(), y = r.ReadSingle(), z = r.ReadSingle(), w = r.ReadSingle() },
+                    ParamDataType.FsmQuaternion when dataVersion == 1 => new FsmQuaternion { value = new Quaternion { x = r.ReadSingle(), y = r.ReadSingle(), z = r.ReadSingle(), w = r.ReadSingle() } },
+                    ParamDataType.Color => new UnityColor { r = r.ReadSingle(), g = r.ReadSingle(), b = r.ReadSingle(), a = r.ReadSingle() },
+                    ParamDataType.FsmColor when dataVersion == 1 => new FsmColor { value = new UnityColor { r = r.ReadSingle(), g = r.ReadSingle(), b = r.ReadSingle(), a = r.ReadSingle() } },
+                    ParamDataType.Rect => new UnityRect { x = r.ReadSingle(), y = r.ReadSingle(), width = r.ReadSingle(), height = r.ReadSingle() },
+                    ParamDataType.FsmRect when dataVersion == 1 => new FsmRect { value = new UnityRect { x = r.ReadSingle(), y = r.ReadSingle(), width = r.ReadSingle(), height = r.ReadSingle() } },
                     /////////////////////////////////////////////////////////
-                    case ParamDataType.FsmEnum when dataVersion > 1:
-                        ret = actionData.fsmEnumParams[paramDataPos];
-                        break;
-                    case ParamDataType.FsmBool when dataVersion > 1:
-                        ret = actionData.fsmBoolParams[paramDataPos];
-                        break;
-                    case ParamDataType.FsmInt when dataVersion > 1:
-                        ret = actionData.fsmIntParams[paramDataPos];
-                        break;
-                    case ParamDataType.FsmFloat when dataVersion > 1:
-                        ret = actionData.fsmFloatParams[paramDataPos];
-                        break;
-                    case ParamDataType.FsmVector2 when dataVersion > 1:
-                        ret = actionData.fsmVector2Params[paramDataPos];
-                        break;
-                    case ParamDataType.FsmVector3 when dataVersion > 1:
-                        ret = actionData.fsmVector3Params[paramDataPos];
-                        break;
-                    case ParamDataType.FsmQuaternion when dataVersion > 1:
-                        ret = actionData.fsmQuaternionParams[paramDataPos];
-                        break;
-                    case ParamDataType.FsmColor when dataVersion > 1:
-                        ret = actionData.fsmColorParams[paramDataPos];
-                        break;
-                    case ParamDataType.FsmRect when dataVersion > 1:
-                        ret = actionData.fsmRectParams[paramDataPos];
-                        break;
-                    /////////////////////////////////////////////////////////
-                    case ParamDataType.FsmGameObject:
-                        ret = actionData.fsmGameObjectParams[paramDataPos];
-                        break;
-                    case ParamDataType.FsmOwnerDefault:
-                        ret = actionData.fsmOwnerDefaultParams[paramDataPos];
-                        break;
-                    case ParamDataType.FsmObject:
-                        ret = actionData.fsmObjectParams[paramDataPos];
-                        break;
-                    case ParamDataType.FsmVar:
-                        ret = actionData.fsmVarParams[paramDataPos];
-                        break;
-                    case ParamDataType.FsmString:
-                        ret = actionData.fsmStringParams[paramDataPos];
-                        break;
-                    case ParamDataType.FsmEvent:
-                        ret = actionData.stringParams[paramDataPos];
-                        break;
-                    case ParamDataType.FsmEventTarget:
-                        ret = actionData.fsmEventTargetParams[paramDataPos];
-                        break;
-                    case ParamDataType.FsmArray:
-                        ret = actionData.fsmArrayParams[paramDataPos];
-                        break;
-                    case ParamDataType.ObjectReference:
-                        ret = $"ObjRef([{actionData.unityObjectParams[paramDataPos]}])";
-                        break;
-                    case ParamDataType.FunctionCall:
-                        ret = actionData.functionCallParams[paramDataPos];
-                        break;
-                    case ParamDataType.Array:
-                        ret = "[Array]";
-                        break;
-                    default:
-                        ret = $"[{paramDataType} not implemented]";
-                        break;
-                }
-
+                   
+                    ParamDataType.FsmBool when dataVersion > 1 => actionData.fsmBoolParams[paramDataPos],
+                    ParamDataType.FsmInt when dataVersion > 1 => actionData.fsmIntParams[paramDataPos],
+                    ParamDataType.FsmFloat when dataVersion > 1 => actionData.fsmFloatParams[paramDataPos],
+                    ParamDataType.FsmVector2 when dataVersion > 1 => actionData.fsmVector2Params[paramDataPos],
+                    ParamDataType.FsmVector3 when dataVersion > 1 => actionData.fsmVector3Params[paramDataPos],
+                    ParamDataType.FsmQuaternion when dataVersion > 1 => actionData.fsmQuaternionParams[paramDataPos],
+                    ParamDataType.FsmColor when dataVersion > 1 => actionData.fsmColorParams[paramDataPos],
+                    ParamDataType.FsmRect when dataVersion > 1 => actionData.fsmRectParams[paramDataPos],
+                    ///////////////////////////////////////////////////////// 
+                    ParamDataType.FsmEnum => actionData.fsmEnumParams[paramDataPos],
+                    ParamDataType.FsmGameObject => actionData.fsmGameObjectParams[paramDataPos],
+                    ParamDataType.FsmOwnerDefault => actionData.fsmOwnerDefaultParams[paramDataPos],
+                    ParamDataType.FsmObject => actionData.fsmObjectParams[paramDataPos],
+                    ParamDataType.FsmVar => actionData.fsmVarParams[paramDataPos],
+                    ParamDataType.FsmString => actionData.fsmStringParams[paramDataPos],
+                    ParamDataType.FsmEvent => actionData.stringParams[paramDataPos],
+                    ParamDataType.FsmEventTarget => actionData.fsmEventTargetParams[paramDataPos],
+                    ParamDataType.FsmArray => actionData.fsmArrayParams[paramDataPos],
+                    ParamDataType.ObjectReference => $"ObjRef([{actionData.unityObjectParams[paramDataPos]}])",
+                    ParamDataType.FunctionCall => actionData.functionCallParams[paramDataPos],
+                    ParamDataType.Array => actionData.GetFsmArray(ref index, dataVersion),
+                    _ => $"[{paramDataType} not implemented]",
+                };
                 if (dataVersion == 1 && ret is NamedVariable nv)
                 {
                     switch (paramDataType)
@@ -163,7 +117,8 @@ namespace FSMViewAvalonia2
                 }
 
                 return ret;
-            }catch(Exception e)
+            }
+            catch (Exception e)
             {
                 return $"An exception was encountered: {e}";
             }

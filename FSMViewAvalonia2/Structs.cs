@@ -1,5 +1,7 @@
 ﻿
 
+using System.Collections;
+
 namespace FSMViewAvalonia2
 {
     public static class Constants
@@ -609,8 +611,12 @@ namespace FSMViewAvalonia2
             }
         }
     }
-
-    public class FsmArray : NamedVariable
+    public class FsmArray2
+    {
+        public ParamDataType type;
+        public object[] array;
+    }
+    public class FsmArray : NamedVariable, IEnumerable<object>
     {
         public VariableType type;
         public string objectTypeName;
@@ -630,12 +636,22 @@ namespace FSMViewAvalonia2
             stringValues = field.Get<IDataProvider[]>("stringValues").Select(x => x.As<string>()).ToArray();
             vector4Values = field.Get<IDataProvider[]>("vector4Values").Select(x => new Vector4(x)).ToArray();
         }
+        public IEnumerator<object> GetEnumerator() => floatValues.OfType<object>()
+            .Concat(intValues.OfType<object>())
+            .Concat(boolValues.OfType<object>())
+            .Concat(vector4Values.OfType<object>())
+            .Concat(stringValues).GetEnumerator();
         public override string MyToString()
         {
             if (name != "")
                 return $"Array {name}";
             else
                 return $"Array {type} {objectTypeName}";
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
         }
     }
 
