@@ -275,6 +275,25 @@ namespace FSMViewAvalonia2
             AssetTypeValueField textureVariables = variables.Get("textureVariables");
             AssetTypeValueField arrayVariables = variables.Get("arrayVariables");
             AssetTypeValueField enumVariables = variables.Get("enumVariables");
+            
+            FsmVariableData enums = new() { Type = "Enums", Values = new List<Tuple<string, object>>() };
+            varData.Add(enums);
+            for (int i = 0; i < enumVariables.Length; i++)
+            {
+                string name = enumVariables.Get(i).Get("name").GetValue().AsString();
+                object value = enumVariabless.Get(i).Get("value").GetValue().AsFloat();
+                enums.Values.Add(new Tuple<string, object>(name, value));
+            }
+
+            FsmVariableData arrays = new() { Type = "Arrays", Values = new List<Tuple<string, object>>() };
+            varData.Add(arrays);
+            for (int i = 0; i < arrayVariables.Length; i++)
+            {
+                string name = arrayVariables.Get(i).Get("name").GetValue().AsString();
+                object value = arrayVariabless.Get(i).Get("value").GetValue().AsFloat();
+                arrays.Values.Add(new Tuple<string, object>(name, value));
+            }
+            
             FsmVariableData floats = new FsmVariableData() { Type = "Floats", Values = new List<Tuple<string, object>>() };
             varData.Add(floats);
             for (int i = 0; i < floatVariables.GetValue().AsArray().size; i++)
