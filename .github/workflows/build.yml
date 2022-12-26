@@ -19,22 +19,6 @@ jobs:
       with:
         name: win-x64
         path: ./FSMViewAvalonia2/bin/Release/net6/win-x64/publish/
-  build-linux:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v2
-      with:
-        dotnet-version: 6.0.x
-    - name: Build
-      run: |
-        dotnet publish -r linux-x64 -p:PublishSingleFile=true -p:Configuration=Release --self-contained true
-    - name: Upload a Build Artifact
-      uses: actions/upload-artifact@v3.1.0
-      with:
-        name: linux-x64
-        path: ./FSMViewAvalonia2/bin/Release/net6/linux-x64/publish/
   build:
     needs: [build-win, build-linux]
     runs-on: windows-latest
@@ -47,10 +31,8 @@ jobs:
     - name: Compress
       run: |
         Compress-Archive -Path ./artifacts/win-x64/* -DestinationPath win-x64.zip
-        Compress-Archive -Path ./artifacts/linux-x64/* -DestinationPath linux-x64.zip
     - name: Release
       uses: softprops/action-gh-release@v1
       with:
         files: |
-            ./linux-x64.zip
             ./win-x64.zip
