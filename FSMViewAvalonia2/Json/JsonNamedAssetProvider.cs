@@ -19,6 +19,7 @@ namespace FSMViewAvalonia2.Json
         public string name { get; init; }
         public long? instanceId { get; init; }
         public string file { get; init; }
+        public long fileId { get; } = 0;
         public override string ToString() => name + (file == null ? $"[{file}]" : "");
     }
 }

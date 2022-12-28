@@ -4,30 +4,31 @@ namespace FSMViewAvalonia2
 {
     public class NamedAssetPPtr : AssetPPtr, INamedAssetProvider
     {
-        public string file;
-        public string name;
-
+        public string file { get; set; }
+        public string name { get; set; }
+        public long fileId { get; set; }
         public NamedAssetPPtr(int fileID, long pathID) : base(fileID, pathID)
         {
+            fileId = pathID;
             this.file = string.Empty;
             this.name = string.Empty;
         }
         public NamedAssetPPtr(int fileID, long pathID, string name) : base(fileID, pathID)
         {
+            fileId = pathID;
             this.file = string.Empty;
             this.name = name;
         }
         public NamedAssetPPtr(int fileID, long pathID, string name, string file) : base(fileID, pathID)
         {
+            fileId = pathID;
             this.file = file;
             this.name = name;
         }
 
-        string INamedAssetProvider.name => name;
 
         bool INamedAssetProvider.isNull => pathID == 0;
 
-        string INamedAssetProvider.file => file;
 
         public override string ToString()
         {

@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace FSMViewAvalonia2.Data
+﻿namespace FSMViewAvalonia2.Data
 {
     public class AssetsDataProvider : IDataProvider
     {
@@ -26,7 +20,7 @@ namespace FSMViewAvalonia2.Data
             {
                 return new NamedAssetPPtr(pptr.fileID, pptr.pathID, string.Empty, string.Empty);
             }
-            AssetExternal extObj = am.GetExtAsset(inst, pptr.fileID, pptr.pathID, true);
+            AssetExternal extObj = am.GetExtAsset(inst, pptr.fileID, pptr.pathID);
             StringBuilder nameBuilder = new();
             nameBuilder.Append(GetAssetNameFastModded(extObj.file.file, am.classFile, extObj.info, out var isGameObject));
             if (isGameObject && extObj.instance != null)
@@ -48,7 +42,8 @@ namespace FSMViewAvalonia2.Data
             return new NamedAssetPPtr(pptr.fileID, pptr.pathID, nameBuilder.ToString(), file);
         }
 
-        private static string GetAssetNameFastModded(AssetsFile file, ClassDatabaseFile cldb, AssetFileInfoEx info, out bool isGameObject)
+        private static string GetAssetNameFastModded(AssetsFile file, ClassDatabaseFile cldb, AssetFileInfoEx info, 
+            out bool isGameObject)
         {
             ClassDatabaseType type = AssetHelper.FindAssetClassByID(cldb, info.curFileType);
             AssetsFileReader reader = file.reader;

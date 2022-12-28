@@ -36,7 +36,8 @@ namespace FSMViewAvalonia2
             //so here we read the template manually to see whether it exists and back up a bit if it doesn't
             string assemblyPath = Path.Combine(Path.GetDirectoryName(curFile.path), "Managed", "PlayMaker.dll");
             MonoDeserializer deserializer = new();
-            deserializer.Read("PlayMakerFSM", MonoDeserializer.GetAssemblyWithDependencies(assemblyPath), file.header.format);
+            deserializer.Read("PlayMakerFSM", MonoDeserializer.GetAssemblyWithDependencies(assemblyPath),
+                new(file.typeTree.unityVersion));
             bool hasDataField = deserializer.children[0].children[0].name == "dataVersion";
             
             return GetFSMInfos(file, table, curFile, hasDataField);
@@ -51,6 +52,7 @@ namespace FSMViewAvalonia2
         }
         public FsmDataInstance LoadJsonFSM(string text, AssetInfo assetInfo)
         {
+            assetInfo.providerType = AssetInfo.DataProviderType.Json;
             return LoadFSM(assetInfo, new JsonDataProvider(JToken.Parse(text)));
         }
         public FsmDataInstance LoadFSM(AssetInfo assetInfo, IDataProvider fsm)
@@ -151,51 +153,54 @@ namespace FSMViewAvalonia2
 
             return dataInstance;
         }
+        public string GetGameObjectPath(AssetTypeInstance goAti)
+        {
+            try
+            {
+                StringBuilder pathBuilder = new();
+
+                AssetTypeInstance c_Transform = am.GetExtAsset(curFile, goAti.GetBaseField().Get("m_Component").Get(0).Get(0).Get(0)).instance;
+                while (true)
+                {
+                    var father = c_Transform.GetBaseField().children.FirstOrDefault(x => x.GetName() == "m_Father");
+                    if (father == null) break;
+                    c_Transform = am.GetExtAsset(curFile, father).instance;
+                    if (c_Transform == null) break;
+                    var m_GameObject = am.GetExtAsset(curFile, c_Transform.GetBaseField().Get("m_GameObject")).instance;
+                    string name = m_GameObject.GetBaseField().Get("m_Name").GetValue().AsString();
+                    pathBuilder.Insert(0, name + "/");
+                }
+                return pathBuilder.ToString();
+            }catch(Exception)
+            {
+                return "";
+            }
+        }
 
         private List<AssetInfo> GetFSMInfos(AssetsFile file, AssetsFileTable table, AssetsFileInstance assetsFile, bool hasDataField)
         {
-            List<AssetInfo> assetInfos = new();
+            List<AssetInfo> assetInfos = new List<AssetInfo>();
             uint assetCount = table.assetFileInfoCount;
-            uint fsmTypeId = 0;
+
             foreach (AssetFileInfoEx info in table.assetFileInfo)
             {
-                bool isMono = false;
-                if (fsmTypeId == 0)
+                if (AssetHelper.GetScriptIndex(file, info) != 0xffff)
                 {
-                    ushort monoType;
-                    if (file.header.format <= 0x10)
-                        monoType = info.scriptIndex;
-                    else
-                        monoType = file.typeTree.unity5Types[info.curFileTypeOrIndex].scriptIndex;
+                    AssetTypeValueField monoBf = am.GetTypeInstance(file, info).GetBaseField();
+                    AssetExternal ext = am.GetExtAsset(curFile, monoBf.Get("m_Script"));
+                    AssetTypeInstance scriptAti = am.GetExtAsset(curFile, monoBf.Get("m_Script")).instance;
+                    var goAE = am.GetExtAsset(curFile, monoBf.Get("m_GameObject"));
+                    AssetTypeInstance goAti = goAE.instance;
 
-                    if (monoType != 0xFFFF)
+                    string m_Name = "Unnamed";
+                    if (goAti != null)
                     {
-                        isMono = true;
+                        m_Name = goAti.GetBaseField().Get("m_Name").GetValue().AsString();
                     }
-                }
-                else if (info.curFileType == fsmTypeId)
-                {
-                    isMono = true;
-                }
-                if (isMono)
-                {
-                    AssetTypeInstance monoAti = am.GetTypeInstance(file, info);
-                    AssetExternal ext = am.GetExtAsset(curFile, monoAti.GetBaseField().Get("m_Script"));
-                    AssetTypeInstance scriptAti = am.GetExtAsset(curFile, monoAti.GetBaseField().Get("m_Script")).instance;
-                    AssetTypeInstance goAti = am.GetExtAsset(curFile, monoAti.GetBaseField().Get("m_GameObject")).instance;
-                    if (goAti == null) //found a scriptable object, oops
-                    {
-                        fsmTypeId = 0;
-                        continue;
-                    }
-                    string m_Name = goAti.GetBaseField().Get("m_Name").GetValue().AsString();
                     string m_ClassName = scriptAti.GetBaseField().Get("m_ClassName").GetValue().AsString();
 
                     if (m_ClassName == "PlayMakerFSM")
                     {
-                        if (fsmTypeId == 0)
-                            fsmTypeId = info.curFileType;
-
                         AssetsFileReader reader = file.reader;
 
                         long oldPos = reader.BaseStream.Position;
@@ -217,27 +222,52 @@ namespace FSMViewAvalonia2
                         string fsmName = Encoding.UTF8.GetString(reader.ReadBytes((int)length2));
                         reader.BaseStream.Position = oldPos;
 
-                        StringBuilder pathBuilder = new();
-
-                        AssetTypeInstance c_Transform = am.GetExtAsset(curFile, goAti.GetBaseField().Get("m_Component").Get(0).Get(0).Get(0)).instance;
-                        while(true)
-                        {
-                            var father = c_Transform.GetBaseField().children.FirstOrDefault(x => x.GetName() == "m_Father");
-                            if(father == null) break;
-                            c_Transform = am.GetExtAsset(curFile, father).instance;
-                            if(c_Transform == null) break;
-                            var m_GameObject = am.GetExtAsset(curFile, c_Transform.GetBaseField().Get("m_GameObject")).instance;
-                            string name = m_GameObject.GetBaseField().Get("m_Name").GetValue().AsString();
-                            pathBuilder.Insert(0, name + "/");
-                        }
-
-
                         assetInfos.Add(new AssetInfo()
                         {
                             id = info.index,
                             size = info.curFileSize,
                             name = m_Name + "-" + fsmName,
-                            path = pathBuilder.ToString(),
+                            path = GetGameObjectPath(goAti),
+                            goId = goAE.info.index,
+                            fsmId = info.index,
+                            assetFile = assetsFile.path,
+                            nameBase = m_Name
+                        });
+                    }
+                    else if (m_ClassName == "FsmTemplate")
+                    {
+                        string m_MonoName = monoBf.Get("m_Name").GetValue().AsString();
+                        AssetsFileReader reader = file.reader;
+
+                        long oldPos = reader.BaseStream.Position;
+                        reader.BaseStream.Position = info.absoluteFilePos;
+                        reader.BaseStream.Position += 28;
+
+                        // m_Name
+                        reader.ReadCountStringInt32();
+                        reader.Align();
+                        // category
+                        reader.ReadCountStringInt32();
+                        reader.Align();
+
+                        reader.BaseStream.Position += 16;
+
+                        if (!hasDataField)
+                        {
+                            reader.BaseStream.Position -= 4;
+                        }
+
+                        string fsmName = reader.ReadCountStringInt32();
+                        reader.BaseStream.Position = oldPos;
+
+                        assetInfos.Add(new AssetInfo()
+                        {
+                            id = info.index,
+                            size = info.curFileSize,
+                            name = m_MonoName + "-" + fsmName + " (template)",
+                            path = "",
+                            goId = 0,
+                            fsmId = info.index,
                             assetFile = assetsFile.path,
                             nameBase = m_Name
                         });
@@ -396,14 +426,11 @@ namespace FSMViewAvalonia2
             }
         }
 
-        public List<SceneInfo> LoadSceneList(string folder)
+        public List<SceneInfo> LoadSceneList()
         {
-            string ggmPath = Path.Combine(folder, "globalgamemanagers");
-            AssetsFileInstance ggm = am.LoadAssetsFile(ggmPath, false);
-            am.LoadClassDatabaseFromPackage(ggm.file.typeTree.unityVersion);
-
-            AssetFileInfoEx buildSettingsInfo = ggm.table.GetAssetsOfType(0x8D)[0];
-            AssetTypeValueField buildSettings = am.GetTypeInstance(ggm, buildSettingsInfo).GetBaseField();
+            var buildSettings = GlobalGameManagers.instance.GetAsset(AssetClassID.BuildSettings).GetBaseField();
+            //AssetFileInfoEx buildSettingsInfo = ggm.table.GetAssetsOfType(0x8D)[0];
+            //AssetTypeValueField buildSettings = am.GetTypeInstance(ggm, buildSettingsInfo).GetBaseField();
             AssetTypeValueField scenes = buildSettings.Get("scenes").Get("Array");
             int sceneCount = scenes.GetValue().AsArray().size;
 

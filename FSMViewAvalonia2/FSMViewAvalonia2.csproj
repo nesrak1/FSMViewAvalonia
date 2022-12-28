@@ -5,7 +5,7 @@
     <LangVersion>preview</LangVersion>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="AssetsTools.NET" Version="2.0.9">
+    <PackageReference Include="AssetsTools.NET" Version="2.0.12">
       <NoWarn></NoWarn>
     </PackageReference>
     <PackageReference Include="Avalonia" Version="0.10.6" />
@@ -30,4 +30,5 @@
       <Generator>MSBuild:Compile</Generator>
     </None>
   </ItemGroup>
+  <ProjectExtensions><VisualStudio><UserProperties properties_4launchsettings_1json__JsonSchema="" /></VisualStudio></ProjectExtensions>
 </Project>

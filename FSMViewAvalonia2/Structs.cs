@@ -1155,4 +1155,46 @@ namespace FSMViewAvalonia2
         Array,
         Enum
     }
+
+    public enum UIHint
+    {
+        None,
+        TextArea,
+        Behaviour,
+        Script,
+        Method,
+        Coroutine,
+        Animation,
+        Tag,
+        Layer,
+        Description,
+        Variable,
+        ScriptComponent,
+        Comment,
+        NamedColor,
+        NamedTexture,
+        FsmName,
+        FsmEvent,
+        FsmFloat,
+        FsmInt,
+        FsmBool,
+        FsmString,
+        FsmVector3,
+        FsmGameObject,
+        FsmColor,
+        FsmRect,
+        FsmMaterial,
+        FsmTexture,
+        FsmQuaternion,
+        FsmObject,
+        FsmVector2,
+        FsmEnum,
+        FsmArray,
+        AnimatorFloat,
+        AnimatorBool,
+        AnimatorInt,
+        AnimatorTrigger,
+        SortingLayer,
+        TagMenu
+    }
 }

@@ -7,5 +7,6 @@ namespace FSMViewAvalonia2.Data
         bool isNull { get; }
         string name { get; }
         string file { get; }
+        long fileId { get; }
     }
 }

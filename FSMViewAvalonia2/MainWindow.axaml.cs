@@ -1,8 +1,3 @@
-
-
-using Mono.Cecil.Rocks;
-using System.Linq;
-
 namespace FSMViewAvalonia2
 {
     public class MainWindow : Window
@@ -22,9 +17,10 @@ namespace FSMViewAvalonia2
         private readonly TabControl fsmTabs;
         private readonly MatrixTransform mt;
 
+        public static MainWindow instance;
         //variables
-        private AssetsManager am;
-        private FSMLoader fsmLoader;
+        public AssetsManager am;
+        public FSMLoader fsmLoader;
         private FsmDataInstance fsmData;
         private string lastFileName;
         private readonly List<FsmDataInstance> loadedFsmDatas;
@@ -35,6 +31,7 @@ namespace FSMViewAvalonia2
 
         public MainWindow()
         {
+            instance = this;
             InitializeComponent();
 #if DEBUG
             this.AttachDevTools();
@@ -189,7 +186,7 @@ namespace FSMViewAvalonia2
             string resourcesPath = GameFileHelper.FindGameFilePath(gamePath, "resources.assets");
             string dataPath = System.IO.Path.GetDirectoryName(resourcesPath);
 
-            List<SceneInfo> sceneList = fsmLoader.LoadSceneList(dataPath);
+            List<SceneInfo> sceneList = fsmLoader.LoadSceneList();
             SceneSelectionDialog selector = new(sceneList);
             await selector.ShowDialog(this);
 
@@ -712,7 +709,7 @@ namespace FSMViewAvalonia2
                     Environment.Exit(0);
                 }
             }
-
+            GlobalGameManagers.instance ??= new(am);
             fsmLoader ??= new FSMLoader(this, am);
         }
 

@@ -104,7 +104,10 @@ namespace FSMViewAvalonia2
 
             return null;
         }
-
+        public static string FindGameFilePath(string file)
+        {
+            return FindGameFilePath(FindHollowKnightPath(null).Result, file);
+        }
         public static string FindGameFilePath(string hkRootPath, string file)
         {
             string[] pathTests = new string[]

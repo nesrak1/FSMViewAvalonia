@@ -1,14 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace FSMViewAvalonia2
+﻿namespace FSMViewAvalonia2
 {
     public class FsmStateAction : IActionScriptEntry
     {
-        public FsmStateAction(ActionData actionData, int index, int dataVersion, FsmState state, FsmDataInstance dataInstance)
+        public FsmStateAction(ActionData actionData, int index, int dataVersion, FsmState state, 
+            FsmDataInstance dataInstance)
         {
             string actionName = actionData.actionNames[index];
             FullName = actionName;
@@ -42,9 +37,24 @@ namespace FSMViewAvalonia2
                 if(field != null)
                 {
                     var ftype = field.FieldType.Resolve();
-                    if(ftype.IsEnum && obj is int val)
+                    var UIHintAttr = field.CustomAttributes
+                        .FirstOrDefault(x => x.AttributeType.FullName == "HutongGames.PlayMaker.UIHintAttribute");
+                    var uitype =  (UIHint?)(int?)UIHintAttr?.ConstructorArguments[0].Value;
+                    if (ftype.IsEnum && obj is int val)
                     {
                         obj = MainWindow.GetFsmEnumString(ftype, val);
+                    } else if(uitype == UIHint.Layer && obj is FsmInt or int)
+                    {
+                        var fi = obj as FsmInt;
+                        var layer = fi?.value ?? (int)obj;
+                        var tagManager = GlobalGameManagers.instance.GetAsset(AssetClassID.TagManager);
+                        var curLayer = tagManager.GetBaseField().Get("layers").Get(0).Get(layer).value.AsString();
+                        
+                        obj = $"{obj} ({curLayer})";
+                    }
+                    if(uitype != null)
+                    {
+                        paramName = $"{paramName} [{uitype}]";
                     }
                 }
                 Values.Add(new Tuple<string, object>(paramName, obj));

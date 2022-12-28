@@ -1,11 +1,4 @@
-﻿using System;
-using Avalonia;
-using Avalonia.Controls;
-using Avalonia.Markup.Xaml;
-using System.Collections.Generic;
-using System.Linq;
-
-namespace FSMViewAvalonia2
+﻿namespace FSMViewAvalonia2
 {
     public class SceneSelectionDialog : Window
     {
