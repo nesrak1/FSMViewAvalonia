@@ -1,4 +1,4 @@
-﻿using Path = System.IO.Path;
+using Path = System.IO.Path;
 
 namespace FSMViewAvalonia2
 {
@@ -69,6 +69,8 @@ namespace FSMViewAvalonia2
             var globalTransitions = fsm.Get<IDataProvider[]>("globalTransitions");
             var dataVersionField = fsm.Get<IDataProvider>("dataVersion");
 
+			string startState = fsm.Get<string>("startState");
+
             dataInstance.fsmName = fsm.Get<string>("name");
 
             dataInstance.goName = assetInfo.nameBase;
@@ -111,6 +113,10 @@ namespace FSMViewAvalonia2
                     state = new FsmState(states[i], dataInstance)
                 };
                 stateData.node = new FsmNodeData(stateData.state);
+				stateData.isStartState = stateData.Name == startState;
+
+				if (stateData.isStartState)
+					dataInstance.startState = stateData;
 
                 GetActionData(stateData.ActionData, stateData.state.actionData, dataInstance.dataVersion, stateData.state, dataInstance);
 

@@ -1,4 +1,4 @@
-﻿
+
 namespace FSMViewAvalonia2
 {
     //not to be confused Structs, which holds the exact data
@@ -15,6 +15,7 @@ namespace FSMViewAvalonia2
         public List<FsmVariableData> variables;
         public HashSet<string> variableNames;
         public List<FsmNodeData> globalTransitions;
+		public FsmStateData startState;
         public List<UINode> nodes;
         public Controls canvasControls;
         public Matrix matrix;
@@ -26,6 +27,7 @@ namespace FSMViewAvalonia2
         public List<IActionScriptEntry> ActionData { get; set; }
         public FsmState state;
         public FsmNodeData node;
+		public bool isStartState;
     }
     public class FsmEventData
     {

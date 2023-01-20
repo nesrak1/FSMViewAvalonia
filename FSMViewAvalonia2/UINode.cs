@@ -1,4 +1,4 @@
-﻿
+
 using Path = Avalonia.Controls.Shapes.Path;
 
 namespace FSMViewAvalonia2
@@ -62,7 +62,7 @@ namespace FSMViewAvalonia2
         }
     
         public UINode(FsmStateData stateData, FsmNodeData nodeData) :
-                    this(stateData, nodeData, new SolidColorBrush(Colors.Black))
+                    this(stateData, nodeData, new SolidColorBrush(stateData?.isStartState ?? false ? Colors.Gold : Colors.Black))
         { }
     
         public UINode(FsmStateData stateData, FsmNodeData nodeData, SolidColorBrush stroke)
