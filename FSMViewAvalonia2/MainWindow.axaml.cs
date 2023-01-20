@@ -307,7 +307,7 @@ namespace FSMViewAvalonia2
             addingTabs = false;
 
             graphCanvas.Children.Clear();
-            fsmData.matrix = mt.Matrix;
+            fsmData.matrix = mt.Matrix = Matrix.Identity;
 
             stateList.Children.Clear();
             eventList.Children.Clear();
