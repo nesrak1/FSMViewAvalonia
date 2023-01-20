@@ -138,7 +138,7 @@ namespace FSMViewAvalonia2
             border = new Border()
             {
                 Child = stack,
-                BorderBrush = Brushes.Black,
+                BorderBrush = stroke,
                 BorderThickness = new Thickness(2),
                 Padding = new Thickness(0)
             };
