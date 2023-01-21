@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Text.Json;
 
 namespace FSMViewAvalonia2
 {
@@ -37,6 +38,71 @@ namespace FSMViewAvalonia2
             bool hasDataField = deserializer.children[0].children[0].name == "dataVersion";
             
             return GetFSMInfos(file, table, hasDataField);
+        }
+
+        public static FsmDataInstance LoadFsmJson(string json)
+        {
+            json.FsmDataInstance data = JsonSerializer.Deserialize<json.FsmDataInstance>(json);
+
+            FsmDataInstance dataInstance = new FsmDataInstance();
+            dataInstance.fsmName = data.fsmName;
+            dataInstance.goName = data.goName;
+            dataInstance.dataVersion = data.dataVersion;
+            dataInstance.states = new List<FsmStateData>();
+            for (int i = 0; i < data.states.Count; i++)
+            {
+                FsmStateData stateData = new FsmStateData();
+                stateData.ActionData = new List<ActionScriptEntry>();
+                for(var j =0; j < data.states[i].actionData.Count; j++)
+                {
+                    stateData.ActionData.Add(new ActionScriptEntry(data.states[i].actionData[j]));
+                }
+                stateData.state = new FsmState(data.states[i]);
+                stateData.node = new FsmNodeData(stateData.state);
+
+                //GetActionData(stateData.ActionData, stateData.state.actionData, dataInstance.dataVersion);
+
+                dataInstance.states.Add(stateData);
+            }
+
+            dataInstance.events = new List<FsmEventData>();
+            for (int i = 0; i < data.events.Count; i++)
+            {
+                FsmEventData eventData = new FsmEventData();
+                eventData.Global = data.events[i].isGlobal;
+                eventData.Name = data.events[i].name;
+                dataInstance.events.Add(eventData);
+            }
+
+            dataInstance.variables = new List<FsmVariableData>();
+            foreach(var v in data.variables)
+            {
+                dataInstance.variables.Add(new FsmVariableData(v));
+            }
+            //GetVariableValues(dataInstance.variables, namer, variables);
+
+            dataInstance.globalTransitions = new List<FsmNodeData>();
+            for (int i = 0; i < data.globalTransitions.Count; i++)
+            {
+                var globalTransitionRaw = data.globalTransitions[i];
+                FsmNodeData node = new FsmNodeData();
+
+
+                node.isGlobal = globalTransitionRaw.isGlobal;
+                node.transform = globalTransitionRaw.transform;
+                node.stateColor = globalTransitionRaw.stateColor;
+                node.transitionColor = globalTransitionRaw.transitionColor;
+                node.name = globalTransitionRaw.name;
+                node.transitions = new FsmTransition[globalTransitionRaw.transitions.Length];
+                for (int j = 0; j < globalTransitionRaw.transitions.Length; j++)
+                {
+                    node.transitions[j] = new FsmTransition(globalTransitionRaw.transitions[j]);
+                }
+
+                dataInstance.globalTransitions.Add(node);
+            }
+
+            return dataInstance;
         }
 
         public FsmDataInstance LoadFSM(long id)

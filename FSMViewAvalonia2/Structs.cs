@@ -105,6 +105,26 @@ namespace FSMViewAvalonia2
         public bool hideUnused;
         public FsmTransition[] transitions;
         public ActionData actionData;
+        public FsmState(json.FsmState state) {
+            name = state.name;
+            description = state.description;
+            colorIndex = state.colorIndex;
+            position = state.position;
+            isBreakpoint = state.isBreakpoint;
+            isSequence = state.isSequence;
+            hideUnused = state.hideUnused;
+            transitions = new FsmTransition[state.transitions.Length];
+            for (int i = 0; i < transitions.Length; i++)
+            {
+                if(state.transitions[i] == null)
+                {
+                    continue;
+                }
+                transitions[i] = new FsmTransition(state.transitions[i]);
+            }
+            actionData = new ActionData();
+            //state.actionData
+        }
         public FsmState(AssetNameResolver namer, AssetTypeValueField field)
         {
             name = field.Get("name").GetValue().AsString();
@@ -167,6 +187,8 @@ namespace FSMViewAvalonia2
         public List<string> paramName;
         public List<int> paramDataPos;
         public List<int> paramByteDataSize;
+        public ActionData() { }
+
         public ActionData(AssetNameResolver namer, AssetTypeValueField field)
         {
             actionNames = StructUtil.ReadAssetList<string>(namer, field.Get("actionNames"));
@@ -957,12 +979,12 @@ namespace FSMViewAvalonia2
         }
     }
 
-    public class UnityRect
-    {
-        public float x;
-        public float y;
-        public float width;
-        public float height;
+        public class UnityRect
+        {
+            public float x { get; set; }
+            public float y { get; set; }
+        public float width { get; set; }
+        public float height { get; set; }
         public UnityRect() { }
         public UnityRect(AssetTypeValueField field)
         {
@@ -1022,6 +1044,13 @@ namespace FSMViewAvalonia2
         public int linkConstraint;
         public byte colorIndex;
         public FsmTransition() { }
+        public FsmTransition(json.FsmTransition transition) {
+            fsmEvent = new FsmEvent(transition.fsmEvent);
+            toState = transition.toState;
+            linkStyle = transition.linkStyle;
+            linkConstraint = transition.linkConstraint;
+            colorIndex = transition.colorIndex;
+        }
         public FsmTransition(FsmGlobalTransition globalTransition)
         {
             fsmEvent = null;
@@ -1050,6 +1079,11 @@ namespace FSMViewAvalonia2
         public bool isSystemEvent;
         public bool isGlobal;
         public FsmEvent() { }
+        public FsmEvent(json.FsmEvent e) {
+            name = e.name;
+            isSystemEvent = e.isSystemEvent;
+            isGlobal = e.isGlobal;
+        }
         public FsmEvent(AssetTypeValueField valueField)
         {
             name = valueField.Get("name").GetValue().AsString();

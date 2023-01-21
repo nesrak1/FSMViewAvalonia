@@ -40,6 +40,19 @@ namespace FSMViewAvalonia2
     {
         public string Type { get; set; }
         public List<Tuple<string, object>> Values { get; set; }
+        public FsmVariableData()
+        {
+
+        }
+        public FsmVariableData(json.FsmVariableData v)
+        {
+            Type = v.Type;
+            Values = new List<Tuple<string, object>>();
+            foreach (var vt in v.Values)
+            {
+                Values.Add(new Tuple<string,object>(vt.Item1, vt.Item2));
+            }
+        }
     }
     public class FsmGlobalTransition
     {
@@ -54,6 +67,23 @@ namespace FSMViewAvalonia2
         public string Name { get; set; }
         public List<Tuple<string, object>> Values { get; set; }
         public bool Enabled { get; set; } = true;
+        public ActionScriptEntry() { }
+        public ActionScriptEntry(json.ActionScriptEntry ase)
+        {
+            Name = ase.Name;
+            Values = new List<Tuple<string, object>>();
+            foreach (var val in ase.Values)
+            {
+                if (val.Item2 as json.FsmParams != null)
+                {
+                    Values.Add(new Tuple<string, object>(val.Item1, (json.FsmParams)val.Item2));
+                }
+                else {
+                    Values.Add(new Tuple<string, object>(val.Item1, val.Item2));
+                }
+            }
+            Enabled = ase.Enabled;
+        }
     }
     public class FsmNodeData
     {
@@ -63,6 +93,7 @@ namespace FSMViewAvalonia2
         public Color transitionColor;
         public string name;
         public FsmTransition[] transitions;
+        public FsmNodeData() {}
         public FsmNodeData(FsmDataInstance dataInst, FsmGlobalTransition transition)
         {
             isGlobal = true;

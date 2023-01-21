@@ -23,7 +23,7 @@ namespace FSMViewAvalonia2
         private MenuItem fileOpen;
         private MenuItem openSceneList;
         private MenuItem openResources;
-        private MenuItem openLast;
+        private MenuItem openLast, openJson;
         private MenuItem closeTab;
         private TextBlock tipText;
         private StackPanel stateList;
@@ -55,6 +55,7 @@ namespace FSMViewAvalonia2
             openSceneList = this.FindControl<MenuItem>("openSceneList");
             openResources = this.FindControl<MenuItem>("openResources");
             openLast = this.FindControl<MenuItem>("openLast");
+            openJson = this.FindControl<MenuItem>("openJson");
             closeTab = this.FindControl<MenuItem>("closeTab");
             tipText = this.FindControl<TextBlock>("tipText");
             stateList = this.FindControl<StackPanel>("stateList");
@@ -69,6 +70,7 @@ namespace FSMViewAvalonia2
             PointerWheelChanged += MouseScrollCanvas;
             fileOpen.Click += FileOpen_Click;
             openLast.Click += OpenLast_Click;
+            openJson.Click += OpenJson_Click;
             closeTab.Click += CloseTab_Click;
             openResources.Click += OpenResources_Click;
             openSceneList.Click += OpenSceneList_Click;
@@ -98,6 +100,24 @@ namespace FSMViewAvalonia2
             openLast.IsEnabled = true;
 
             LoadFsm(fileName);
+        }
+        private async void OpenJson_Click(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog openFileDialog = new OpenFileDialog();
+            string[] result = await openFileDialog.ShowAsync(this);
+
+            if (result == null || result.Length == 0)
+                return;
+
+            if (tipText != null)
+            {
+                graphCanvas.Children.Remove(tipText);
+                tipText = null;
+            }
+
+            string fileName = result[0];
+            lastFileName = fileName;
+            LoadFsmJson(fileName);
         }
 
         private void OpenLast_Click(object sender, RoutedEventArgs e)
@@ -203,7 +223,35 @@ namespace FSMViewAvalonia2
                 }
             }
         }
+        private async void LoadFsmJson(string fileName)
+        {
+            var json = System.IO.File.ReadAllText(fileName);
+            fsmData = FSMLoader.LoadFsmJson(json);
+            loadedFsmDatas.Add(fsmData);
 
+            TabItem newTabItem = new TabItem
+            {
+                Header = $"{fsmData.goName}-{fsmData.fsmName}",
+                Tag = fsmData
+            };
+
+            addingTabs = true;
+            tabItems.Add(newTabItem);
+            fsmTabs.SelectedIndex = tabItems.Count - 1;
+            addingTabs = false;
+
+            graphCanvas.Children.Clear();
+            fsmData.matrix = mt.Matrix;
+
+            stateList.Children.Clear();
+            eventList.Children.Clear();
+            variableList.Children.Clear();
+
+            LoadStates();
+            LoadEvents();
+            LoadVariables();
+
+        }
         private async void LoadFsm(string fileName)
         {
             await CreateAssetsManagerAndLoader();
@@ -252,7 +300,6 @@ namespace FSMViewAvalonia2
                 {
                     FsmNodeData node = stateData.node;
                     UINode uiNode = new UINode(stateData, node);
-
                     uiNode.grid.PointerPressed += (object sender, PointerPressedEventArgs e) =>
                     {
                         if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
@@ -307,7 +354,13 @@ namespace FSMViewAvalonia2
                 variableList.Children.Add(CreateSidebarHeader(variableType));
                 foreach (Tuple<string, object> value in varData.Values)
                 {
-                    variableList.Children.Add(CreateSidebarRow(value.Item1, value.Item2.ToString()));
+                    if(value.Item2 != null)
+                    {
+                        variableList.Children.Add(CreateSidebarRow(value.Item1, value.Item2.ToString()));
+                    } else
+                    {
+                        variableList.Children.Add(CreateSidebarRow(value.Item1,"[null]"));
+                    }
                 }
             }
         }
@@ -323,7 +376,6 @@ namespace FSMViewAvalonia2
                 var fields = entry.Values;
 
                 stateList.Children.Add(CreateSidebarHeader(actionName,i, entry.Enabled));
-
                 foreach (var field in fields)
                 {
                     string key = field.Item1;
