@@ -1,11 +1,10 @@
 ﻿
 
-namespace FSMViewAvalonia2.Data
+namespace FSMViewAvalonia2.Data;
+
+public interface IDataProvider
 {
-    public interface IDataProvider
-    {
-        T GetValue<T>(string key);
-        T Get<T>(string key) => GetValue<T>(key);
-        T As<T>();
-    }
+    T GetValue<T>(string key);
+    T Get<T>(string key) => GetValue<T>(key);
+    T As<T>();
 }

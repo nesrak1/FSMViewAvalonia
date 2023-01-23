@@ -1,10 +1,6 @@
-﻿namespace FSMViewAvalonia2
+﻿namespace FSMViewAvalonia2;
+
+internal class AssemblyResolver : BaseAssemblyResolver
 {
-    internal class AssemblyResolver : BaseAssemblyResolver
-    {
-        public AssemblyResolver(string dir)
-        {
-            AddSearchDirectory(dir);
-        }
-    }
+    public AssemblyResolver(string dir) => AddSearchDirectory(dir);
 }

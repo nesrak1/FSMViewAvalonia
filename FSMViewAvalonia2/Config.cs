@@ -1,38 +1,32 @@
 ﻿
 
-namespace FSMViewAvalonia2
+namespace FSMViewAvalonia2;
+
+internal class Config
 {
-    internal class Config
+    public static readonly string ConfigPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Environment.ProcessPath), "Config.json");
+    public static readonly Config config;
+    static Config()
     {
-        public static readonly string ConfigPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Environment.ProcessPath), "Config.json");
-        public static readonly Config config;
-        static Config()
+        if (File.Exists(ConfigPath))
         {
-            if (File.Exists(ConfigPath))
+            try
             {
-                try
-                {
-                    config = JsonConvert.DeserializeObject<Config>(File.ReadAllText(ConfigPath));
-                }
-                catch (Exception)
-                {
-                    config = new();
-                }
-            }
-            else
+                config = JsonConvert.DeserializeObject<Config>(File.ReadAllText(ConfigPath));
+            } catch (Exception)
             {
                 config = new();
             }
-
-            AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
-        }
-
-        private static void CurrentDomain_ProcessExit(object sender, EventArgs e)
+        } else
         {
-            File.WriteAllText(ConfigPath, JsonConvert.SerializeObject(config, Formatting.Indented));
+            config = new();
         }
 
-        public string hkPath = "";
-        public string SpyPath = "";
+        AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
     }
+
+    private static void CurrentDomain_ProcessExit(object sender, EventArgs e) => File.WriteAllText(ConfigPath, JsonConvert.SerializeObject(config, Formatting.Indented));
+
+    public string hkPath = "";
+    public string SpyPath = "";
 }
