@@ -5,6 +5,8 @@ using FSMViewAvalonia2.UEP;
 namespace FSMViewAvalonia2;
 internal class Program
 {
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    private static extern void MessageBoxW(IntPtr _, string lpText, string lpCaption, uint uType);
     public const string PipeName = "FSMViewAvaloniaInstancePipe";
     public static Mutex mutex = new(false, "MutexLock." + PipeName);
 
@@ -65,7 +67,13 @@ internal class Program
                 IsBackground = true
             }.Start();
 
-            _ = BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
+            try
+            {
+                _ = BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
+            } catch (Exception e)
+            {
+                MessageBoxW(IntPtr.Zero, e.ToString(), "Exception!", 0x10);
+            }
         }
     }
 

@@ -9,7 +9,6 @@ public static class MessageBoxUtil
     public static async Task<ButtonResult> ShowDialog(Window window, string header, string message, ButtonEnum buttons) => await MessageBoxManager.GetMessageBoxStandardWindow(new MessageBoxStandardParams
     {
         ButtonDefinitions = buttons,
-        Style = Style.Windows,
         ContentHeader = header,
         ContentMessage = message
     }).ShowDialog(window);
@@ -24,7 +23,6 @@ public static class MessageBoxUtil
 
         return await MessageBoxManager.GetMessageBoxCustomWindow(new MessageBoxCustomParams
         {
-            Style = Style.Windows,
             ContentHeader = header,
             ContentMessage = message,
             ButtonDefinitions = definitions
