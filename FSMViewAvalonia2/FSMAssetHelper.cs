@@ -1,22 +1,22 @@
 ﻿
 
-namespace FSMViewAvalonia2
+namespace FSMViewAvalonia2;
+
+public static class FSMAssetHelper
 {
-    public static class FSMAssetHelper
+    public static AssetsManager CreateAssetManager()
     {
-        public static AssetsManager CreateAssetManager()
+        AssetsManager am = new()
         {
-            AssetsManager am = new()
-            {
-                updateAfterLoad = false,
-                useTemplateFieldCache = true
-            };
-            if (!File.Exists("classdata.tpk"))
-            {
-                return null;
-            }
-            am.LoadClassPackage("classdata.tpk");
-            return am;
+            updateAfterLoad = false,
+            useTemplateFieldCache = true
+        };
+        if (!File.Exists("classdata.tpk"))
+        {
+            return null;
         }
+
+        _ = am.LoadClassPackage("classdata.tpk");
+        return am;
     }
 }

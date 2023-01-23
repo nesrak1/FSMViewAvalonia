@@ -1,24 +1,20 @@
-﻿
 
-namespace FSMViewAvalonia2
+
+namespace FSMViewAvalonia2;
+
+public class App : Application
 {
-    public class App : Application
+    public static MainWindow mainWindow;
+    public override void Initialize() => AvaloniaXamlLoader.Load(this);
+
+    public override void OnFrameworkInitializationCompleted()
     {
-        public static MainWindow mainWindow;
-        public override void Initialize()
+        if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            AvaloniaXamlLoader.Load(this);
+            desktop.MainWindow = new MainWindow();
+            desktop.MainWindow.Show();
         }
 
-        public override void OnFrameworkInitializationCompleted()
-        {
-            if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
-            {
-                desktop.MainWindow = new MainWindow();
-                desktop.MainWindow.Show();
-            }
-
-            base.OnFrameworkInitializationCompleted();
-        }
+        base.OnFrameworkInitializationCompleted();
     }
 }

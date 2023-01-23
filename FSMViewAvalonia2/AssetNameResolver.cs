@@ -1,15 +1,14 @@
 ﻿
 
-namespace FSMViewAvalonia2
+namespace FSMViewAvalonia2;
+
+public class AssetNameResolver
 {
-    public class AssetNameResolver
+    internal AssetsManager am;
+    internal AssetsFileInstance inst;
+    public AssetNameResolver(AssetsManager am, AssetsFileInstance inst)
     {
-        internal AssetsManager am;
-        internal AssetsFileInstance inst;
-        public AssetNameResolver(AssetsManager am, AssetsFileInstance inst)
-        {
-            this.am = am;
-            this.inst = inst;
-        }
+        this.am = am;
+        this.inst = inst;
     }
 }
