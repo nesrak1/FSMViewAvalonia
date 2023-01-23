@@ -359,6 +359,7 @@ namespace FSMViewAvalonia2
                     PlaceTransitions(node, true);
                 }
                 fsmData.canvasControls.AddRange(graphCanvas.Children);
+				(stateList.Parent as ScrollViewer)!.ScrollToHome();
             }
             else
             {
@@ -373,6 +374,7 @@ namespace FSMViewAvalonia2
             {
                 eventList.Children.Add(CreateSidebarRowEvent(eventData.Name, eventData.Global));
             }
+			(eventList.Parent as ScrollViewer)!.ScrollToHome();
         }
 
         private async void LoadVariables()
@@ -389,6 +391,7 @@ namespace FSMViewAvalonia2
                     await CreateSidebarRow(value.Item1, value.Item2, variableList);
                 }
             }
+			(variableList.Parent as ScrollViewer)!.ScrollToHome();
         }
 
         private void StateSidebarData(FsmStateData stateData)
