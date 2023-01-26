@@ -1,4 +1,4 @@
-﻿using AssetsTools.NET;
+using AssetsTools.NET;
 using AssetsTools.NET.Extra;
 using Avalonia;
 using System;
@@ -33,7 +33,7 @@ namespace FSMViewAvalonia2
             //so here we read the template manually to see whether it exists and back up a bit if it doesn't
             string assemblyPath = Path.Combine(Path.GetDirectoryName(curFile.path), "Managed", "PlayMaker.dll");
             MonoDeserializer deserializer = new MonoDeserializer();
-            deserializer.Read("PlayMakerFSM", MonoDeserializer.GetAssemblyWithDependencies(assemblyPath), file.header.format);
+            deserializer.Read("PlayMakerFSM", MonoDeserializer.GetAssemblyWithDependencies(assemblyPath), new UnityVersion(file.typeTree.unityVersion));
             bool hasDataField = deserializer.children[0].children[0].name == "dataVersion";
             
             return GetFSMInfos(file, table, hasDataField);
@@ -246,6 +246,7 @@ namespace FSMViewAvalonia2
                 for (int j = startIndex; j < endIndex; j++)
                 {
                     string paramName = actionData.paramName[j];
+                    if (string.IsNullOrEmpty(paramName)) break;
                     object obj = ActionReader.GetFsmObject(actionData, j, dataVersion);
 
                     entry.Values.Add(new Tuple<string, object>(paramName, obj));
@@ -278,19 +279,19 @@ namespace FSMViewAvalonia2
             
             FsmVariableData enums = new() { Type = "Enums", Values = new List<Tuple<string, object>>() };
             varData.Add(enums);
-            for (int i = 0; i < enumVariables.Length; i++)
+            for (int i = 0; i < enumVariables.GetValue().AsArray().size; i++)
             {
                 string name = enumVariables.Get(i).Get("name").GetValue().AsString();
-                object value = enumVariabless.Get(i).Get("value").GetValue().AsFloat();
+                object value = enumVariables.Get(i).Get("value").GetValue().AsFloat();
                 enums.Values.Add(new Tuple<string, object>(name, value));
             }
 
             FsmVariableData arrays = new() { Type = "Arrays", Values = new List<Tuple<string, object>>() };
             varData.Add(arrays);
-            for (int i = 0; i < arrayVariables.Length; i++)
+            for (int i = 0; i < arrayVariables.GetValue().AsArray().size; i++)
             {
                 string name = arrayVariables.Get(i).Get("name").GetValue().AsString();
-                object value = arrayVariabless.Get(i).Get("value").GetValue().AsFloat();
+                object value = arrayVariables.Get(i).Get("value").GetValue().AsFloat();
                 arrays.Values.Add(new Tuple<string, object>(name, value));
             }
             
