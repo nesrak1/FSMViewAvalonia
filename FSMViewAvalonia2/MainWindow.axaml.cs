@@ -1,21 +1,9 @@
 using FSMViewAvalonia2.UEP;
 
 namespace FSMViewAvalonia2;
-public class MainWindow : Window
+public partial class MainWindow : Window
 {
     //controls
-    private readonly Canvas graphCanvas;
-    private readonly MenuItem fileOpen, openJson;
-    private readonly MenuItem openSceneList;
-    private readonly MenuItem openResources;
-    private readonly MenuItem openLast;
-    private readonly MenuItem closeTab;
-    private readonly MenuItem closeAllTab;
-    private TextBlock tipText;
-    private readonly StackPanel stateList;
-    private readonly StackPanel eventList;
-    private readonly StackPanel variableList;
-    private readonly TabControl fsmTabs;
     private readonly MatrixTransform mt;
 
     public static MainWindow instance;
@@ -34,10 +22,8 @@ public class MainWindow : Window
     {
         instance = this;
         InitializeComponent();
-#if DEBUG
-            this.AttachDevTools();
-#endif
         //generated items
+        
         graphCanvas = this.FindControl<Canvas>("graphCanvas");
         fileOpen = this.FindControl<MenuItem>("fileOpen");
         openJson = this.FindControl<MenuItem>("openJson");
@@ -51,6 +37,7 @@ public class MainWindow : Window
         eventList = this.FindControl<StackPanel>("eventList");
         variableList = this.FindControl<StackPanel>("variableList");
         fsmTabs = this.FindControl<TabControl>("fsmTabs");
+        
         mt = graphCanvas.RenderTransform as MatrixTransform;
         //generated events
         PointerPressed += MouseDownCanvas;
@@ -815,6 +802,4 @@ public class MainWindow : Window
     }
     private static Matrix CreateScaling(Matrix mat, double scaleX, double scaleY, double centerX, double centerY) => new Matrix(scaleX, 0.0, 0.0, scaleY, centerX - (scaleX * centerX), centerY - (scaleY * centerY)) * mat;
     #endregion
-
-    private void InitializeComponent() => AvaloniaXamlLoader.Load(this);
 }

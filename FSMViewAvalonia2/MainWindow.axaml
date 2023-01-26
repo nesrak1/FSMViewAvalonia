@@ -1,11 +1,11 @@
-﻿<Window xmlns="https://github.com/avaloniaui"
+<Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         Width="800" Height="600"
         x:Class="FSMViewAvalonia2.MainWindow"
-        Title="FSMView Avalonia [BETA]">
+        Title="FSMView Avalonia">
   <Window.Styles>
     <Style Selector="TabControl">
       <Setter Property="Background" Value="#F0F0F0"/>
@@ -103,6 +103,19 @@
               <StackPanel Name="variableList"/>
             </ScrollViewer>
           </Grid>
+        </TabItem>
+        <TabItem Header="Settings">
+            <Grid Background="#ffe5e5e5">
+                <ScrollViewer Margin="10">
+                    <StackPanel>
+                        <CheckBox x:Name="option_includeSharedassets">
+                            <TextBlock TextWrapping="Wrap">
+                                Include FSMs from other sharedassets that the scene depends on in '(sharedassets)'
+                            </TextBlock>
+                        </CheckBox>
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
         </TabItem>
       </TabControl>
     </Grid>

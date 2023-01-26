@@ -1,10 +1,8 @@
-﻿namespace FSMViewAvalonia2;
+namespace FSMViewAvalonia2;
 
-public class SceneSelectionDialog : Window
+public partial class SceneSelectionDialog : Window
 {
     public List<SceneInfo> AssetInfos { get; private set; }
-    public ListBox listBox;
-    public Button selectButton;
 
     public long selectedID = -1;
     public bool selectedLevel = true;
@@ -14,9 +12,6 @@ public class SceneSelectionDialog : Window
 #if DEBUG
             this.AttachDevTools();
 #endif
-        //generated items
-        listBox = this.FindControl<ListBox>("listBox");
-        selectButton = this.FindControl<Button>("selectButton");
         //generated events
         selectButton.Click += SelectButton_Click;
         listBox.DoubleTapped += SelectButton_Click;
@@ -47,8 +42,6 @@ public class SceneSelectionDialog : Window
 
         listBox.Items = AssetInfos;
     }
-
-    private void InitializeComponent() => AvaloniaXamlLoader.Load(this);
 
     private void SelectButton_Click(object sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
