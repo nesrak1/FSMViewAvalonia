@@ -1,3 +1,7 @@
+using System.Reactive;
+
+using Avalonia.Reactive;
+
 using FSMViewAvalonia2.UEP;
 
 namespace FSMViewAvalonia2;
@@ -22,21 +26,6 @@ public partial class MainWindow : Window
     {
         instance = this;
         InitializeComponent();
-        //generated items
-        
-        graphCanvas = this.FindControl<Canvas>("graphCanvas");
-        fileOpen = this.FindControl<MenuItem>("fileOpen");
-        openJson = this.FindControl<MenuItem>("openJson");
-        openSceneList = this.FindControl<MenuItem>("openSceneList");
-        openResources = this.FindControl<MenuItem>("openResources");
-        openLast = this.FindControl<MenuItem>("openLast");
-        closeTab = this.FindControl<MenuItem>("closeTab");
-        closeAllTab = this.FindControl<MenuItem>("closeAllTab");
-        tipText = this.FindControl<TextBlock>("tipText");
-        stateList = this.FindControl<StackPanel>("stateList");
-        eventList = this.FindControl<StackPanel>("eventList");
-        variableList = this.FindControl<StackPanel>("variableList");
-        fsmTabs = this.FindControl<TabControl>("fsmTabs");
         
         mt = graphCanvas.RenderTransform as MatrixTransform;
         //generated events
@@ -57,8 +46,13 @@ public partial class MainWindow : Window
         tabItems = new ObservableCollection<TabItem>();
         fsmTabs.Items = tabItems;
 
+        option_includeSharedassets.IsChecked = Config.config.option_includeSharedassets;
+        option_includeSharedassets.Checked += (_, _1) => Config.config.option_includeSharedassets = true;
+        option_includeSharedassets.Unchecked += (_, _1) => Config.config.option_includeSharedassets = false;
+
         App.mainWindow = this;
     }
+
 
     private async void FileOpen_Click(object sender, RoutedEventArgs e)
     {
@@ -454,7 +448,7 @@ public partial class MainWindow : Window
                     {
                         if (sb.Length != 0)
                         {
-                            _ = sb.Append(",");
+                            _ = sb.Append(',');
                         }
 
                         _ = sb.Append(v.Name);

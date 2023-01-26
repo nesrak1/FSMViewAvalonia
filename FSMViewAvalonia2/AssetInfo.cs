@@ -1,4 +1,4 @@
-﻿
+
 
 namespace FSMViewAvalonia2;
 
@@ -12,8 +12,22 @@ public class AssetInfo
     public string assetFile;
     public long fsmId;
     public long goId;
+    public bool loadAsDep;
+    public AssetsFileInstance assetFI;
     public DataProviderType providerType = DataProviderType.Assets;
-    public string Name => path + name;// + $" [G:{(goId > 0 ? goId.ToString() : "0")}][F:{fsmId}]";
+    public string Name
+    {
+        get
+        {
+            if(loadAsDep)
+            {
+                return "[LoadAsDep]" + path + name + " (" + Path.GetFileNameWithoutExtension(assetFile) + ")";
+            } else
+            {
+                return path + name;
+            }
+        }
+    }
     public enum DataProviderType
     {
         Assets, Json

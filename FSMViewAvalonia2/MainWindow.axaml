@@ -104,13 +104,13 @@
             </ScrollViewer>
           </Grid>
         </TabItem>
-        <TabItem Header="Settings">
+        <TabItem Header="Options">
             <Grid Background="#ffe5e5e5">
                 <ScrollViewer Margin="10">
                     <StackPanel>
                         <CheckBox x:Name="option_includeSharedassets">
                             <TextBlock TextWrapping="Wrap">
-                                Include FSMs from other sharedassets that the scene depends on in '(sharedassets)'
+                                Include all dependent shared assets in the scene
                             </TextBlock>
                         </CheckBox>
                     </StackPanel>
