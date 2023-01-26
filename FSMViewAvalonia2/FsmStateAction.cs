@@ -16,11 +16,6 @@ public class FsmStateAction : IActionScriptEntry
             actionName = actionName[(actionName.LastIndexOf(".") + 1)..];
         }
 
-        if(actionName == "ListenForUp")
-        {
-            Debugger.Break();
-        }
-
         int startIndex = actionData.actionStartIndex[index];
         int endIndex = index == actionData.actionNames.Count - 1 ? actionData.paramDataType.Count : actionData.actionStartIndex[index + 1];
 
