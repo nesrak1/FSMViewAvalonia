@@ -258,7 +258,7 @@ public partial class MainWindow : Window
 
         List<AssetInfo> assetInfos = fsmLoader.LoadAllFSMsFromFile(fileName);
         AssetInfo assetInfo = assetInfos.FirstOrDefault(x => x.assetFile == fileName && x.Name == fullname);
-        return assetInfo is null ? fallback && await LoadFsm(fileName, "") : LoadFsm(assetInfo);
+        return assetInfo is null ? fallback && await LoadFsm(fileName, fullname) : LoadFsm(assetInfo);
     }
 
     public bool LoadFsm(AssetInfo assetInfo, IDataProvider dataProvider = null)

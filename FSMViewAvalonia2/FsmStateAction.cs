@@ -1,3 +1,5 @@
+using System.Diagnostics;
+
 using FSMViewAvalonia2.UEP;
 
 namespace FSMViewAvalonia2;
@@ -14,12 +16,23 @@ public class FsmStateAction : IActionScriptEntry
             actionName = actionName[(actionName.LastIndexOf(".") + 1)..];
         }
 
+        if(actionName == "ListenForUp")
+        {
+            Debugger.Break();
+        }
+
         int startIndex = actionData.actionStartIndex[index];
         int endIndex = index == actionData.actionNames.Count - 1 ? actionData.paramDataType.Count : actionData.actionStartIndex[index + 1];
 
+        HashSet<string> parmaNames = new HashSet<string>();
         for (int j = startIndex; j < endIndex; j++)
         {
             string paramName = actionData.paramName[j];
+            if(string.IsNullOrEmpty(paramName))
+            {
+                break;
+            }
+
             object obj = ActionReader.GetFsmObject(actionData, ref j, dataVersion);
             FieldDefinition field = Type?.Fields?.FirstOrDefault(x => x.Name == paramName);
 
