@@ -277,7 +277,11 @@ public partial class MainWindow : Window
             }
         }
 
-        fsmData = loadedFsmDatas.FirstOrDefault(x => x.info.assetFile == assetInfo.assetFile && x.info.Name == assetInfo.Name);
+        fsmData = loadedFsmDatas.FirstOrDefault(x => x.info.assetFile == assetInfo.assetFile &&
+                                                        x.info.Name == assetInfo.Name &&
+                                                        x.info.providerType == assetInfo.providerType &&
+                                                        x.info.goId == assetInfo.goId &&
+                                                        x.info.fsmId == assetInfo.fsmId);
         if (fsmData == null)
         {
             fsmData = dataProvider == null ? fsmLoader.LoadFSMWithAssets(selectedId, assetInfo) : fsmLoader.LoadFSM(assetInfo, dataProvider);
