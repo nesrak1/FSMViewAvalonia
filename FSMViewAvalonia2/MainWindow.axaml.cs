@@ -543,8 +543,8 @@ public partial class MainWindow : Window
             {
                 if (!string.IsNullOrEmpty(@enum.enumName))
                 {
-                    TypeDefinition enumType = FSMLoader.mainAssembly.MainModule.AssemblyReferences
-                            .Select(x => FSMLoader.mainAssembly.MainModule.AssemblyResolver.Resolve(x).MainModule)
+                    TypeDefinition enumType = FSMLoader.mainAssembly.SafeResolveReferences()
+                            .Select(x => x.MainModule)
                             .Append(FSMLoader.mainAssembly.MainModule)
                             .Select(
                                 x => x.GetType(@enum.enumName.Replace('+', '/'))
