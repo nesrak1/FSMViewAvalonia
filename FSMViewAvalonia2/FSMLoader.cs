@@ -211,6 +211,7 @@ public class FSMLoader
         )
     {
         AssetTypeTemplateField t_pmBS = null;
+        AssetTypeTemplateField t_fsmTemplateBS = null;
 
         AssetsFile file = assetsFile.file;
         var assetInfos = new List<AssetInfo>();
@@ -269,31 +270,21 @@ public class FSMLoader
                     assetFI = assetsFile,
                     loadAsDep = loadAsDep
                 });
-            } else if (m_ClassName == "FsmTemplate" && false) //TODO
+            } else if (m_ClassName == "FsmTemplate") //TODO
             {
-                string m_MonoName = monoBf.Get("m_Name").AsString;
-                AssetsFileReader reader = file.Reader;
-
-                long oldPos = reader.BaseStream.Position;
-                reader.BaseStream.Position = info.ByteStart;
-                reader.BaseStream.Position += 28;
-
-                // m_Name
-                _ = reader.ReadCountStringInt32();
-                reader.Align();
-                // category
-                _ = reader.ReadCountStringInt32();
-                reader.Align();
-
-                reader.BaseStream.Position += 16;
-
-
-                string fsmName = reader.ReadCountStringInt32();
-                reader.BaseStream.Position = oldPos;
+                var t_baseFields = t_fsmTemplateBS ??= FSMAssetHelper.mono.GetTemplateField(new()
+                {
+                    Children = t_monoBF.Children.ToArray().ToList()
+                }, "PlayMaker", "",
+                    "FsmTemplate", new(file.Metadata.UnityVersion));
+                var pmBf = t_baseFields.MakeValue(file.Reader, info.AbsoluteByteStart);
+                string m_MonoName = pmBf.Get("m_Name").AsString;
+                string fsmName = pmBf["fsm"]["name"].AsString;
 
                 assetInfos.Add(new AssetInfoUnity()
                 {
                     id = info.PathId,
+                    data = pmBf,
                     size = info.ByteSize,
                     name = m_MonoName + "-" + fsmName + " (template)",
                     path = "",
