@@ -1,4 +1,4 @@
-﻿namespace FSMViewAvalonia2.Data;
+namespace FSMViewAvalonia2.Data;
 public class NamedAssetPPtr : AssetPPtr, INamedAssetProvider
 {
     public string file { get; set; }
@@ -24,7 +24,7 @@ public class NamedAssetPPtr : AssetPPtr, INamedAssetProvider
     }
 
 
-    bool INamedAssetProvider.isNull => pathID == 0;
+    bool INamedAssetProvider.isNull => PathId == 0;
 
 
     public override string ToString() => file == string.Empty ? name : $"{name} ({file})";

@@ -9,7 +9,7 @@
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="AssetsTools.NET" Version="2.0.12">
+    <PackageReference Include="AssetsTools.NET" Version="3.0.0-preview2">
       <NoWarn></NoWarn>
     </PackageReference>
     <PackageReference Include="Avalonia" Version="0.10.18" />

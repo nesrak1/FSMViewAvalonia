@@ -55,8 +55,8 @@ public class FsmStateAction : IActionScriptEntry
                 {
                     var fi = obj as FsmInt;
                     int layer = fi?.value ?? (int) obj;
-                    AssetTypeInstance tagManager = GlobalGameManagers.instance.GetAsset(AssetClassID.TagManager);
-                    string curLayer = tagManager.GetBaseField().Get("layers").Get(0).Get(layer).value.AsString();
+                    AssetTypeValueField tagManager = GlobalGameManagers.instance.GetAsset(AssetClassID.TagManager);
+                    string curLayer = tagManager.Get("layers").Get(0).Get(layer).AsString;
 
                     obj = $"{obj} ({curLayer})";
                 }
@@ -123,7 +123,7 @@ public class FsmStateAction : IActionScriptEntry
 
         valueContainer.Children.Add(header);
         #region Inspect
-        if (UEPConnect.UEPConnected && State.fsm.info.providerType == AssetInfo.DataProviderType.Json)
+        if (UEPConnect.UEPConnected && State.fsm.info.ProviderType == AssetInfo.DataProviderType.Json)
         {
             Button inspect_btn = new()
             {

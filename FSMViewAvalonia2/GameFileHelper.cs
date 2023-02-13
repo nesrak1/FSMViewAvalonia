@@ -108,7 +108,12 @@ public static class GameFileHelper
         return null;
     }
 
-    public static string FindGameFilePath(string file) => FindGameFilePath(FindHollowKnightPath(null).Result, file);
+    public static string FindGameFilePath(string file)
+    {
+        Task<string> task = FindHollowKnightPath(null);
+        task.Wait();
+        return FindGameFilePath(task.Result, file);
+    }
     public static string FindGameFilePath(string hkRootPath, string file)
     {
         string[] pathTests = new string[]
@@ -122,7 +127,7 @@ public static class GameFileHelper
         {
             string dataPath = Path.Combine(hkRootPath, pathTest);
             string filePath = Path.Combine(dataPath, file);
-            if (File.Exists(filePath))
+            if (File.Exists(filePath) || Directory.Exists(filePath))
             {
                 return filePath;
             }

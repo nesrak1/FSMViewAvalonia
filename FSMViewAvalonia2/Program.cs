@@ -15,6 +15,7 @@ internal class Program
     // yet and stuff might break.
     public static void Main(string[] args)
     {
+        //MessageBoxW(IntPtr.Zero, string.Join(",", Encoding.ASCII.GetBytes("CLDB").Select(x => ((int)x).ToString())), "Exception!", 0x10);
     RETRY:
         if (!mutex.WaitOne(1))
         {

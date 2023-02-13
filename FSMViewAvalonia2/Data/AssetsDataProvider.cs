@@ -1,4 +1,4 @@
-﻿namespace FSMViewAvalonia2.Data;
+namespace FSMViewAvalonia2.Data;
 public class AssetsDataProvider : IDataProvider
 {
     private readonly AssetTypeValueField _provider;
@@ -15,98 +15,72 @@ public class AssetsDataProvider : IDataProvider
 
     private NamedAssetPPtr GetNamedPtr(AssetPPtr pptr)
     {
-        if (pptr.pathID == 0)
+        if (pptr.PathId == 0)
         {
-            return new NamedAssetPPtr(pptr.fileID, pptr.pathID, string.Empty, string.Empty);
+            return new NamedAssetPPtr(pptr.FileId, pptr.PathId, string.Empty, string.Empty);
         }
 
-        AssetExternal extObj = am.GetExtAsset(inst, pptr.fileID, pptr.pathID);
+        AssetExternal extObj = am.GetExtAsset(inst, pptr.FileId, pptr.PathId);
         StringBuilder nameBuilder = new();
-        _ = nameBuilder.Append(GetAssetNameFastModded(extObj.file.file, am.classFile, extObj.info, out bool isGameObject));
-        if (isGameObject && extObj.instance != null)
+        _ = nameBuilder.Append(GetAssetNameFastModded(extObj.info, extObj.baseField, out bool isGameObject));
+        if (isGameObject && extObj.baseField != null)
         {
-            AssetTypeInstance c_Transform = am.GetExtAsset(extObj.file, extObj.instance.GetBaseField().Get("m_Component").Get(0).Get(0).Get(0)).instance;
+            AssetTypeValueField c_Transform = am.GetExtAsset(extObj.file, extObj.baseField.Get("m_Component").Get(0).Get(0).Get(0)).baseField;
             while (true)
             {
-                AssetTypeValueField father = c_Transform.GetBaseField().children.FirstOrDefault(x => x.GetName() == "m_Father");
+                AssetTypeValueField father = c_Transform.Children.FirstOrDefault(x => x.FieldName == "m_Father");
                 if (father == null)
                 {
                     break;
                 }
 
-                c_Transform = am.GetExtAsset(extObj.file, father).instance;
+                c_Transform = am.GetExtAsset(extObj.file, father).baseField;
                 if (c_Transform == null)
                 {
                     break;
                 }
 
-                AssetTypeInstance m_GameObject = am.GetExtAsset(extObj.file, c_Transform.GetBaseField().Get("m_GameObject")).instance;
-                string name = m_GameObject.GetBaseField().Get("m_Name").GetValue().AsString();
+                AssetTypeValueField m_GameObject = am.GetExtAsset(extObj.file, c_Transform.Get("m_GameObject")).baseField;
+                string name = m_GameObject.Get("m_Name").AsString;
                 _ = nameBuilder.Insert(0, name + "/");
             }
         }
 
         string file = extObj.file.name;
-        return new NamedAssetPPtr(pptr.fileID, pptr.pathID, nameBuilder.ToString(), file);
+        return new NamedAssetPPtr(pptr.FileId, pptr.PathId, nameBuilder.ToString(), file);
     }
 
-    private static string GetAssetNameFastModded(AssetsFile file, ClassDatabaseFile cldb, AssetFileInfoEx info,
+    private static string GetAssetNameFastModded(AssetFileInfo info, AssetTypeValueField fields,
         out bool isGameObject)
     {
-        ClassDatabaseType type = AssetHelper.FindAssetClassByID(cldb, info.curFileType);
-        AssetsFileReader reader = file.reader;
         isGameObject = false;
-        if (type.fields.Count == 0)
+        AssetTypeValueField name = fields["m_Name"];
+        if (name == null)
         {
-            return type.name.GetString(cldb);
+            return $"pathId_{info.PathId}";
         }
-
-        if (type.fields.Count > 1 && type.fields[1].fieldName.GetString(cldb) == "m_Name")
-        {
-            reader.Position = info.absoluteFilePos;
-            return reader.ReadCountStringInt32();
-        } else if (type.name.GetString(cldb) == "GameObject")
-        {
-            isGameObject = true;
-            reader.Position = info.absoluteFilePos;
-            int size = reader.ReadInt32();
-            int componentSize = file.header.format > 0x10 ? 0xC : 0x10;
-            reader.Position += size * componentSize;
-            reader.Position += 4;
-            return reader.ReadCountStringInt32();
-        } else if (type.name.GetString(cldb) == "MonoBehaviour")
-        {
-            reader.Position = info.absoluteFilePos;
-            reader.Position += 28;
-            string name = reader.ReadCountStringInt32();
-            if (name != "")
-            {
-                return name;
-            }
-        }
-
-        return $"pathId_{info.index}";
+        return name.AsString;
     }
     private INamedAssetProvider ReadNamedAssetPPtr(AssetTypeValueField field)
     {
-        int fileId = field.Get("m_FileID").GetValue().AsInt();
-        long pathId = field.Get("m_PathID").GetValue().AsInt64();
+        int fileId = field.Get("m_FileID").AsInt;
+        long pathId = field.Get("m_PathID").AsLong;
         return GetNamedPtr(new AssetPPtr(fileId, pathId));
     }
     private T GetValue<T>(AssetTypeValueField field)
     {
-        if (field.IsDummy())
+        if (field.IsDummy)
         {
             return default;
         }
 
-        AssetTypeValue val = field.GetValue();
+        AssetTypeValue val = field.Value;
         if (typeof(T) == typeof(IDataProvider[]))
         {
-            var providers = new IDataProvider[field.childrenCount];
+            var providers = new IDataProvider[field.Children.Count];
             for (int i = 0; i < providers.Length; i++)
             {
-                providers[i] = field.children[i].IsDummy() ? null : new AssetsDataProvider(field.children[i], _resovler);
+                providers[i] = field.Children[i].IsDummy ? null : new AssetsDataProvider(field.Children[i], _resovler);
             }
 
             return (T) (object) providers;
@@ -122,25 +96,25 @@ public class AssetsDataProvider : IDataProvider
             return (T) ReadNamedAssetPPtr(field);
         }
 
-        object r = val.type switch
+        object r = val.ValueType switch
         {
-            EnumValueTypes.Bool => val.value.asBool,
-            EnumValueTypes.ByteArray => val.value.asByteArray,
-            EnumValueTypes.Double => val.value.asDouble,
-            EnumValueTypes.Float => val.value.asFloat,
-            EnumValueTypes.Int16 => val.value.asInt16,
-            EnumValueTypes.Int32 => val.value.asInt32,
-            EnumValueTypes.Int64 => val.value.asInt64,
-            EnumValueTypes.Int8 => val.value.asInt8,
-            EnumValueTypes.None => null,
-            EnumValueTypes.String => val.AsString(),
-            EnumValueTypes.UInt16 => val.value.asUInt16,
-            EnumValueTypes.UInt32 => val.value.asUInt32,
-            EnumValueTypes.UInt64 => val.value.asUInt64,
-            EnumValueTypes.UInt8 => val.value.asUInt8,
+            AssetValueType.Bool => val.AsBool,
+            AssetValueType.ByteArray => val.AsByteArray,
+            AssetValueType.Double => val.AsDouble,
+            AssetValueType.Float => val.AsFloat,
+            AssetValueType.Int16 => val.AsShort,
+            AssetValueType.Int32 => val.AsInt,
+            AssetValueType.Int64 => val.AsLong,
+            AssetValueType.Int8 => val.AsByte,
+            AssetValueType.None => null,
+            AssetValueType.String => val.AsString,
+            AssetValueType.UInt16 => val.AsUShort,
+            AssetValueType.UInt32 => val.AsUInt,
+            AssetValueType.UInt64 => val.AsULong,
+            AssetValueType.UInt8 => val.AsByte,
             _ => null
         };
-        return val.type != EnumValueTypes.String && r is IConvertible ? (T) Convert.ChangeType(r, typeof(T)) : (T) r;
+        return val.ValueType != AssetValueType.String && r is IConvertible ? (T) Convert.ChangeType(r, typeof(T)) : (T) r;
     }
 
     T IDataProvider.As<T>() => GetValue<T>(_provider);

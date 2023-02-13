@@ -107,8 +107,6 @@ public partial class MainWindow : Window
         var assetInfo = new AssetInfo()
         {
             id = jsonProvider.Get<int>("fsmId"),
-            providerType = AssetInfo.DataProviderType.Json,
-            size = 999,
             name = jsonProvider.Get<string>("goName"),
             nameBase = jsonProvider.Get<string>("goName"),
             assetFile = fileName ?? Guid.NewGuid().ToString(),
@@ -279,12 +277,21 @@ public partial class MainWindow : Window
 
         fsmData = loadedFsmDatas.FirstOrDefault(x => x.info.assetFile == assetInfo.assetFile &&
                                                         x.info.Name == assetInfo.Name &&
-                                                        x.info.providerType == assetInfo.providerType &&
-                                                        x.info.goId == assetInfo.goId &&
-                                                        x.info.fsmId == assetInfo.fsmId);
+                                                        x.info.ProviderType == assetInfo.ProviderType &&
+                                                        (
+                                                        x.info is not AssetInfoUnity xaiu ||
+                                                        assetInfo is not AssetInfoUnity aiu ||
+                                                        xaiu.goId == aiu.goId &&
+                                                        xaiu.fsmId == aiu.fsmId
+                                                        )
+                                                        );
         if (fsmData == null)
         {
-            fsmData = dataProvider == null ? fsmLoader.LoadFSMWithAssets(selectedId, assetInfo) : fsmLoader.LoadFSM(assetInfo, dataProvider);
+            fsmData = dataProvider == null ?
+                (assetInfo is AssetInfoUnity uinfo ?
+                    fsmLoader.LoadFSMWithAssets(selectedId, uinfo) :
+                    throw new NotSupportedException())
+                : fsmLoader.LoadFSM(assetInfo, dataProvider);
             loadedFsmDatas.Add(fsmData);
             fsmData.tabIndex = tabItems.Count;
 

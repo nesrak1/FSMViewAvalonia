@@ -11,9 +11,9 @@ internal class GlobalGameManagers
         instance = this;
         string ggmPath = GameFileHelper.FindGameFilePath("globalgamemanagers");
         file = am.LoadAssetsFile(ggmPath, false);
-        _ = am.LoadClassDatabaseFromPackage(file.file.typeTree.unityVersion);
+        //_ = am.LoadClassDatabaseFromPackage(file.file.typeTree.unityVersion);
         this.am = am;
     }
 
-    public AssetTypeInstance GetAsset(AssetClassID id) => am.GetTypeInstance(file, file.table.GetAssetsOfType((int) id)[0]);
+    public AssetTypeValueField GetAsset(AssetClassID id) => am.GetBaseField(file, file.file.GetAssetsOfType((int) id)[0]);
 }
