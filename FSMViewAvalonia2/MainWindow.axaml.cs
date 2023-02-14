@@ -16,6 +16,7 @@ public partial class MainWindow : Window
     public FSMLoader fsmLoader;
     private FsmDataInstance fsmData;
     private string lastFileName;
+    private bool lastIsBundle;
     private readonly List<FsmDataInstance> loadedFsmDatas;
     private bool addingTabs;
 
@@ -40,6 +41,7 @@ public partial class MainWindow : Window
         closeAllTab.Click += CloseAllTab_Click;
         openResources.Click += OpenResources_Click;
         openSceneList.Click += OpenSceneList_Click;
+        openBundle.Click += OpenBundle_Click;
         fsmTabs.SelectionChanged += FsmTabs_SelectionChanged;
 
         loadedFsmDatas = new List<FsmDataInstance>();
@@ -53,6 +55,29 @@ public partial class MainWindow : Window
         App.mainWindow = this;
     }
 
+    private async void OpenBundle_Click(object sender, RoutedEventArgs e)
+    {
+        OpenFileDialog openFileDialog = new();
+        string[] result = await openFileDialog.ShowAsync(this);
+
+        if (result == null || result.Length == 0)
+        {
+            return;
+        }
+
+        if (tipText != null)
+        {
+            _ = graphCanvas.Children.Remove(tipText);
+            tipText = null;
+        }
+
+        string fileName = result[0];
+        lastFileName = fileName;
+        lastIsBundle = true;
+        openLast.IsEnabled = true;
+
+        _ = await LoadFsm(fileName, true);
+    }
 
     private async void FileOpen_Click(object sender, RoutedEventArgs e)
     {
@@ -72,9 +97,10 @@ public partial class MainWindow : Window
 
         string fileName = result[0];
         lastFileName = fileName;
+        lastIsBundle = false;
         openLast.IsEnabled = true;
 
-        _ = await LoadFsm(fileName);
+        _ = await LoadFsm(fileName, false);
     }
 
     private async void OpenJson_Click(object sender, RoutedEventArgs e)
@@ -94,8 +120,6 @@ public partial class MainWindow : Window
         }
 
         string fileName = result[0];
-        lastFileName = fileName;
-        openLast.IsEnabled = true;
         string data = File.ReadAllText(fileName);
         LoadJsonFSM(data, fileName);
         //System.Diagnostics.Process.Start(Environment.ProcessPath, "-Json \"" + fileName + "\"");
@@ -115,7 +139,7 @@ public partial class MainWindow : Window
         _ = LoadFsm(assetInfo, jsonProvider);
     }
 
-    private async void OpenLast_Click(object sender, RoutedEventArgs e) => await LoadFsm(lastFileName);
+    private async void OpenLast_Click(object sender, RoutedEventArgs e) => await LoadFsm(lastFileName, lastIsBundle);
 
     private void CloseTab_Click(object sender, RoutedEventArgs e)
     {
@@ -153,7 +177,7 @@ public partial class MainWindow : Window
 
         string resourcesPath = GameFileHelper.FindGameFilePath(gamePath, "resources.assets");
 
-        _ = await LoadFsm(resourcesPath);
+        _ = await LoadFsm(resourcesPath, false);
     }
 
     private async void OpenSceneList_Click(object sender, RoutedEventArgs e)
@@ -190,7 +214,7 @@ public partial class MainWindow : Window
         lastFileName = fullAssetsPath;
         openLast.IsEnabled = true;
 
-        _ = await LoadFsm(fullAssetsPath);
+        _ = await LoadFsm(fullAssetsPath, false);
     }
 
     private void FsmTabs_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -231,11 +255,12 @@ public partial class MainWindow : Window
         }
     }
 
-    public async Task<bool> LoadFsm(string fileName, string defaultSearch = "")
+    public async Task<bool> LoadFsm(string fileName, bool isBundle, string defaultSearch = "")
     {
         await CreateAssetsManagerAndLoader();
 
-        List<AssetInfo> assetInfos = fsmLoader.LoadAllFSMsFromFile(fileName);
+        List<AssetInfo> assetInfos = isBundle ? fsmLoader.LoadAllFSMsFromBundle(fileName):
+            fsmLoader.LoadAllFSMsFromFile(fileName);
         FSMSelectionDialog selector = new(assetInfos, System.IO.Path.GetFileName(fileName));
         if (!string.IsNullOrEmpty(defaultSearch))
         {
@@ -256,7 +281,7 @@ public partial class MainWindow : Window
 
         List<AssetInfo> assetInfos = fsmLoader.LoadAllFSMsFromFile(fileName);
         AssetInfo assetInfo = assetInfos.FirstOrDefault(x => x.assetFile == fileName && x.Name == fullname);
-        return assetInfo is null ? fallback && await LoadFsm(fileName, fullname) : LoadFsm(assetInfo);
+        return assetInfo is null ? fallback && await LoadFsm(fileName, false, fullname) : LoadFsm(assetInfo);
     }
 
     public bool LoadFsm(AssetInfo assetInfo, IDataProvider dataProvider = null)
@@ -578,7 +603,7 @@ public partial class MainWindow : Window
                 };
                 marginRight = 55;
                 btn.Content = "Search";
-                btn.Click += async (sender, ev) => await LoadFsm(assetPath, pptr.name);
+                btn.Click += async (sender, ev) => await LoadFsm(assetPath, false, pptr.name);
                 valueContainer.Children.Add(btn);
             }
         }

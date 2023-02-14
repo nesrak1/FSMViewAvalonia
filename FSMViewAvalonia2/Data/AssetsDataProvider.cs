@@ -59,6 +59,7 @@ public class AssetsDataProvider : IDataProvider
         {
             return $"pathId_{info.PathId}";
         }
+
         return name.AsString;
     }
     private INamedAssetProvider ReadNamedAssetPPtr(AssetTypeValueField field)
