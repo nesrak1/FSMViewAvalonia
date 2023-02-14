@@ -114,6 +114,11 @@
                                 Include all dependent shared assets in the scene
                             </TextBlock>
                         </CheckBox>
+                    <CheckBox x:Name="option_extraLAMZABOnTempFile">
+                            <TextBlock TextWrapping="Wrap">
+                                Extract the LAMZ compressed AssetBundle to a temporary file
+                            </TextBlock>
+                        </CheckBox>
                     </StackPanel>
                 </ScrollViewer>
             </Grid>

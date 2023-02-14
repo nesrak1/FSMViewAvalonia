@@ -16,8 +16,18 @@ public class FSMLoader
     {
         BundleFileInstance file = am.LoadBundleFile(path, true);
         _ = am.LoadClassDatabaseFromPackage(file.file.Header.EngineVersion);
-        List<string> a = file.file.GetAllFileNames();
-
+        if (file.file.DataIsCompressed)
+        {
+            Stream stream = Config.config.option_extraLAMZABOnTempFile ?
+                new FileStream(Path.GetTempFileName(), FileMode.OpenOrCreate, FileAccess.ReadWrite,
+                FileShare.None, 4096, FileOptions.DeleteOnClose) :
+                new MemoryStream();
+            file.file.Unpack(new(stream));
+            file.file.Close();
+            stream.Position = 0;
+            file.file = new();
+            file.file.Read(new(stream));
+        }
         return file.file.GetAllFileNames()
             .Select(x =>
             {

@@ -27,6 +27,7 @@ internal class Config
 
     private static void CurrentDomain_ProcessExit(object sender, EventArgs e) => File.WriteAllText(ConfigPath, JsonConvert.SerializeObject(config, Formatting.Indented));
     public bool option_includeSharedassets = false;
+    public bool option_extraLAMZABOnTempFile = false;
     public string hkPath = "";
     public string SpyPath = "";
 }
