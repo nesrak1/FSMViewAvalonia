@@ -52,10 +52,6 @@ public partial class MainWindow : Window
         option_includeSharedassets.Checked += (_, _1) => Config.config.option_includeSharedassets = true;
         option_includeSharedassets.Unchecked += (_, _1) => Config.config.option_includeSharedassets = false;
 
-        option_extraLAMZABOnTempFile.IsChecked = Config.config.option_extraLAMZABOnTempFile;
-        option_extraLAMZABOnTempFile.Checked += (_, _1) => Config.config.option_extraLAMZABOnTempFile = true;
-        option_extraLAMZABOnTempFile.Unchecked += (_, _1) => Config.config.option_extraLAMZABOnTempFile = false;
-
         App.mainWindow = this;
     }
 
@@ -310,8 +306,8 @@ public partial class MainWindow : Window
                                                         (
                                                         x.info is not AssetInfoUnity xaiu ||
                                                         assetInfo is not AssetInfoUnity aiu ||
-                                                        xaiu.goId == aiu.goId &&
-                                                        xaiu.fsmId == aiu.fsmId
+                                                        (xaiu.goId == aiu.goId &&
+                                                        xaiu.fsmId == aiu.fsmId)
                                                         )
                                                         );
         if (fsmData == null)
