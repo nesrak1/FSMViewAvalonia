@@ -320,7 +320,7 @@ public partial class MainWindow : Window
                 (assetInfo is AssetInfoUnity uinfo ?
                     fsmLoader.LoadFSMWithAssets(selectedId, uinfo) :
                     throw new NotSupportedException())
-                : fsmLoader.LoadFSM(assetInfo, dataProvider);
+                : FSMLoader.LoadFSM(assetInfo, dataProvider);
             loadedFsmDatas.Add(fsmData);
             fsmData.tabIndex = tabItems.Count;
 

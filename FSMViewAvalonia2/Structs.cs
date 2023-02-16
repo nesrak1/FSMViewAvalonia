@@ -1,4 +1,4 @@
-﻿
+
 
 using System.Collections;
 
@@ -172,10 +172,10 @@ public class ActionData
     {
         actionNames = StructUtil.ReadAssetList<string>(field.Get<IDataProvider[]>("actionNames"));
         customNames = StructUtil.ReadAssetList<string>(field.Get<IDataProvider[]>("customNames"));
-        actionEnabled = StructUtil.ReadAssetList<bool>(field.Get<IDataProvider[]>("actionEnabled"));
-        actionIsOpen = StructUtil.ReadAssetList<bool>(field.Get<IDataProvider[]>("actionIsOpen"));
-        actionStartIndex = StructUtil.ReadAssetList<int>(field.Get<IDataProvider[]>("actionStartIndex"));
-        actionHashCodes = StructUtil.ReadAssetList<int>(field.Get<IDataProvider[]>("actionHashCodes"));
+        actionEnabled = field.Get<bool[]>("actionEnabled").ToList();
+        actionIsOpen = field.Get<bool[]>("actionIsOpen").ToList();
+        actionStartIndex = field.Get<int[]>("actionStartIndex").ToList();
+        actionHashCodes = field.Get<int[]>("actionHashCodes").ToList();
         unityObjectParams = StructUtil.ReadAssetList<INamedAssetProvider>(field.Get<IDataProvider[]>("unityObjectParams"));
         fsmGameObjectParams = StructUtil.ReadAssetList<FsmGameObject>(field.Get<IDataProvider[]>("fsmGameObjectParams"));
         fsmOwnerDefaultParams = StructUtil.ReadAssetList<FsmOwnerDefault>(field.Get<IDataProvider[]>("fsmOwnerDefaultParams"));
@@ -199,8 +199,8 @@ public class ActionData
         fsmRectParams = StructUtil.ReadAssetList<FsmRect>(field.Get<IDataProvider[]>("fsmRectParams"));
         fsmQuaternionParams = StructUtil.ReadAssetList<FsmQuaternion>(field.Get<IDataProvider[]>("fsmQuaternionParams"));
         stringParams = StructUtil.ReadAssetList<string>(field.Get<IDataProvider[]>("stringParams"));
-        byteData = StructUtil.ReadAssetList<byte>(field.Get<IDataProvider[]>("byteData"));
-        arrayParamSizes = StructUtil.ReadAssetList<int>(field.Get<IDataProvider[]>("arrayParamSizes"));
+        byteData = field.Get<byte[]>("byteData").ToList();
+        arrayParamSizes = field.Get<int[]>("arrayParamSizes").ToList();
         arrayParamTypes = StructUtil.ReadAssetList<string>(field.Get<IDataProvider[]>("arrayParamTypes"));
         customTypeSizes = StructUtil.ReadAssetList<int>(field.Get<IDataProvider[]>("customTypeSizes"));
         customTypeNames = StructUtil.ReadAssetList<string>(field.Get<IDataProvider[]>("customTypeNames"));

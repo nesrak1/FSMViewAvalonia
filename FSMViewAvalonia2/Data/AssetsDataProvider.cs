@@ -1,3 +1,9 @@
+using System;
+using System.Collections;
+using System.Runtime.CompilerServices;
+
+using AssetsTools.NET;
+
 namespace FSMViewAvalonia2.Data;
 public class AssetsDataProvider : IDataProvider
 {
@@ -55,12 +61,7 @@ public class AssetsDataProvider : IDataProvider
     {
         isGameObject = false;
         AssetTypeValueField name = fields["m_Name"];
-        if (name == null)
-        {
-            return $"pathId_{info.PathId}";
-        }
-
-        return name.AsString;
+        return name == null ? $"pathId_{info.PathId}" : name.AsString;
     }
     private INamedAssetProvider ReadNamedAssetPPtr(AssetTypeValueField field)
     {
@@ -68,7 +69,8 @@ public class AssetsDataProvider : IDataProvider
         long pathId = field.Get("m_PathID").AsLong;
         return GetNamedPtr(new AssetPPtr(fileId, pathId));
     }
-    private T GetValue<T>(AssetTypeValueField field)
+    private T GetValue<T>(AssetTypeValueField field) => (T) GetValue(typeof(T), field);
+    private object GetValue(Type resultType, AssetTypeValueField field)
     {
         if (field.IsDummy)
         {
@@ -76,30 +78,100 @@ public class AssetsDataProvider : IDataProvider
         }
 
         AssetTypeValue val = field.Value;
-        if (typeof(T) == typeof(IDataProvider[]))
+        if (resultType.IsArray)
         {
-            var providers = new IDataProvider[field.Children.Count];
-            for (int i = 0; i < providers.Length; i++)
+            if (field.Children.Count == 1 &&
+                field.Children[0].FieldName == "Array" &&
+                field.Value == null)
             {
-                providers[i] = field.Children[i].IsDummy ? null : new AssetsDataProvider(field.Children[i], _resovler);
+                field = field.Children[0];
+                val = field.Value;
+            }
+            
+
+            if (resultType == typeof(byte[]))
+            {
+                return field.AsByteArray;
             }
 
-            return (T) (object) providers;
+            Type elType = resultType.GetElementType();
+
+            
+
+            if (resultType == typeof(IDataProvider[]))
+            {
+                var providers = new IDataProvider[field.Children.Count];
+                for (int i = 0; i < providers.Length; i++)
+                {
+                    providers[i] = field.Children[i].IsDummy ? null : new AssetsDataProvider(field.Children[i], _resovler);
+                }
+
+                return providers;
+            }
+
+            if (val.ValueType == AssetValueType.ByteArray
+                && elType.IsAssignableTo(typeof(IConvertible))
+                && elType.IsPrimitive
+                && elType.IsValueType)
+            {
+                using (var ms = new MemoryStream(val.AsByteArray))
+                {
+                    var result = new List<object>();
+                    var reader = new BinaryReader(ms);
+
+                    while(ms.Position < ms.Length)
+                    {
+                        if (elType == typeof(bool))
+                        {
+                            result.Add(reader.ReadByte());
+                        } else if (elType == typeof(short))
+                        {
+                            result.Add(reader.ReadInt16());
+                        } else if (elType == typeof(int))
+                        {
+                            result.Add(reader.ReadInt32());
+                        } else if (elType == typeof(long))
+                        {
+                            result.Add(reader.ReadInt64());
+                        } else if (elType == typeof(float))
+                        {
+                            result.Add(reader.ReadSingle());
+                        } else if (elType == typeof(double))
+                        {
+                            result.Add(reader.ReadDouble());
+                        } else
+                        {
+                            throw new NotSupportedException();
+                        }
+                    }
+
+                    return result.Select(x => ((IConvertible)x).ToType(elType, null))
+                        .ToArray()
+                        .Convert(elType);
+                }
+            }
+
+            return GetValue<IDataProvider[]>(field)
+                .Cast<AssetsDataProvider>()
+                .Select(x => x.GetValue(elType, x._provider))
+                .ToArray()
+                .Convert(elType);
         }
 
-        if (typeof(T) == typeof(IDataProvider))
+        if (resultType == typeof(IDataProvider))
         {
-            return (T) (object) new AssetsDataProvider(field, _resovler);
+            return new AssetsDataProvider(field, _resovler);
         }
 
-        if (typeof(T) == typeof(INamedAssetProvider))
+        if (resultType == typeof(INamedAssetProvider))
         {
-            return (T) ReadNamedAssetPPtr(field);
+            return ReadNamedAssetPPtr(field);
         }
 
         object r = val.ValueType switch
         {
             AssetValueType.Bool => val.AsBool,
+            AssetValueType.Array=> val.AsObject,
             AssetValueType.ByteArray => val.AsByteArray,
             AssetValueType.Double => val.AsDouble,
             AssetValueType.Float => val.AsFloat,
@@ -115,7 +187,7 @@ public class AssetsDataProvider : IDataProvider
             AssetValueType.UInt8 => val.AsByte,
             _ => null
         };
-        return val.ValueType != AssetValueType.String && r is IConvertible ? (T) Convert.ChangeType(r, typeof(T)) : (T) r;
+        return val.ValueType != AssetValueType.String && r is IConvertible ? Convert.ChangeType(r, resultType) : r;
     }
 
     T IDataProvider.As<T>() => GetValue<T>(_provider);

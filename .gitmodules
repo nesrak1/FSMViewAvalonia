@@ -1,0 +1,3 @@
+[submodule "AssetsTools.NET"]
+	path = AssetsTools.NET
+	url = https://github.com/HKLab/AssetsTools.NET.git
