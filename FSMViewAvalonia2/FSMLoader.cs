@@ -1,4 +1,7 @@
+using System.Diagnostics;
+
 using FSMViewAvalonia2.Assets;
+using FSMViewAvalonia2.Assets.Bundle;
 
 using Path = System.IO.Path;
 
@@ -18,6 +21,31 @@ public class FSMLoader
     {
         BundleFileInstance file = am.LoadBundleFile(path, true);
         _ = am.LoadClassDatabaseFromPackage(file.file.Header.EngineVersion);
+        if(file.file.DataIsCompressed)
+        {
+            var originFile = file.file;
+            var context = new LZ4PackContext
+            {
+                Length = file.file.Header.FileStreamHeader.DecompressedSize
+            };
+            _ = Task.Run(() =>
+            {
+                var writer = new LZ4PackStreamWriter(context);
+                try
+                {
+                    originFile.Unpack(new(writer));
+                } catch(Exception ex)
+                {
+                    Debugger.Break();
+                } finally
+                {
+                    writer.EndWrite();
+                }
+            });
+
+            file.file = new();
+            file.file.Read(new(new LZ4PackStreamReader(context)));
+        }
 
         return file.file.GetAllFileNames()
             .Select(x =>
