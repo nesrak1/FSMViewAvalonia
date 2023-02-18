@@ -564,7 +564,7 @@ public class FsmVar
 }
 public class FsmArray2
 {
-    public ParamDataType type;
+    public string type;
     public object[] array;
 }
 public class FsmArray : NamedVariable, IEnumerable<object>
@@ -681,7 +681,7 @@ public class NamedVariable
         networkSync = field.Get<bool>("networkSync");
     }
     public virtual string MyToString() => base.ToString();
-    public sealed override string ToString() => isGlobal ? "[Global] " + MyToString() : MyToString();
+    public sealed override string ToString() => (isGlobal && !string.IsNullOrWhiteSpace(name)) ? "[Global] " + MyToString() : MyToString();
 }
 
 public class AnimationCurve

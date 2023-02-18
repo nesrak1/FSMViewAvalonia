@@ -194,7 +194,7 @@ public partial class MainWindow : Window
         string resourcesPath = GameFileHelper.FindGameFilePath(gamePath, "resources.assets");
         string dataPath = System.IO.Path.GetDirectoryName(resourcesPath);
 
-        List<SceneInfo> sceneList = fsmLoader.LoadSceneList();
+        List<SceneInfo> sceneList = FSMLoader.LoadSceneList();
         SceneSelectionDialog selector = new(sceneList);
         await selector.ShowDialog(this);
 
@@ -316,7 +316,7 @@ public partial class MainWindow : Window
                 (assetInfo is AssetInfoUnity uinfo ?
                     fsmLoader.LoadFSMWithAssets(selectedId, uinfo) :
                     throw new NotSupportedException())
-                : FSMLoader.LoadFSM(assetInfo, dataProvider);
+                : new(assetInfo, dataProvider);
             loadedFsmDatas.Add(fsmData);
             fsmData.tabIndex = tabItems.Count;
 
@@ -576,11 +576,8 @@ public partial class MainWindow : Window
                 if (!string.IsNullOrEmpty(@enum.enumName))
                 {
                     TypeDefinition enumType = FSMLoader.mainAssembly.SafeResolveReferences()
-                            .Select(x => x.MainModule)
-                            .Append(FSMLoader.mainAssembly.MainModule)
-                            .Select(
-                                x => x.GetType(@enum.enumName.Replace('+', '/'))
-                                ).FirstOrDefault(x => x != null);
+                            .Append(FSMLoader.mainAssembly)
+                            .FindType(@enum.enumName.Replace('+', '/'));
                     if (enumType != null)
                     {
                         value = GetFsmEnumString(enumType, @enum.intValue);

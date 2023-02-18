@@ -12,22 +12,37 @@ public static class ActionReader
     {
         foreach (string v in Enum.GetNames(typeof(ParamDataType)))
         {
-            ParamDataTypes.Add($"HutongGames.PlayMaker.{v}", (ParamDataType) Enum.Parse(typeof(ParamDataType), v));
+            ParamDataTypes.Add($"HutongGames.PlayMaker.{v}",
+                (ParamDataType) Enum.Parse(typeof(ParamDataType), v));
         }
     }
     public static object GetFsmArray(this ActionData actionData, ref int index, int dataVersion)
     {
         string type = actionData.arrayParamTypes[actionData.paramDataPos[index]];
         int size = actionData.arrayParamSizes[actionData.paramDataPos[index]];
-        if (!ParamDataTypes.TryGetValue(type, out ParamDataType pdt))
-        {
-            return $"[{size}]({type}[])";
-        }
-
         var result = new FsmArray2
         {
-            type = pdt
+            type = type
         };
+        if (!ParamDataTypes.TryGetValue(type, out ParamDataType pdt))
+        {
+            var t = FSMLoader.mainAssembly.SafeResolveReferences().Append(FSMLoader.mainAssembly)
+                .FindType(type);
+            if(t.IsSubclassOf("UnityEngine.Object"))
+            {
+                pdt = ParamDataType.ObjectReference;
+            }
+            else
+            {
+                return $"Not support [{size}]({type}[])";
+            }
+            
+        }
+        else
+        {
+            result.type = pdt.ToString();
+        }
+
         object[] array = result.array = new object[size];
         for (int i = 0; i < size; i++)
         {

@@ -4,23 +4,6 @@ namespace FSMViewAvalonia2;
 //not to be confused Structs, which holds the exact data
 //from the assets files, these classes hold simplified
 //data to be displayed on the canvas
-public class FsmDataInstance
-{
-    public string fsmName;
-    public string goName;
-    public int tabIndex;
-    public AssetInfo info;
-    public List<FsmStateData> states;
-    public List<FsmEventData> events;
-    public List<FsmVariableData> variables;
-    public HashSet<string> variableNames;
-    public List<FsmNodeData> globalTransitions;
-    public FsmStateData startState;
-    public List<UINode> nodes;
-    public Controls canvasControls;
-    public Matrix matrix;
-    public int dataVersion;
-}
 public class FsmStateData
 {
     public string Name => state.name;

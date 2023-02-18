@@ -59,9 +59,9 @@ public class AssetsDataProvider : IDataProvider
     private static string GetAssetNameFastModded(AssetFileInfo info, AssetTypeValueField fields,
         out bool isGameObject)
     {
-        isGameObject = false;
+        isGameObject = !fields["m_Components"].IsDummy;
         AssetTypeValueField name = fields["m_Name"];
-        return name == null ? $"pathId_{info.PathId}" : name.AsString;
+        return name.IsDummy ? $"pathId_{info.PathId}" : name.AsString;
     }
     private INamedAssetProvider ReadNamedAssetPPtr(AssetTypeValueField field)
     {
