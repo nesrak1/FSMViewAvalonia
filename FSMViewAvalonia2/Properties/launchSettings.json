@@ -2,7 +2,7 @@
   "profiles": {
     "FSMViewAvalonia2": {
       "commandName": "Project",
-      "commandLineArgsA": "\"E:\\SteamLibrary\\steamapps\\common\\Hollow Knight\\hollow_knight_Data\\level40\" \"door1-Door Control\" true"
+      "commandLineArgs": "\"E:\\SteamLibrary\\steamapps\\common\\Hollow Knight\\hollow_knight_Data\\level40\" \"door1-Door Control\" true"
     }
   }
 }

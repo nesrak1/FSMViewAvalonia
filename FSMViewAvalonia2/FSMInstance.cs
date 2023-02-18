@@ -20,6 +20,7 @@ public class FsmEventData
 public class FsmVariableData
 {
     public string Type { get; set; }
+    public VariableType VariableType { get; set; }
     public List<Tuple<string, object>> Values { get; set; }
 }
 public class FsmGlobalTransition

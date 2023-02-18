@@ -14,26 +14,39 @@ public partial class MainWindow : Window
     //variables
     public AssetsManager am;
     public FSMLoader fsmLoader;
-    private FsmDataInstance fsmData;
+    private FsmDataInstance currentFSMData;
     private string lastFileName;
     private bool lastIsBundle;
-    private readonly List<FsmDataInstance> loadedFsmDatas;
+    private readonly List<FsmDataInstance> loadedFsmDatas = new();
     private bool addingTabs;
 
     //fsm info
-    private readonly ObservableCollection<TabItem> tabItems;
+    private readonly ObservableCollection<TabItem> tabItems = new();
 
     public MainWindow()
     {
         instance = this;
+        App.mainWindow = this;
         InitializeComponent();
         
         mt = graphCanvas.RenderTransform as MatrixTransform;
-        //generated events
-        PointerPressed += MouseDownCanvas;
-        PointerReleased += MouseUpCanvas;
-        PointerMoved += MouseMoveCanvas;
-        PointerWheelChanged += MouseScrollCanvas;
+
+        InitView();
+
+        InitFSMLoader();
+
+        InitFSMProxy();
+
+
+        option_includeSharedassets.IsChecked = Config.config.option_includeSharedassets;
+        option_includeSharedassets.Checked += (_, _1) => Config.config.option_includeSharedassets = true;
+        option_includeSharedassets.Unchecked += (_, _1) => Config.config.option_includeSharedassets = false;
+
+        
+    }
+
+    private void InitFSMLoader()
+    {
         openJson.Click += OpenJson_Click;
         fileOpen.Click += FileOpen_Click;
         openLast.Click += OpenLast_Click;
@@ -44,15 +57,7 @@ public partial class MainWindow : Window
         openBundle.Click += OpenBundle_Click;
         fsmTabs.SelectionChanged += FsmTabs_SelectionChanged;
 
-        loadedFsmDatas = new List<FsmDataInstance>();
-        tabItems = new ObservableCollection<TabItem>();
         fsmTabs.Items = tabItems;
-
-        option_includeSharedassets.IsChecked = Config.config.option_includeSharedassets;
-        option_includeSharedassets.Checked += (_, _1) => Config.config.option_includeSharedassets = true;
-        option_includeSharedassets.Unchecked += (_, _1) => Config.config.option_includeSharedassets = false;
-
-        App.mainWindow = this;
     }
 
     private async void OpenBundle_Click(object sender, RoutedEventArgs e)
@@ -230,10 +235,10 @@ public partial class MainWindow : Window
             {
                 var fsmDataInst = (FsmDataInstance) ((TabItem) fsmTabs.SelectedItem).Tag;
 
-                fsmData = fsmDataInst;
-                mt.Matrix = fsmData.matrix;
+                currentFSMData = fsmDataInst;
+                mt.Matrix = currentFSMData.matrix;
 
-                foreach (UINode uiNode in fsmData.nodes)
+                foreach (UINode uiNode in currentFSMData.nodes)
                 {
                     if (uiNode.Selected)
                     {
@@ -300,7 +305,7 @@ public partial class MainWindow : Window
             }
         }
 
-        fsmData = loadedFsmDatas.FirstOrDefault(x => x.info.assetFile == assetInfo.assetFile &&
+        currentFSMData = loadedFsmDatas.FirstOrDefault(x => x.info.assetFile == assetInfo.assetFile &&
                                                         x.info.Name == assetInfo.Name &&
                                                         x.info.ProviderType == assetInfo.ProviderType &&
                                                         (
@@ -310,31 +315,31 @@ public partial class MainWindow : Window
                                                         xaiu.fsmId == aiu.fsmId)
                                                         )
                                                         );
-        if (fsmData == null)
+        if (currentFSMData == null)
         {
-            fsmData = dataProvider == null ?
+            currentFSMData = dataProvider == null ?
                 (assetInfo is AssetInfoUnity uinfo ?
                     fsmLoader.LoadFSMWithAssets(selectedId, uinfo) :
                     throw new NotSupportedException())
                 : new(assetInfo, dataProvider);
-            loadedFsmDatas.Add(fsmData);
-            fsmData.tabIndex = tabItems.Count;
+            loadedFsmDatas.Add(currentFSMData);
+            currentFSMData.tabIndex = tabItems.Count;
 
             TabItem newTabItem = new()
             {
-                Header = $"{fsmData.goName}-{fsmData.fsmName}",
-                Tag = fsmData
+                Header = $"{currentFSMData.goName}-{currentFSMData.fsmName}",
+                Tag = currentFSMData
             };
 
             addingTabs = true;
             tabItems.Add(newTabItem);
         }
 
-        fsmTabs.SelectedIndex = fsmData.tabIndex;
+        fsmTabs.SelectedIndex = currentFSMData.tabIndex;
         addingTabs = false;
 
         graphCanvas.Children.Clear();
-        fsmData.matrix = mt.Matrix = Matrix.Identity;
+        currentFSMData.matrix = mt.Matrix = Matrix.Identity;
 
         stateList.Children.Clear();
         eventList.Children.Clear();
@@ -348,11 +353,11 @@ public partial class MainWindow : Window
 
     private void LoadStates()
     {
-        if (fsmData.canvasControls == null)
+        if (currentFSMData.canvasControls == null)
         {
-            fsmData.nodes = new List<UINode>();
-            fsmData.canvasControls = new Controls();
-            foreach (FsmStateData stateData in fsmData.states)
+            currentFSMData.nodes = new List<UINode>();
+            currentFSMData.canvasControls = new Controls();
+            foreach (FsmStateData stateData in currentFSMData.states)
             {
                 FsmNodeData node = stateData.node;
                 UINode uiNode = new(stateData, node);
@@ -364,7 +369,7 @@ public partial class MainWindow : Window
                         return;
                     }
 
-                    foreach (UINode uiNode2 in fsmData.nodes)
+                    foreach (UINode uiNode2 in currentFSMData.nodes)
                     {
                         uiNode2.Selected = false;
                     }
@@ -374,34 +379,34 @@ public partial class MainWindow : Window
                 };
 
                 graphCanvas.Children.Add(uiNode.grid);
-                fsmData.nodes.Add(uiNode);
+                currentFSMData.nodes.Add(uiNode);
 
                 PlaceTransitions(node, false);
             }
 
-            foreach (FsmNodeData globalTransition in fsmData.globalTransitions)
+            foreach (FsmNodeData globalTransition in currentFSMData.globalTransitions)
             {
                 FsmNodeData node = globalTransition;
                 UINode uiNode = new(null, node);
 
                 graphCanvas.Children.Add(uiNode.grid);
-                fsmData.nodes.Add(uiNode);
+                currentFSMData.nodes.Add(uiNode);
 
                 PlaceTransitions(node, true);
             }
 
-            fsmData.canvasControls.AddRange(graphCanvas.Children);
+            currentFSMData.canvasControls.AddRange(graphCanvas.Children);
             (stateList.Parent as ScrollViewer)!.ScrollToHome();
         } else
         {
             graphCanvas.Children.Clear();
-            graphCanvas.Children.AddRange(fsmData.canvasControls);
+            graphCanvas.Children.AddRange(currentFSMData.canvasControls);
         }
     }
 
     private void LoadEvents()
     {
-        foreach (FsmEventData eventData in fsmData.events)
+        foreach (FsmEventData eventData in currentFSMData.events)
         {
             eventList.Children.Add(CreateSidebarRowEvent(eventData.Name, eventData.Global));
         }
@@ -411,8 +416,8 @@ public partial class MainWindow : Window
 
     private async void LoadVariables()
     {
-        fsmData.variables.Sort((a, b) => a.Type.CompareTo(b.Type));
-        foreach (FsmVariableData varData in fsmData.variables)
+        currentFSMData.variables.Sort((a, b) => a.Type.CompareTo(b.Type));
+        foreach (FsmVariableData varData in currentFSMData.variables)
         {
             if (varData.Values.Count == 0)
             {
@@ -678,7 +683,7 @@ public partial class MainWindow : Window
         {
             try
             {
-                FsmStateData endState = fsmData.states.FirstOrDefault(s => s.node.name == trans.toState);
+                FsmStateData endState = currentFSMData.states.FirstOrDefault(s => s.node.name == trans.toState);
                 if (endState != null)
                 {
                     FsmNodeData endNode = endState.node;
@@ -753,80 +758,5 @@ public partial class MainWindow : Window
         fsmLoader ??= new FSMLoader(this, am);
     }
 
-    #region Drag
-    private Point _last;
-    private bool isDragged = false;
-    private void MouseDownCanvas(object sender, PointerPressedEventArgs args)
-    {
-        if (!args.GetCurrentPoint(this).Properties.IsRightButtonPressed)
-        {
-            return;
-        }
 
-        _last = args.GetPosition(this);
-        Cursor = new Cursor(StandardCursorType.Hand);
-        isDragged = true;
-    }
-    private void MouseUpCanvas(object sender, PointerReleasedEventArgs args)
-    {
-        if (args.GetCurrentPoint(this).Properties.IsRightButtonPressed)
-        {
-            return;
-        }
-
-        Cursor = new Cursor(StandardCursorType.Arrow);
-        isDragged = false;
-    }
-    private void MouseMoveCanvas(object sender, PointerEventArgs args)
-    {
-        if (!isDragged)
-        {
-            return;
-        }
-
-        Point pos = args.GetPosition(this);
-        Matrix matrix = mt.Matrix;
-        matrix = new Matrix(matrix.M11, matrix.M12, matrix.M21, matrix.M22, pos.X - _last.X + matrix.M31, pos.Y - _last.Y + matrix.M32);
-        mt.Matrix = matrix;
-        _last = pos;
-
-        if (fsmData != null)
-        {
-            fsmData.matrix = mt.Matrix;
-        }
-    }
-    private void MouseScrollCanvas(object sender, PointerWheelEventArgs args)
-    {
-        Point pos = args.GetPosition(this);
-        Matrix matrix = mt.Matrix;
-
-        double scale = 1 + (args.Delta.Y / 10);
-        mt.Matrix = ZoomToLocation(matrix, new Point(pos.X - (graphCanvas.Bounds.Width / 2), pos.Y - (graphCanvas.Bounds.Height / 2)), scale);
-
-        if (fsmData != null)
-        {
-            fsmData.matrix = mt.Matrix;
-        }
-    }
-
-    private static Matrix ZoomToLocation(Matrix mat, Point pos, double scale)
-    {
-        Matrix matrix = mat;
-
-        Matrix step1 = new(1, 0, 0, 1, -pos.X, -pos.Y);
-        Matrix step2 = new(scale, 0, 0, scale, 0, 0);
-        Matrix step3 = new(1, 0, 0, 1, pos.X, pos.Y);
-
-        matrix *= step1;
-        matrix *= step2;
-        matrix *= step3;
-
-        //matrix = Matrix.CreateTranslation(pos.X, pos.Y) * matrix;
-        //Matrix matrix = new Matrix(mat.M11, mat.M12, mat.M21, mat.M22, pos.X - mat.M31, pos.Y - mat.M32);
-        //matrix = Matrix.CreateScale(scale, scale) * matrix;
-        //matrix = Matrix.CreateTranslation(-pos.X, -pos.Y) * matrix;
-        return matrix;
-    }
-    private static Matrix CreateScaling(Matrix mat, double scaleX, double scaleY, double centerX, double centerY) => new Matrix(scaleX, 0.0, 0.0, scaleY, centerX - (scaleX * centerX), centerY - (scaleY * centerY)) * mat;
-    #endregion
 }

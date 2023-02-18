@@ -47,7 +47,7 @@ public class FsmDataInstance
         IDataProvider[] arrayVariables = variables.Get<IDataProvider[]>("arrayVariables");
         IDataProvider[] enumVariables = variables.Get<IDataProvider[]>("enumVariables");
 
-        FsmVariableData enums = new() { Type = "Enums", Values = new List<Tuple<string, object>>() };
+        FsmVariableData enums = new() { VariableType = VariableType.Enum, Type = "Enums", Values = new List<Tuple<string, object>>() };
         varData.Add(enums);
         for (int i = 0; i < enumVariables.Length; i++)
         {
@@ -56,7 +56,7 @@ public class FsmDataInstance
             enums.Values.Add(new Tuple<string, object>(name, value));
         }
 
-        FsmVariableData arrays = new() { Type = "Arrays", Values = new List<Tuple<string, object>>() };
+        FsmVariableData arrays = new() { VariableType = VariableType.Array, Type = "Arrays", Values = new List<Tuple<string, object>>() };
         varData.Add(arrays);
         for (int i = 0; i < arrayVariables.Length; i++)
         {
@@ -64,7 +64,7 @@ public class FsmDataInstance
             arrays.Values.Add(new(arr.name, arr));
         }
 
-        FsmVariableData floats = new() { Type = "Floats", Values = new List<Tuple<string, object>>() };
+        FsmVariableData floats = new() { VariableType = VariableType.Float, Type = "Floats", Values = new List<Tuple<string, object>>() };
         varData.Add(floats);
         for (int i = 0; i < floatVariables.Length; i++)
         {
@@ -73,7 +73,7 @@ public class FsmDataInstance
             floats.Values.Add(new Tuple<string, object>(name, value));
         }
 
-        FsmVariableData ints = new() { Type = "Ints", Values = new List<Tuple<string, object>>() };
+        FsmVariableData ints = new() { VariableType = VariableType.Int, Type = "Ints", Values = new List<Tuple<string, object>>() };
         varData.Add(ints);
         for (int i = 0; i < intVariables.Length; i++)
         {
@@ -82,7 +82,7 @@ public class FsmDataInstance
             ints.Values.Add(new Tuple<string, object>(name, value));
         }
 
-        FsmVariableData bools = new() { Type = "Bools", Values = new List<Tuple<string, object>>() };
+        FsmVariableData bools = new() { VariableType = VariableType.Bool, Type = "Bools", Values = new List<Tuple<string, object>>() };
         varData.Add(bools);
         for (int i = 0; i < boolVariables.Length; i++)
         {
@@ -91,7 +91,7 @@ public class FsmDataInstance
             bools.Values.Add(new Tuple<string, object>(name, value));
         }
 
-        FsmVariableData strings = new() { Type = "Strings", Values = new List<Tuple<string, object>>() };
+        FsmVariableData strings = new() { VariableType = VariableType.String, Type = "Strings", Values = new List<Tuple<string, object>>() };
         varData.Add(strings);
         for (int i = 0; i < stringVariables.Length; i++)
         {
@@ -100,7 +100,7 @@ public class FsmDataInstance
             strings.Values.Add(new Tuple<string, object>(name, value));
         }
 
-        FsmVariableData vector2s = new() { Type = "Vector2s", Values = new List<Tuple<string, object>>() };
+        FsmVariableData vector2s = new() { VariableType = VariableType.Vector2, Type = "Vector2s", Values = new List<Tuple<string, object>>() };
         varData.Add(vector2s);
         for (int i = 0; i < vector2Variables.Length; i++)
         {
@@ -110,7 +110,7 @@ public class FsmDataInstance
             vector2s.Values.Add(new Tuple<string, object>(name, value));
         }
 
-        FsmVariableData vector3s = new() { Type = "Vector3s", Values = new List<Tuple<string, object>>() };
+        FsmVariableData vector3s = new() { VariableType = VariableType.Vector3, Type = "Vector3s", Values = new List<Tuple<string, object>>() };
         varData.Add(vector3s);
         for (int i = 0; i < vector3Variables.Length; i++)
         {
@@ -120,7 +120,7 @@ public class FsmDataInstance
             vector3s.Values.Add(new Tuple<string, object>(name, value));
         }
 
-        FsmVariableData colors = new() { Type = "Colors", Values = new List<Tuple<string, object>>() };
+        FsmVariableData colors = new() { VariableType = VariableType.Color, Type = "Colors", Values = new List<Tuple<string, object>>() };
         varData.Add(colors);
         for (int i = 0; i < colorVariables.Length; i++)
         {
@@ -130,7 +130,7 @@ public class FsmDataInstance
             colors.Values.Add(new Tuple<string, object>(name, value));
         }
 
-        FsmVariableData rects = new() { Type = "Rects", Values = new List<Tuple<string, object>>() };
+        FsmVariableData rects = new() { VariableType = VariableType.Rect, Type = "Rects", Values = new List<Tuple<string, object>>() };
         varData.Add(rects);
         for (int i = 0; i < rectVariables.Length; i++)
         {
@@ -140,7 +140,7 @@ public class FsmDataInstance
             rects.Values.Add(new Tuple<string, object>(name, value));
         }
 
-        FsmVariableData quaternions = new() { Type = "Quaternions", Values = new List<Tuple<string, object>>() };
+        FsmVariableData quaternions = new() { VariableType = VariableType.Quaternion, Type = "Quaternions", Values = new List<Tuple<string, object>>() };
         varData.Add(quaternions);
         for (int i = 0; i < quaternionVariables.Length; i++)
         {
@@ -151,10 +151,12 @@ public class FsmDataInstance
         }
 
         string[] pptrTypeHeaders = new[] { "GameObjects", "Objects", "Materials", "Textures" };
+        VariableType[] pptrTypeVarTypes = new[] { VariableType.GameObject, VariableType.Object, VariableType.Material, VariableType.Texture };
         IDataProvider[][] pptrTypeFields = new[] { gameObjectVariables, objectVariables, materialVariables, textureVariables };
         for (int j = 0; j < pptrTypeHeaders.Length; j++)
         {
             string header = pptrTypeHeaders[j];
+            VariableType type = pptrTypeVarTypes[j];
             IDataProvider[] field = pptrTypeFields[j];
 
             if (field == null)
@@ -162,7 +164,7 @@ public class FsmDataInstance
                 continue;
             }
 
-            FsmVariableData genericData = new() { Type = header, Values = new List<Tuple<string, object>>() };
+            FsmVariableData genericData = new() { VariableType = type, Type = header, Values = new List<Tuple<string, object>>() };
             varData.Add(genericData);
             for (int i = 0; i < field.Length; i++)
             {

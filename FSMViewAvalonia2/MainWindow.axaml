@@ -72,7 +72,7 @@
       <Grid.ColumnDefinitions>
         <ColumnDefinition Width="*" />
         <ColumnDefinition Width="auto" />
-        <ColumnDefinition Width="250" />
+        <ColumnDefinition Width="300" />
       </Grid.ColumnDefinitions>
       <TabControl x:Name="fsmTabControl" BorderBrush="#00000000"
                   HorizontalAlignment="Stretch" VerticalAlignment="Top"
@@ -105,6 +105,29 @@
             </ScrollViewer>
           </Grid>
         </TabItem>
+          <TabItem Header="Proxy">
+              <Grid Background="#ffe5e5e5">
+                  <ScrollViewer Margin="10">
+                      <StackPanel>
+                      <StackPanel>
+                          <Label>Use library mod:</Label>
+                          <ComboBox SelectedIndex="0" x:Name="fsmProxyLibrary">
+                              <ComboBoxItem>None</ComboBoxItem>
+                              <ComboBoxItem>Vasi</ComboBoxItem>
+                              <ComboBoxItem>Satchel</ComboBoxItem>
+                              <ComboBoxItem>HKTool</ComboBoxItem>
+                          </ComboBox>
+                          <Label>Class Name:</Label>
+                          <TextBox x:Name="fsmProxyClassName" />
+                          <Button Content="Generate" x:Name="generateFSMProxy" />
+                          <Button Content="Copy all" x:Name="copyFSMProxyCode" />
+                      </StackPanel>
+                          <TextBox AcceptsReturn="True" x:Name="fsmProxyCode" IsReadOnly="true">
+                          </TextBox>
+                      </StackPanel>
+                  </ScrollViewer>
+              </Grid>
+          </TabItem>
         <TabItem Header="Options">
             <Grid Background="#ffe5e5e5">
                 <ScrollViewer Margin="10">
