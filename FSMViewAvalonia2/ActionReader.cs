@@ -26,7 +26,7 @@ public static class ActionReader
         };
         if (!ParamDataTypes.TryGetValue(type, out ParamDataType pdt))
         {
-            var t = FSMLoader.mainAssembly.SafeResolveReferences().Append(FSMLoader.mainAssembly)
+            TypeDefinition t = FSMLoader.mainAssembly.SafeResolveReferences().Append(FSMLoader.mainAssembly)
                 .FindType(type);
             if(t.IsSubclassOf("UnityEngine.Object"))
             {

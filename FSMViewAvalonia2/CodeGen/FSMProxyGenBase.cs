@@ -21,10 +21,11 @@ internal abstract class FSMProxyGenBase
     public FsmDataInstance Fsm { get; set; }
     protected virtual void GenerateUsings(CodeGenContext ctx)
     {
-        foreach (var v in Usings)
+        foreach (string v in Usings)
         {
             ctx.AppendLine($"using {v};");
         }
+
         ctx.AppendEmptyLine();
     }
     protected virtual void GenerateNameSpace(CodeGenContext ctx)
@@ -53,7 +54,7 @@ internal abstract class FSMProxyGenBase
     }
     protected virtual void InsertComment(CodeGenContext ctx, string text)
     {
-        var lines = text.Trim().Split('\n');
+        string[] lines = text.Trim().Split('\n');
         if(lines.Length == 1)
         {
             ctx.AppendLine(@"// " + text);
@@ -62,10 +63,11 @@ internal abstract class FSMProxyGenBase
         {
             ctx.AppendLine("/**");
             ctx.EnterBlock();
-            foreach(var v in lines)
+            foreach(string v in lines)
             {
                 ctx.AppendLine(v);
             }
+
             ctx.AppendLine("**/");
             ctx.ExitBlock();
         }
@@ -102,7 +104,7 @@ internal abstract class FSMProxyGenBase
     {
         GenerateClass(ctx, ctx =>
         {
-            foreach(var v in Fsm.states)
+            foreach(FsmStateData v in Fsm.states)
             {
                 InsertFieldDef(ctx, v.Name, "string", true, "const", ctx.GetStringExp(v.Name));
             }
@@ -112,7 +114,7 @@ internal abstract class FSMProxyGenBase
     {
         GenerateClass(ctx, ctx =>
         {
-            foreach (var v in Fsm.variables.SelectMany(x => x.Values))
+            foreach (Tuple<string, object> v in Fsm.variables.SelectMany(x => x.Values))
             {
                 InsertFieldDef(ctx, v.Item1, "string", true, "const", ctx.GetStringExp(v.Item1));
             }
@@ -122,7 +124,7 @@ internal abstract class FSMProxyGenBase
     {
         GenerateClass(ctx, ctx =>
         {
-            foreach (var v in Fsm.events)
+            foreach (FsmEventData v in Fsm.events)
             {
                 InsertFieldDef(ctx, v.Name, "string", true, "const", ctx.GetStringExp(v.Name));
             }
@@ -133,10 +135,10 @@ internal abstract class FSMProxyGenBase
         GenerateClass(ctx, ctx =>
         {
             InsertFieldDef(ctx, "fsmVariables", "FsmVariables", true);
-            foreach(var vars in Fsm.variables)
+            foreach(FsmVariableData vars in Fsm.variables)
             {
-                var type = "Fsm" + vars.VariableType.ToString();
-                foreach(var v in vars.Values)
+                string type = "Fsm" + vars.VariableType.ToString();
+                foreach(Tuple<string, object> v in vars.Values)
                 {
                     InsertGetter(ctx, ctx =>
                     {

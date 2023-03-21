@@ -36,7 +36,7 @@ public partial class MainWindow
         }
         else
         {
-            var generator = FSMProxyGenBase.SupportedGenerator[fsmProxyLibrary.SelectedIndex];
+            FSMProxyGenBase generator = FSMProxyGenBase.SupportedGenerator[fsmProxyLibrary.SelectedIndex];
             generator.Fsm = currentFSMData;
             generator.Generate(ctx);
         }

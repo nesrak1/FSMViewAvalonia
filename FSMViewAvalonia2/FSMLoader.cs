@@ -133,7 +133,7 @@ public class FSMLoader
 
         foreach (AssetFileInfo info in file.GetAssetsOfType(AssetClassID.MonoBehaviour))
         {
-            AssetTypeTemplateField t_monoBF = am.GetTemplateBaseField(assetsFile, info, false, true);
+            AssetTypeTemplateField t_monoBF = am.GetTemplateBaseField(assetsFile, info, AssetReadFlags.SkipMonoBehaviourFields);
             AssetTypeValueField monoBf = am.GetBaseField(assetsFile, info);
             AssetExternal ext = am.GetExtAsset(assetsFile, monoBf.Get("m_Script"));
             if (ext.baseField == null)

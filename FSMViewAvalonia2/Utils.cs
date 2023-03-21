@@ -37,6 +37,7 @@ internal static class Utils
             if(type.FullName == parentType) return true;
             type = type.BaseType.Resolve();
         }
+
         return false;
     }
 }
