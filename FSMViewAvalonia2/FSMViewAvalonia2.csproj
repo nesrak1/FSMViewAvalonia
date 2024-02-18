@@ -8,6 +8,7 @@
      <PublishReadyToRun>true</PublishReadyToRun>
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+      <AssemblyVersion>1.6.0</AssemblyVersion>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="AssetsTools.NET" Version="3.0.0" />
@@ -38,5 +39,4 @@
       <Generator>MSBuild:Compile</Generator>
     </None>
   </ItemGroup>
-  <ProjectExtensions><VisualStudio><UserProperties properties_4launchsettings_1json__JsonSchema="" /></VisualStudio></ProjectExtensions>
 </Project>
