@@ -56,7 +56,7 @@ public class AssetsDataProvider : IDataProvider
             }
         }
 
-        string file = extObj.file.name;
+        string file = extObj.file.path;
         return new NamedAssetPPtr(pptr.FileId, pptr.PathId, nameBuilder.ToString(), file);
     }
 

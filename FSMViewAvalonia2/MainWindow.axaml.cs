@@ -266,7 +266,7 @@ public partial class MainWindow : Window
 
         List<AssetInfo> assetInfos = isBundle ? fsmLoader.LoadAllFSMsFromBundle(fileName) :
             fsmLoader.LoadAllFSMsFromFile(fileName);
-        FSMSelectionDialog selector = new(assetInfos, System.IO.Path.GetFileName(fileName));
+        FSMSelectionDialog selector = new(assetInfos, fileName);
         if (!string.IsNullOrEmpty(defaultSearch))
         {
             AutoCompleteBox tex = selector.FindControl<AutoCompleteBox>("searchBox");

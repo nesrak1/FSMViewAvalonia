@@ -4,9 +4,34 @@ namespace FSMViewAvalonia2;
 
 public static class GameFileHelper
 {
-    public static readonly int HOLLOWKNIGHT_APP_ID = 367520;
-    public static readonly string HOLLOWKNIGHT_GAME_NAME = "Hollow Knight";
-    public static readonly string HOLLOWKNIGHT_PATH_FILE = "hkpath.txt";
+    public class GameInfo
+    {
+        [JsonProperty("name")]
+        public string Name { get; set; } = "Hollow Knight";
+        [JsonProperty("steamid")]
+        public int SteamId { get; set; } = 367520;
+        [JsonProperty("dataDirs")]
+        public List<string> DataDirs { get; set; } = [
+            "hollow_knight_Data",
+            "Hollow Knight_Data",
+            "Hollow_Knight_Data"
+        ];
+    }
+    public static readonly GameInfo gameInfo;
+
+    static GameFileHelper()
+    {
+        if(!File.Exists("GameInfo.json"))
+        {
+            MessageBoxManager
+                    .GetMessageBoxStandardWindow("No game info",
+                    "You're missing GameInfo.json next to the executable. Please make sure it exists.")
+                    .Show().Wait();
+            Environment.Exit(0);
+        }
+
+        gameInfo = JsonConvert.DeserializeObject<GameInfo>(File.ReadAllText("GameInfo.json"));
+    }
 
     public static async Task<string> FindHollowKnightPath(Window win)
     {
@@ -15,22 +40,15 @@ public static class GameFileHelper
             return Config.config.hkPath;
         }
 
-        if (File.Exists(HOLLOWKNIGHT_PATH_FILE))
-        {
-            string result = Config.config.hkPath = File.ReadAllText(HOLLOWKNIGHT_PATH_FILE);
-            File.Delete(HOLLOWKNIGHT_PATH_FILE);
-            return result;
-        } else
-        {
-            string path = await FindSteamGamePath(win, HOLLOWKNIGHT_APP_ID, HOLLOWKNIGHT_GAME_NAME);
+        string path = await FindSteamGamePath(win, gameInfo.SteamId, gameInfo.Name);
 
-            if (path != null)
-            {
-                Config.config.hkPath = path;
-            }
-
-            return path;
+        if (path != null)
+        {
+            Config.config.hkPath = path;
         }
+
+        return path;
+
     }
 
     public static async Task<string> FindSteamGamePath(Window win, int appid, string gameName)
@@ -114,14 +132,7 @@ public static class GameFileHelper
     }
     public static string FindGameFilePath(string hkRootPath, string file)
     {
-        string[] pathTests =
-        [
-                "hollow_knight_Data",
-                "Hollow Knight_Data",
-                "Hollow_Knight_Data",
-                Path.Combine("Contents", "Resources", "Data")
-        ];
-        foreach (string pathTest in pathTests)
+        foreach (string pathTest in gameInfo.DataDirs)
         {
             string dataPath = Path.Combine(hkRootPath, pathTest);
             string filePath = Path.Combine(dataPath, file);
