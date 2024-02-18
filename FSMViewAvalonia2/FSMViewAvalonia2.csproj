@@ -10,6 +10,8 @@
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="AssetsTools.NET" Version="3.0.0" />
+    <PackageReference Include="AssetsTools.NET.MonoCecil" Version="1.0.0" />
     <PackageReference Include="Avalonia" Version="0.10.18" />
     <PackageReference Include="Avalonia.Desktop" Version="0.10.18" />
     <PackageReference Include="Avalonia.Diagnostics" Version="0.10.18" />
@@ -19,10 +21,6 @@
     <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
     <PackageReference Include="System.Net.WebSockets" Version="4.3.0" />
     <PackageReference Include="XamlNameReferenceGenerator" Version="1.5.1" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\AssetsTools.NET\AssetsTools.NET.MonoCecil\AssetsTools.NET.MonoCecil.csproj" />
-    <ProjectReference Include="..\AssetsTools.NET\AssetTools.NET\AssetsTools.NET.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Compile Update="SceneSelectionDialog.axaml.cs">

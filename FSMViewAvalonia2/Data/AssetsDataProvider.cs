@@ -19,6 +19,8 @@ public class AssetsDataProvider : IDataProvider
         inst = resovler.inst;
     }
 
+    
+    
     private NamedAssetPPtr GetNamedPtr(AssetPPtr pptr)
     {
         if (pptr.PathId == 0)
@@ -28,10 +30,12 @@ public class AssetsDataProvider : IDataProvider
 
         AssetExternal extObj = am.GetExtAsset(inst, pptr.FileId, pptr.PathId);
         StringBuilder nameBuilder = new();
-        _ = nameBuilder.Append(GetAssetNameFastModded(extObj.info, extObj.baseField, out bool isGameObject));
+        _ = nameBuilder.Append(GetAssetNameFastModded(extObj.info, extObj.baseField, extObj.file,
+            out bool isGameObject));
         if (isGameObject && extObj.baseField != null)
         {
             AssetTypeValueField c_Transform = am.GetExtAsset(extObj.file, extObj.baseField.Get("m_Component").Get(0).Get(0).Get(0)).baseField;
+
             while (true)
             {
                 AssetTypeValueField father = c_Transform.Children.FirstOrDefault(x => x.FieldName == "m_Father");
@@ -56,12 +60,49 @@ public class AssetsDataProvider : IDataProvider
         return new NamedAssetPPtr(pptr.FileId, pptr.PathId, nameBuilder.ToString(), file);
     }
 
-    private static string GetAssetNameFastModded(AssetFileInfo info, AssetTypeValueField fields,
+    private string GetAssetNameFastModded(AssetFileInfo info, AssetTypeValueField fields,
+        AssetsFileInstance assetsFileInstance,
         out bool isGameObject)
     {
-        isGameObject = !fields["m_Components"].IsDummy;
+        var type = (AssetClassID) info.TypeId;
+        isGameObject = type == AssetClassID.GameObject;
         AssetTypeValueField name = fields["m_Name"];
-        return name.IsDummy ? $"pathId_{info.PathId}" : name.AsString;
+        string result;
+        if (name.IsDummy)
+        {
+            var gof = fields["m_GameObject"];
+            if (!gof.IsDummy && gof.TypeName == "PPtr<GameObject>")
+            {
+                AssetExternal go = am.GetExtAsset(assetsFileInstance, gof);
+                result = GetAssetNameFastModded(go.info, go.baseField, go.file, out _);
+            }
+            else
+            {
+                result = $"pathId_{info.PathId}";
+            }
+
+        }
+        else
+        {
+            result = name.AsString;
+        }
+        if (type != AssetClassID.GameObject)
+        {
+            string typeName;
+            if (type == AssetClassID.MonoBehaviour)
+            {
+                AssetExternal script = am.GetExtAsset(assetsFileInstance, fields["m_Script"]);
+                typeName = "Script " + script.baseField["m_Name"].AsString;
+            }
+            else
+            {
+                typeName = type.ToString();
+            }
+            result += $" ({typeName})";
+        }
+        
+
+        return result;
     }
     private NamedAssetPPtr ReadNamedAssetPPtr(AssetTypeValueField field)
     {
@@ -69,6 +110,7 @@ public class AssetsDataProvider : IDataProvider
         long pathId = field.Get("m_PathID").AsLong;
         return GetNamedPtr(new AssetPPtr(fileId, pathId));
     }
+
     private T GetValue<T>(AssetTypeValueField field) => (T) (GetValue(typeof(T), field) ?? default(T));
     private object GetValue(Type resultType, AssetTypeValueField field)
     {
