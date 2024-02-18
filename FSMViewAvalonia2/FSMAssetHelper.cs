@@ -74,7 +74,7 @@ public static class FSMAssetHelper
     {
         AssetsManager am = new()
         {
-            UpdateAfterLoad = false,
+            UseQuickLookup = true,
             UseTemplateFieldCache = true
         };
         if (!File.Exists("classdata.tpk"))

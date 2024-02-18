@@ -78,7 +78,7 @@ public class FSMLoader
     {
         AssetNameResolver namer = new(am, assetInfo.assetFI);
         AssetTypeValueField fsm = assetInfo.templateField.MakeValue(assetInfo.assetFI.file.Reader,
-            assetInfo.assetInfo.AbsoluteByteStart)["fsm"];
+            assetInfo.assetInfo.GetAbsoluteByteOffset(assetInfo.assetFI.file))["fsm"];
         return new(assetInfo, new AssetsDataProvider(fsm, namer));
     }
     public static FsmDataInstance LoadJsonFSM(string text, AssetInfo assetInfo) => assetInfo.ProviderType != AssetInfo.DataProviderType.Json
@@ -158,7 +158,7 @@ public class FSMLoader
 
 
         AssetsFile file = assetsFile.file;
-        file.GenerateQuickLookupTree();
+        file.GenerateQuickLookup();
         var assetInfos = new List<AssetInfo>();
         int assetCount = file.AssetInfos.Count;
         AssemblyProvider apr = FSMAssetHelper.GetAssemblyProvider(assetsFile);
@@ -204,7 +204,7 @@ public class FSMLoader
                 t_pmBS_data ??= assetsFile.GetTypeTemplateFieldFromAsset(info, "PlayMaker", "",
                                                                "PlayMakerFSM", t_monoBF.Children);
 
-                AssetTypeValueField pmBf = t_pmBS.MakeValue(file.Reader, info.AbsoluteByteStart);
+                AssetTypeValueField pmBf = t_pmBS.MakeValue(file.Reader, info.GetAbsoluteByteOffset(file));
                 string fsmName = pmBf["fsm"]["name"].AsString;
 
                 assetInfos.Add(new AssetInfoUnity()
@@ -238,7 +238,7 @@ public class FSMLoader
                 t_fsmTemplateBS_data ??= assetsFile.GetTypeTemplateFieldFromAsset(info, "PlayMaker", "",
                                                                "FsmTemplate", t_monoBF.Children);
 
-                AssetTypeValueField pmBf = t_fsmTemplateBS.MakeValue(file.Reader, info.AbsoluteByteStart);
+                AssetTypeValueField pmBf = t_fsmTemplateBS.MakeValue(file.Reader, info.GetAbsoluteByteOffset(file));
                 string fsmName = pmBf["fsm"]["name"].AsString;
                 string m_MonoName = monoBf["m_Name"].AsString;
 

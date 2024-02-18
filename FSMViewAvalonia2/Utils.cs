@@ -39,7 +39,7 @@ internal static class Utils
                 return true;
             }
 
-            type = type.BaseType.Resolve();
+            type = type.BaseType?.Resolve();
         }
 
         return false;
