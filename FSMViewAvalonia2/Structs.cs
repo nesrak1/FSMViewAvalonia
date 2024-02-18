@@ -411,7 +411,7 @@ public class FsmProperty
         ArrayParameter = new FsmArray(field.Get<IDataProvider>("ArrayParameter"));
         setProperty = field.Get<bool>("setProperty");
     }
-    public override string ToString() => $"Property {TargetTypeName} {PropertyName}";
+    public override string ToString() => $"Property {{{TargetObject}}}.{PropertyName}";
 }
 
 public class FsmLayoutOption : NamedVariable

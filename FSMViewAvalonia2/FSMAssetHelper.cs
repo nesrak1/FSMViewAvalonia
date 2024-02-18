@@ -11,31 +11,60 @@ public static class FSMAssetHelper
 
 
     private readonly static Dictionary<string, AssemblyProvider> assemblyProviders = [];
+    private readonly static Dictionary<string, AssetsManager> assetsManagers = [];
     private static MonoCecilTempGenerator hkMono;
 
-    public static AssemblyProvider GetAssemblyProvider(AssetsFileInstance assetsFile)
+    public static string GetGameId(string gamePath)
     {
-        string path = Path.GetDirectoryName(Path.GetFullPath(assetsFile.path));
+        string path = Path.GetDirectoryName(Path.GetFullPath(gamePath));
         if (string.IsNullOrEmpty(path) || !Directory.Exists(Path.Combine(path, "Managed"))) //Default as hk
         {
-            return defaultProvider;
+            return null;
         }
 
         string dataName = Path.GetFileName(path);
         if (!dataName.Contains("_Data", StringComparison.OrdinalIgnoreCase))
         {
+            return null;
+        }
+
+        return dataName.ToLower();
+    }
+
+    public static AssemblyProvider GetAssemblyProvider(AssetsFileInstance assetsFile)
+    {
+        string dataName = GetGameId(assetsFile.path);
+        if(dataName == null)
+        {
             return defaultProvider;
         }
 
-        dataName = dataName[..dataName.IndexOf("_Data", StringComparison.OrdinalIgnoreCase)].ToLower();
         if (assemblyProviders.TryGetValue(dataName, out AssemblyProvider mono))
         {
             return mono;
         }
 
-        mono = CreateAssemblyProvider(Path.Combine(path, "Managed"));
+        mono = CreateAssemblyProvider(
+            Path.Combine(
+            Path.GetDirectoryName(Path.GetFullPath(assetsFile.path)),
+            "Managed"));
         assemblyProviders[dataName] = mono;
         return mono;
+    }
+    public static AssetsManager GetAssetsManager(string path)
+    {
+        var gd = GetGameId(path);
+        if(gd == null)
+        {
+            return CreateAssetManager();
+        }
+        if(assetsManagers.TryGetValue(gd, out AssetsManager manager))
+        {
+            return manager;
+        }
+        manager = CreateAssetManager();
+        assetsManagers[gd] = manager;
+        return manager;
     }
     public static MonoCecilTempGenerator GetMonoCTG(AssetsFileInstance assetsFile)
     {
@@ -69,8 +98,16 @@ public static class FSMAssetHelper
             assemblies = assemblies
         };
     }
+    public static void Init()
+    {
+        defaultProvider = CreateAssemblyProvider(GameFileHelper.FindGameFilePath("Managed"));
 
-    public static AssetsManager CreateAssetManager()
+        hkMono = defaultProvider.mono;
+        assemblyProviders["hollow_knight"] = defaultProvider;
+        assemblyProviders["hollow knight"] = defaultProvider;
+
+    }
+    private static AssetsManager CreateAssetManager()
     {
         AssetsManager am = new()
         {
@@ -81,12 +118,6 @@ public static class FSMAssetHelper
         {
             return null;
         }
-
-        defaultProvider = CreateAssemblyProvider(GameFileHelper.FindGameFilePath("Managed"));
-
-        hkMono = defaultProvider.mono;
-        assemblyProviders["hollow_knight"] = defaultProvider;
-        assemblyProviders["hollow knight"] = defaultProvider;
 
         _ = am.LoadClassPackage("classdata.tpk");
         return am;

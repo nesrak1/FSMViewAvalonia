@@ -4,13 +4,14 @@ namespace FSMViewAvalonia2;
 
 public class AssetInfoUnity : AssetInfo
 {
-    public uint size;
+    public required AssetsManager am;
+    public required uint size;
     public bool loadAsDep;
-    public AssetFileInfo assetInfo;
-    public AssetsFileInstance assetFI;
+    public required AssetFileInfo assetInfo;
+    public required AssetsFileInstance assetFI;
     public long fsmId;
     public long goId;
-    public AssetTypeTemplateField templateField;
+    public required AssetTypeTemplateField templateField;
     public override DataProviderType ProviderType => DataProviderType.Assets;
     public override string Name => loadAsDep ? "[LoadAsDep]" + path + name + " (" + Path.GetFileNameWithoutExtension(assetFile) + ")" : path + name;
 }

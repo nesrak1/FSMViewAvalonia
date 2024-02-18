@@ -12,7 +12,7 @@ public partial class MainWindow : Window
 
     public static MainWindow instance;
     //variables
-    public AssetsManager am;
+    private AssetsManager am;
     public FSMLoader fsmLoader;
     private FsmDataInstance currentFSMData;
     private string lastFileName;
@@ -745,9 +745,10 @@ public partial class MainWindow : Window
 
     private async Task CreateAssetsManagerAndLoader()
     {
-        if (am == null)
+        if (fsmLoader == null)
         {
-            am = FSMAssetHelper.CreateAssetManager();
+            FSMAssetHelper.Init();
+            am = FSMAssetHelper.GetAssetsManager(GameFileHelper.FindGameFilePath("Managed"));
             if (am == null)
             {
                 _ = await MessageBoxManager
@@ -756,10 +757,11 @@ public partial class MainWindow : Window
                     .Show();
                 Environment.Exit(0);
             }
+            GlobalGameManagers.instance ??= new(am);
+            fsmLoader = new FSMLoader(this);
         }
 
-        GlobalGameManagers.instance ??= new(am);
-        fsmLoader ??= new FSMLoader(this, am);
+        
     }
 
 
