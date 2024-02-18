@@ -109,6 +109,7 @@ public static class ActionReader
                 ParamDataType.ObjectReference => $"ObjRef([{actionData.unityObjectParams[paramDataPos]}])",
                 ParamDataType.FunctionCall => actionData.functionCallParams[paramDataPos],
                 ParamDataType.Array => actionData.GetFsmArray(assemblyProvider, ref index, dataVersion),
+                ParamDataType.FsmProperty => actionData.fsmPropertyParams[paramDataPos],
                 _ => $"[{paramDataType} not implemented]",
             };
             if (dataVersion == 1 && ret is NamedVariable nv)

@@ -15,7 +15,7 @@ jobs:
         dotnet-version: 8
     - name: Build
       run: |
-        dotnet publish -p:Configuration=Release -r win-x64 -f net6
+        dotnet publish -p:Configuration=Release -r win-x64
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v3.1.0
       with:
