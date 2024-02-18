@@ -23,6 +23,7 @@ public class AssetInfo
     public string path;
     public string assetFile;
     public virtual DataProviderType ProviderType => DataProviderType.Json;
+    public AssemblyProvider assemblyProvider = FSMAssetHelper.defaultProvider;
     public virtual string Name => path + name;
     public enum DataProviderType
     {

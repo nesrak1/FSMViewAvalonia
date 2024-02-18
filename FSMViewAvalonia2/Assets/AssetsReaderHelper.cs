@@ -18,29 +18,31 @@ internal static class AssetsReaderHelper
     {
         AssetTypeTemplateField l = includeLatest ? field.GetField(name) : null;
         field.Children = field.Children.TakeWhile(x => x.Name != name).ToList();
-        if(l != null)
+        if (l != null)
         {
             field.Children.Add(l);
         }
 
         return field;
     }
-    public static AssetTypeTemplateField GetTypeTemplateFieldFromAsset(this AssetsFile file,
+    public static AssetTypeTemplateField GetTypeTemplateFieldFromAsset(
+        this AssetsFileInstance assetsFileInstance,
         AssetFileInfo info,
         string assemblyName, string nameSpace, string typeName,
         List<AssetTypeTemplateField> parent = null)
     {
         AssetTypeTemplateField result = new()
         {
-            Children = (parent?.ToList()) ?? new()
+            Children = (parent?.ToList()) ?? []
         };
-        if(file.Metadata.TypeTreeEnabled)
+        AssetsFile file = assetsFileInstance.file;
+        if (file.Metadata.TypeTreeEnabled)
         {
             result.FromTypeTree(file.Metadata.FindTypeTreeTypeByID(info.GetTypeId(file), file.GetScriptIndex(info)));
         }
         else
         {
-            result = FSMAssetHelper.mono.GetTemplateField(result, assemblyName, nameSpace,
+            result = FSMAssetHelper.GetMonoCTG(assetsFileInstance).GetTemplateField(result, assemblyName, nameSpace,
                                                                typeName, new(file.Metadata.UnityVersion));
         }
 

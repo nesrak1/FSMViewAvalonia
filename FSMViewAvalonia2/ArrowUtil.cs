@@ -38,7 +38,7 @@ internal static class ArrowUtil
     {
         PathGeometry pathGeometry = new()
         {
-            Figures = new PathFigures { BezierFromIntersection(startPt, int1, int2, endPt) }
+            Figures = [BezierFromIntersection(startPt, int1, int2, endPt)]
         };
 
         Path path = new()

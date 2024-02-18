@@ -3,10 +3,10 @@
 using FSMViewAvalonia2.UEP;
 
 namespace FSMViewAvalonia2;
-internal class Program
+internal partial class Program
 {
-    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
-    private static extern void MessageBoxW(IntPtr _, string lpText, string lpCaption, uint uType);
+    [LibraryImport("user32.dll", StringMarshalling = StringMarshalling.Utf16)]
+    private static partial void MessageBoxW(IntPtr _, string lpText, string lpCaption, uint uType);
     public const string PipeName = "FSMViewAvaloniaInstancePipe";
     public static Mutex mutex = new(false, "MutexLock." + PipeName);
 
@@ -15,7 +15,7 @@ internal class Program
     // yet and stuff might break.
     public static void Main(string[] args)
     {
-        //MessageBoxW(IntPtr.Zero, string.Join(",", Encoding.ASCII.GetBytes("CLDB").Select(x => ((int)x).ToString())), "Exception!", 0x10);
+    //MessageBoxW(IntPtr.Zero, string.Join(",", Encoding.ASCII.GetBytes("CLDB").Select(x => ((int)x).ToString())), "Exception!", 0x10);
     RETRY:
         if (!mutex.WaitOne(1))
         {
@@ -24,7 +24,8 @@ internal class Program
                 try
                 {
                     pipe.Connect(100);
-                } catch (TimeoutException)
+                }
+                catch (TimeoutException)
                 {
                     goto RETRY;
                 }
@@ -41,14 +42,16 @@ internal class Program
                         bw.Flush();
                         pipe.Flush();
                     }
-                } else
+                }
+                else
                 {
                     bw.Write((byte) 0);
                 }
             }
 
             Environment.Exit(0);
-        } else
+        }
+        else
         {
 
             new Thread(() =>
@@ -71,7 +74,8 @@ internal class Program
             try
             {
                 _ = BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
-            } catch (Exception e)
+            }
+            catch (Exception e)
             {
                 MessageBoxW(IntPtr.Zero, e.ToString(), "Exception!", 0x10);
             }

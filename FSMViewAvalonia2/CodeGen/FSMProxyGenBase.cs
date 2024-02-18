@@ -169,8 +169,8 @@ Generator Type: {GetType().FullName}
         GenerateClass(ctx, GenerateClassBody, ctx.GetFriendlyName(ctx.className, "ClassName"), "internal");
     }
 
-    public static readonly List<FSMProxyGenBase> SupportedGenerator = new()
-    {
+    public static readonly List<FSMProxyGenBase> SupportedGenerator =
+    [
         new DefaultFsmProxy()
-    };
+    ];
 }

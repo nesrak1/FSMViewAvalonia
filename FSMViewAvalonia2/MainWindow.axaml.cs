@@ -17,18 +17,18 @@ public partial class MainWindow : Window
     private FsmDataInstance currentFSMData;
     private string lastFileName;
     private bool lastIsBundle;
-    private readonly List<FsmDataInstance> loadedFsmDatas = new();
+    private readonly List<FsmDataInstance> loadedFsmDatas = [];
     private bool addingTabs;
 
     //fsm info
-    private readonly ObservableCollection<TabItem> tabItems = new();
+    private readonly ObservableCollection<TabItem> tabItems = [];
 
     public MainWindow()
     {
         instance = this;
         App.mainWindow = this;
         InitializeComponent();
-        
+
         mt = graphCanvas.RenderTransform as MatrixTransform;
 
         InitView();
@@ -42,7 +42,7 @@ public partial class MainWindow : Window
         option_includeSharedassets.Checked += (_, _1) => Config.config.option_includeSharedassets = true;
         option_includeSharedassets.Unchecked += (_, _1) => Config.config.option_includeSharedassets = false;
 
-        
+
     }
 
     private void InitFSMLoader()
@@ -264,7 +264,7 @@ public partial class MainWindow : Window
     {
         await CreateAssetsManagerAndLoader();
 
-        List<AssetInfo> assetInfos = isBundle ? fsmLoader.LoadAllFSMsFromBundle(fileName):
+        List<AssetInfo> assetInfos = isBundle ? fsmLoader.LoadAllFSMsFromBundle(fileName) :
             fsmLoader.LoadAllFSMsFromFile(fileName);
         FSMSelectionDialog selector = new(assetInfos, System.IO.Path.GetFileName(fileName));
         if (!string.IsNullOrEmpty(defaultSearch))
@@ -355,8 +355,8 @@ public partial class MainWindow : Window
     {
         if (currentFSMData.canvasControls == null)
         {
-            currentFSMData.nodes = new List<UINode>();
-            currentFSMData.canvasControls = new Controls();
+            currentFSMData.nodes = [];
+            currentFSMData.canvasControls = [];
             foreach (FsmStateData stateData in currentFSMData.states)
             {
                 FsmNodeData node = stateData.node;
@@ -397,7 +397,8 @@ public partial class MainWindow : Window
 
             currentFSMData.canvasControls.AddRange(graphCanvas.Children);
             (stateList.Parent as ScrollViewer)!.ScrollToHome();
-        } else
+        }
+        else
         {
             graphCanvas.Children.Clear();
             graphCanvas.Children.AddRange(currentFSMData.canvasControls);
@@ -429,7 +430,8 @@ public partial class MainWindow : Window
             variableList.Children.Add(CreateSidebarHeader(variableType));
             foreach (Tuple<string, object> value in varData.Values)
             {
-                _ = await CreateSidebarRow(value.Item1, value.Item2, variableList);
+                _ = await CreateSidebarRow(currentFSMData.info.assemblyProvider, value.Item1,
+                    value.Item2, variableList);
             }
         }
 
@@ -494,7 +496,8 @@ public partial class MainWindow : Window
 
                         _ = sb.Append(v.Name);
                     }
-                } else
+                }
+                else
                 {
                     if (fv == val)
                     {
@@ -512,7 +515,8 @@ public partial class MainWindow : Window
         return $"({fn}) {val}";
     }
 
-    public async Task<Grid> CreateSidebarRow(string key, object rawvalue, StackPanel panel)
+    public async Task<Grid> CreateSidebarRow(AssemblyProvider assemblyProvider,
+        string key, object rawvalue, StackPanel panel)
     {
         string value = rawvalue.ToString();
         if (rawvalue is bool)
@@ -560,7 +564,7 @@ public partial class MainWindow : Window
             int id = 0;
             foreach (object v in array)
             {
-                _ = await CreateSidebarRow($"[{id++}]", v, panel);
+                _ = await CreateSidebarRow(assemblyProvider, $"[{id++}]", v, panel);
             }
         }
 
@@ -570,19 +574,17 @@ public partial class MainWindow : Window
             int id = 0;
             foreach (object v in array2.array)
             {
-                _ = await CreateSidebarRow($"[{id++}]", v, panel);
+                _ = await CreateSidebarRow(assemblyProvider, $"[{id++}]", v, panel);
             }
         }
 
-        if (FSMLoader.mainAssembly != null)
+        if (assemblyProvider != null)
         {
             if (rawvalue is FsmEnum @enum)
             {
                 if (!string.IsNullOrEmpty(@enum.enumName))
                 {
-                    TypeDefinition enumType = FSMLoader.mainAssembly.SafeResolveReferences()
-                            .Append(FSMLoader.mainAssembly)
-                            .FindType(@enum.enumName.Replace('+', '/'));
+                    TypeDefinition enumType = assemblyProvider.GetType(@enum.enumName.Replace('+', '/'));
                     if (enumType != null)
                     {
                         value = GetFsmEnumString(enumType, @enum.intValue);
@@ -705,7 +707,8 @@ public partial class MainWindow : Window
                         startMiddle = !isLeftStart ? new Point(start.X - dist, start.Y) : new Point(start.X + dist, start.Y);
 
                         endMiddle = !isLeftEnd ? new Point(end.X - dist, end.Y) : new Point(end.X + dist, end.Y);
-                    } else
+                    }
+                    else
                     {
                         start = new Point(node.transform.X + (node.transform.Width / 2),
                                           node.transform.Y + (node.transform.Height / 2));
@@ -730,7 +733,8 @@ public partial class MainWindow : Window
                 }
 
                 yPos += 16;
-            } catch (Exception ex)
+            }
+            catch (Exception ex)
             {
                 MessageBox.Avalonia.BaseWindows.Base.IMsBoxWindow<ButtonResult> messageBoxStandardWindow = MessageBoxManager
                         .GetMessageBoxStandardWindow("Exception", ex.ToString());

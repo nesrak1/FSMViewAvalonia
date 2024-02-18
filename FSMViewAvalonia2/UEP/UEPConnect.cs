@@ -14,7 +14,7 @@ internal static class UEPConnect
         await client.ConnectAsync(new Uri("ws://127.0.0.1:" + port + "/fsmviewer"), CancellationToken.None);
         while (client.State == WebSocketState.Open)
         {
-            List<byte> buffer = new();
+            List<byte> buffer = [];
 
             Memory<byte> readBuffer = new(new byte[4096]);
             ValueWebSocketReceiveResult info;

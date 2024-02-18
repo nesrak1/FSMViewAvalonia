@@ -19,7 +19,10 @@ internal class CodeGenContext
     public void AppendSpace()
     {
         if (SpaceCount <= 0)
+        {
             return;
+        }
+
         _ = builder.Append(' ', SpaceCount);
     }
     public void AppendLine(string text)
@@ -53,7 +56,11 @@ internal class CodeGenContext
     }
     public string GetFriendlyName(string orig, string defaultVal = "")
     {
-        if(string.IsNullOrWhiteSpace(orig)) orig = defaultVal;
+        if(string.IsNullOrWhiteSpace(orig))
+        {
+            orig = defaultVal;
+        }
+
         return orig.Replace(" ", "_")
                     .Replace('-', '_')
                     .Replace("?", "")

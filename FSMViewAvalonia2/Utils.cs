@@ -34,7 +34,11 @@ internal static class Utils
     {
         while(type!= null)
         {
-            if(type.FullName == parentType) return true;
+            if(type.FullName == parentType)
+            {
+                return true;
+            }
+
             type = type.BaseType.Resolve();
         }
 

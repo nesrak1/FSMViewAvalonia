@@ -6,28 +6,28 @@ namespace FSMViewAvalonia2;
 public static class Constants
 {
     public static readonly Color[] STATE_COLORS =
-    {
+    [
             Color.FromRgb(128, 128, 128),
-            Color.FromRgb(116, 143, 201),
-            Color.FromRgb(58, 182, 166),
-            Color.FromRgb(93, 164, 53),
-            Color.FromRgb(225, 254, 50),
-            Color.FromRgb(235, 131, 46),
-            Color.FromRgb(187, 75, 75),
-            Color.FromRgb(117, 53, 164)
-        };
+        Color.FromRgb(116, 143, 201),
+        Color.FromRgb(58, 182, 166),
+        Color.FromRgb(93, 164, 53),
+        Color.FromRgb(225, 254, 50),
+        Color.FromRgb(235, 131, 46),
+        Color.FromRgb(187, 75, 75),
+        Color.FromRgb(117, 53, 164)
+        ];
 
     public static readonly Color[] TRANSITION_COLORS =
-    {
+    [
             Color.FromRgb(222, 222, 222),
-            Color.FromRgb(197, 213, 248),
-            Color.FromRgb(159, 225, 216),
-            Color.FromRgb(183, 225, 159),
-            Color.FromRgb(225, 254, 102),
-            Color.FromRgb(255, 198, 152),
-            Color.FromRgb(225, 159, 160),
-            Color.FromRgb(197, 159, 225)
-        };
+        Color.FromRgb(197, 213, 248),
+        Color.FromRgb(159, 225, 216),
+        Color.FromRgb(183, 225, 159),
+        Color.FromRgb(225, 254, 102),
+        Color.FromRgb(255, 198, 152),
+        Color.FromRgb(225, 159, 160),
+        Color.FromRgb(197, 159, 225)
+        ];
 }
 
 public static class StructUtil
@@ -35,8 +35,14 @@ public static class StructUtil
 
     public static List<T> ReadAssetList<T>(IDataProvider[] field)
     {
-        List<T> data = new();
+        List<T> data = [];
+        if (field == null)
+        {
+            return data;
+        }
+
         int size = field.Length;
+        data.Capacity = size;
         switch (typeof(T))
         {
             case Type intType when intType == typeof(int):
@@ -128,87 +134,46 @@ public class FsmState
     public override string ToString() => $"State {name}";
 }
 
-public class ActionData
+public class ActionData(IDataProvider field)
 {
-    public List<string> actionNames;
-    public List<string> customNames;
-    public List<bool> actionEnabled;
-    public List<bool> actionIsOpen;
-    public List<int> actionStartIndex;
-    public List<int> actionHashCodes;
-    public List<INamedAssetProvider> unityObjectParams;
-    public List<FsmGameObject> fsmGameObjectParams;
-    public List<FsmOwnerDefault> fsmOwnerDefaultParams;
-    public List<FsmAnimationCurve> animationCurveParams;
-    public List<FsmFunctionCall> functionCallParams;
-    public List<FsmTemplateControl> fsmTemplateControlParams;
-    public List<FsmEventTarget> fsmEventTargetParams;
-    public List<FsmProperty> fsmPropertyParams;
-    public List<FsmLayoutOption> layoutOptionParams;
-    public List<FsmString> fsmStringParams;
-    public List<FsmObject> fsmObjectParams;
-    public List<FsmVar> fsmVarParams;
-    public List<FsmArray> fsmArrayParams;
-    public List<FsmEnum> fsmEnumParams;
-    public List<FsmFloat> fsmFloatParams;
-    public List<FsmInt> fsmIntParams;
-    public List<FsmBool> fsmBoolParams;
-    public List<FsmVector2> fsmVector2Params;
-    public List<FsmVector3> fsmVector3Params;
-    public List<FsmColor> fsmColorParams;
-    public List<FsmRect> fsmRectParams;
-    public List<FsmQuaternion> fsmQuaternionParams;
-    public List<string> stringParams;
-    public List<byte> byteData;
-    public List<int> arrayParamSizes;
-    public List<string> arrayParamTypes;
-    public List<int> customTypeSizes;
-    public List<string> customTypeNames;
-    public List<ParamDataType> paramDataType;
-    public List<string> paramName;
-    public List<int> paramDataPos;
-    public List<int> paramByteDataSize;
-    public ActionData(IDataProvider field)
-    {
-        actionNames = StructUtil.ReadAssetList<string>(field.Get<IDataProvider[]>("actionNames"));
-        customNames = StructUtil.ReadAssetList<string>(field.Get<IDataProvider[]>("customNames"));
-        actionEnabled = field.Get<bool[]>("actionEnabled").ToList();
-        actionIsOpen = field.Get<bool[]>("actionIsOpen").ToList();
-        actionStartIndex = field.Get<int[]>("actionStartIndex").ToList();
-        actionHashCodes = field.Get<int[]>("actionHashCodes").ToList();
-        unityObjectParams = StructUtil.ReadAssetList<INamedAssetProvider>(field.Get<IDataProvider[]>("unityObjectParams"));
-        fsmGameObjectParams = StructUtil.ReadAssetList<FsmGameObject>(field.Get<IDataProvider[]>("fsmGameObjectParams"));
-        fsmOwnerDefaultParams = StructUtil.ReadAssetList<FsmOwnerDefault>(field.Get<IDataProvider[]>("fsmOwnerDefaultParams"));
-        animationCurveParams = StructUtil.ReadAssetList<FsmAnimationCurve>(field.Get<IDataProvider[]>("animationCurveParams"));
-        functionCallParams = StructUtil.ReadAssetList<FsmFunctionCall>(field.Get<IDataProvider[]>("functionCallParams"));
-        fsmTemplateControlParams = StructUtil.ReadAssetList<FsmTemplateControl>(field.Get<IDataProvider[]>("fsmTemplateControlParams"));
-        fsmEventTargetParams = StructUtil.ReadAssetList<FsmEventTarget>(field.Get<IDataProvider[]>("fsmEventTargetParams"));
-        fsmPropertyParams = StructUtil.ReadAssetList<FsmProperty>(field.Get<IDataProvider[]>("fsmPropertyParams"));
-        layoutOptionParams = StructUtil.ReadAssetList<FsmLayoutOption>(field.Get<IDataProvider[]>("layoutOptionParams"));
-        fsmStringParams = StructUtil.ReadAssetList<FsmString>(field.Get<IDataProvider[]>("fsmStringParams"));
-        fsmObjectParams = StructUtil.ReadAssetList<FsmObject>(field.Get<IDataProvider[]>("fsmObjectParams"));
-        fsmVarParams = StructUtil.ReadAssetList<FsmVar>(field.Get<IDataProvider[]>("fsmVarParams"));
-        fsmArrayParams = StructUtil.ReadAssetList<FsmArray>(field.Get<IDataProvider[]>("fsmArrayParams"));
-        fsmEnumParams = StructUtil.ReadAssetList<FsmEnum>(field.Get<IDataProvider[]>("fsmEnumParams"));
-        fsmFloatParams = StructUtil.ReadAssetList<FsmFloat>(field.Get<IDataProvider[]>("fsmFloatParams"));
-        fsmIntParams = StructUtil.ReadAssetList<FsmInt>(field.Get<IDataProvider[]>("fsmIntParams"));
-        fsmBoolParams = StructUtil.ReadAssetList<FsmBool>(field.Get<IDataProvider[]>("fsmBoolParams"));
-        fsmVector2Params = StructUtil.ReadAssetList<FsmVector2>(field.Get<IDataProvider[]>("fsmVector2Params"));
-        fsmVector3Params = StructUtil.ReadAssetList<FsmVector3>(field.Get<IDataProvider[]>("fsmVector3Params"));
-        fsmColorParams = StructUtil.ReadAssetList<FsmColor>(field.Get<IDataProvider[]>("fsmColorParams"));
-        fsmRectParams = StructUtil.ReadAssetList<FsmRect>(field.Get<IDataProvider[]>("fsmRectParams"));
-        fsmQuaternionParams = StructUtil.ReadAssetList<FsmQuaternion>(field.Get<IDataProvider[]>("fsmQuaternionParams"));
-        stringParams = StructUtil.ReadAssetList<string>(field.Get<IDataProvider[]>("stringParams"));
-        byteData = field.Get<byte[]>("byteData").ToList();
-        arrayParamSizes = field.Get<int[]>("arrayParamSizes").ToList();
-        arrayParamTypes = StructUtil.ReadAssetList<string>(field.Get<IDataProvider[]>("arrayParamTypes"));
-        customTypeSizes = StructUtil.ReadAssetList<int>(field.Get<IDataProvider[]>("customTypeSizes"));
-        customTypeNames = StructUtil.ReadAssetList<string>(field.Get<IDataProvider[]>("customTypeNames"));
-        paramDataType = StructUtil.ReadAssetList<ParamDataType>(field.Get<IDataProvider[]>("paramDataType"));
-        paramName = StructUtil.ReadAssetList<string>(field.Get<IDataProvider[]>("paramName"));
-        paramDataPos = StructUtil.ReadAssetList<int>(field.Get<IDataProvider[]>("paramDataPos"));
-        paramByteDataSize = StructUtil.ReadAssetList<int>(field.Get<IDataProvider[]>("paramByteDataSize"));
-    }
+    public List<string> actionNames = StructUtil.ReadAssetList<string>(field.Get<IDataProvider[]>("actionNames"));
+    public List<string> customNames = StructUtil.ReadAssetList<string>(field.Get<IDataProvider[]>("customNames"));
+    public List<bool> actionEnabled = [.. field.Get<bool[]>("actionEnabled")];
+    public List<bool> actionIsOpen = [.. field.Get<bool[]>("actionIsOpen")];
+    public List<int> actionStartIndex = [.. field.Get<int[]>("actionStartIndex")];
+    public List<int> actionHashCodes = [.. field.Get<int[]>("actionHashCodes")];
+    public List<INamedAssetProvider> unityObjectParams = StructUtil.ReadAssetList<INamedAssetProvider>(field.Get<IDataProvider[]>("unityObjectParams"));
+    public List<FsmGameObject> fsmGameObjectParams = StructUtil.ReadAssetList<FsmGameObject>(field.Get<IDataProvider[]>("fsmGameObjectParams"));
+    public List<FsmOwnerDefault> fsmOwnerDefaultParams = StructUtil.ReadAssetList<FsmOwnerDefault>(field.Get<IDataProvider[]>("fsmOwnerDefaultParams"));
+    public List<FsmAnimationCurve> animationCurveParams = StructUtil.ReadAssetList<FsmAnimationCurve>(field.Get<IDataProvider[]>("animationCurveParams"));
+    public List<FsmFunctionCall> functionCallParams = StructUtil.ReadAssetList<FsmFunctionCall>(field.Get<IDataProvider[]>("functionCallParams"));
+    public List<FsmTemplateControl> fsmTemplateControlParams = StructUtil.ReadAssetList<FsmTemplateControl>(field.Get<IDataProvider[]>("fsmTemplateControlParams"));
+    public List<FsmEventTarget> fsmEventTargetParams = StructUtil.ReadAssetList<FsmEventTarget>(field.Get<IDataProvider[]>("fsmEventTargetParams"));
+    public List<FsmProperty> fsmPropertyParams = StructUtil.ReadAssetList<FsmProperty>(field.Get<IDataProvider[]>("fsmPropertyParams"));
+    public List<FsmLayoutOption> layoutOptionParams = StructUtil.ReadAssetList<FsmLayoutOption>(field.Get<IDataProvider[]>("layoutOptionParams"));
+    public List<FsmString> fsmStringParams = StructUtil.ReadAssetList<FsmString>(field.Get<IDataProvider[]>("fsmStringParams"));
+    public List<FsmObject> fsmObjectParams = StructUtil.ReadAssetList<FsmObject>(field.Get<IDataProvider[]>("fsmObjectParams"));
+    public List<FsmVar> fsmVarParams = StructUtil.ReadAssetList<FsmVar>(field.Get<IDataProvider[]>("fsmVarParams"));
+    public List<FsmArray> fsmArrayParams = StructUtil.ReadAssetList<FsmArray>(field.Get<IDataProvider[]>("fsmArrayParams"));
+    public List<FsmEnum> fsmEnumParams = StructUtil.ReadAssetList<FsmEnum>(field.Get<IDataProvider[]>("fsmEnumParams"));
+    public List<FsmFloat> fsmFloatParams = StructUtil.ReadAssetList<FsmFloat>(field.Get<IDataProvider[]>("fsmFloatParams"));
+    public List<FsmInt> fsmIntParams = StructUtil.ReadAssetList<FsmInt>(field.Get<IDataProvider[]>("fsmIntParams"));
+    public List<FsmBool> fsmBoolParams = StructUtil.ReadAssetList<FsmBool>(field.Get<IDataProvider[]>("fsmBoolParams"));
+    public List<FsmVector2> fsmVector2Params = StructUtil.ReadAssetList<FsmVector2>(field.Get<IDataProvider[]>("fsmVector2Params"));
+    public List<FsmVector3> fsmVector3Params = StructUtil.ReadAssetList<FsmVector3>(field.Get<IDataProvider[]>("fsmVector3Params"));
+    public List<FsmColor> fsmColorParams = StructUtil.ReadAssetList<FsmColor>(field.Get<IDataProvider[]>("fsmColorParams"));
+    public List<FsmRect> fsmRectParams = StructUtil.ReadAssetList<FsmRect>(field.Get<IDataProvider[]>("fsmRectParams"));
+    public List<FsmQuaternion> fsmQuaternionParams = StructUtil.ReadAssetList<FsmQuaternion>(field.Get<IDataProvider[]>("fsmQuaternionParams"));
+    public List<string> stringParams = StructUtil.ReadAssetList<string>(field.Get<IDataProvider[]>("stringParams"));
+    public List<byte> byteData = [.. field.Get<byte[]>("byteData")];
+    public List<int> arrayParamSizes = [.. field.Get<int[]>("arrayParamSizes")];
+    public List<string> arrayParamTypes = StructUtil.ReadAssetList<string>(field.Get<IDataProvider[]>("arrayParamTypes"));
+    public List<int> customTypeSizes = StructUtil.ReadAssetList<int>(field.Get<IDataProvider[]>("customTypeSizes"));
+    public List<string> customTypeNames = StructUtil.ReadAssetList<string>(field.Get<IDataProvider[]>("customTypeNames"));
+    public List<ParamDataType> paramDataType = StructUtil.ReadAssetList<ParamDataType>(field.Get<IDataProvider[]>("paramDataType"));
+    public List<string> paramName = StructUtil.ReadAssetList<string>(field.Get<IDataProvider[]>("paramName"));
+    public List<int> paramDataPos = StructUtil.ReadAssetList<int>(field.Get<IDataProvider[]>("paramDataPos"));
+    public List<int> paramByteDataSize = StructUtil.ReadAssetList<int>(field.Get<IDataProvider[]>("paramByteDataSize"));
 }
 
 public class FsmGameObject : NamedVariable
@@ -556,7 +521,8 @@ public class FsmVar
             object valueObj = value is NamedAssetPPtr namedPPtr && namedPPtr.name != "" ? namedPPtr.name : value;
 
             return variableName != "" ? $"Var {variableName} = {valueObj}" : $"Var unnamed = {valueObj}";
-        } else
+        }
+        else
         {
             return variableName != "" ? $"Var {variableName}" : $"Var";
         }

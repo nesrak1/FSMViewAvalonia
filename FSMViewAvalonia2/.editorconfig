@@ -192,6 +192,9 @@ csharp_style_prefer_top_level_statements = true:silent
 csharp_style_prefer_readonly_struct = true:suggestion
 csharp_style_prefer_utf8_string_literals = true:suggestion
 
+# CA1859: 尽可能使用具体类型以提高性能
+dotnet_diagnostic.CA1859.severity = none
+
 [*.{cs,vb}]
 end_of_line = lf
 dotnet_style_qualification_for_field = false:suggestion

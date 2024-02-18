@@ -4,10 +4,7 @@ namespace FSMViewAvalonia2;
 
 public static class ActionReader
 {
-    public static Dictionary<string, ParamDataType> ParamDataTypes = new()
-    {
-
-    };
+    public static readonly Dictionary<string, ParamDataType> ParamDataTypes = [];
     static ActionReader()
     {
         foreach (string v in Enum.GetNames(typeof(ParamDataType)))
@@ -16,7 +13,7 @@ public static class ActionReader
                 (ParamDataType) Enum.Parse(typeof(ParamDataType), v));
         }
     }
-    public static object GetFsmArray(this ActionData actionData, ref int index, int dataVersion)
+    public static object GetFsmArray(this ActionData actionData, AssemblyProvider assemblyProvider, ref int index, int dataVersion)
     {
         string type = actionData.arrayParamTypes[actionData.paramDataPos[index]];
         int size = actionData.arrayParamSizes[actionData.paramDataPos[index]];
@@ -26,9 +23,8 @@ public static class ActionReader
         };
         if (!ParamDataTypes.TryGetValue(type, out ParamDataType pdt))
         {
-            TypeDefinition t = FSMLoader.mainAssembly.SafeResolveReferences().Append(FSMLoader.mainAssembly)
-                .FindType(type);
-            if(t.IsSubclassOf("UnityEngine.Object"))
+            TypeDefinition t = assemblyProvider.GetType(type);
+            if (t.IsSubclassOf("UnityEngine.Object"))
             {
                 pdt = ParamDataType.ObjectReference;
             }
@@ -36,7 +32,7 @@ public static class ActionReader
             {
                 return $"Not support [{size}]({type}[])";
             }
-            
+
         }
         else
         {
@@ -47,27 +43,27 @@ public static class ActionReader
         for (int i = 0; i < size; i++)
         {
             index++;
-            array[i] = GetFsmObject(actionData, ref index, dataVersion, pdt);
+            array[i] = GetFsmObject(actionData, assemblyProvider, ref index, dataVersion, pdt);
         }
 
         return result;
     }
-    public static object GetFsmObject(this ActionData actionData, ref int index, int dataVersion)
+    public static object GetFsmObject(this ActionData actionData, AssemblyProvider assemblyProvider, ref int index, int dataVersion)
     {
         //string actionName = actionData.actionNames[index];
         ParamDataType paramDataType = actionData.paramDataType[index];
-        object ret = GetFsmObject(actionData, ref index, dataVersion, paramDataType);
+        object ret = GetFsmObject(actionData, assemblyProvider, ref index, dataVersion, paramDataType);
         return ret;
     }
 
-    private static object GetFsmObject(ActionData actionData, ref int index, int dataVersion,
+    private static object GetFsmObject(ActionData actionData, AssemblyProvider assemblyProvider, ref int index, int dataVersion,
         ParamDataType paramDataType)
     {
         try
         {
             int paramDataPos = actionData.paramDataPos[index];
             int paramByteDataSize = actionData.paramByteDataSize[index];
-            BinaryReader r = new(new MemoryStream(actionData.byteData.ToArray()));
+            BinaryReader r = new(new MemoryStream([.. actionData.byteData]));
             r.BaseStream.Position = paramDataPos;
             object ret = paramDataType switch
             {
@@ -112,7 +108,7 @@ public static class ActionReader
                 ParamDataType.FsmArray => actionData.fsmArrayParams[paramDataPos],
                 ParamDataType.ObjectReference => $"ObjRef([{actionData.unityObjectParams[paramDataPos]}])",
                 ParamDataType.FunctionCall => actionData.functionCallParams[paramDataPos],
-                ParamDataType.Array => actionData.GetFsmArray(ref index, dataVersion),
+                ParamDataType.Array => actionData.GetFsmArray(assemblyProvider, ref index, dataVersion),
                 _ => $"[{paramDataType} not implemented]",
             };
             if (dataVersion == 1 && ret is NamedVariable nv)
@@ -134,7 +130,8 @@ public static class ActionReader
             }
 
             return ret;
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             return $"An exception was encountered: {e}";
         }

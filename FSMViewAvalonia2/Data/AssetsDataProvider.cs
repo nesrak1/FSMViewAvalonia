@@ -63,13 +63,13 @@ public class AssetsDataProvider : IDataProvider
         AssetTypeValueField name = fields["m_Name"];
         return name.IsDummy ? $"pathId_{info.PathId}" : name.AsString;
     }
-    private INamedAssetProvider ReadNamedAssetPPtr(AssetTypeValueField field)
+    private NamedAssetPPtr ReadNamedAssetPPtr(AssetTypeValueField field)
     {
         int fileId = field.Get("m_FileID").AsInt;
         long pathId = field.Get("m_PathID").AsLong;
         return GetNamedPtr(new AssetPPtr(fileId, pathId));
     }
-    private T GetValue<T>(AssetTypeValueField field) => (T) GetValue(typeof(T), field);
+    private T GetValue<T>(AssetTypeValueField field) => (T) (GetValue(typeof(T), field) ?? default(T));
     private object GetValue(Type resultType, AssetTypeValueField field)
     {
         if (field.IsDummy)
@@ -87,7 +87,7 @@ public class AssetsDataProvider : IDataProvider
                 field = field.Children[0];
                 val = field.Value;
             }
-            
+
 
             if (resultType == typeof(byte[]))
             {
@@ -96,7 +96,7 @@ public class AssetsDataProvider : IDataProvider
 
             Type elType = resultType.GetElementType();
 
-            
+
 
             if (resultType == typeof(IDataProvider[]))
             {
@@ -114,41 +114,45 @@ public class AssetsDataProvider : IDataProvider
                 && elType.IsPrimitive
                 && elType.IsValueType)
             {
-                using (var ms = new MemoryStream(val.AsByteArray))
+                using var ms = new MemoryStream(val.AsByteArray);
+                var result = new List<object>();
+                var reader = new BinaryReader(ms);
+
+                while (ms.Position < ms.Length)
                 {
-                    var result = new List<object>();
-                    var reader = new BinaryReader(ms);
-
-                    while(ms.Position < ms.Length)
+                    if (elType == typeof(bool))
                     {
-                        if (elType == typeof(bool))
-                        {
-                            result.Add(reader.ReadByte());
-                        } else if (elType == typeof(short))
-                        {
-                            result.Add(reader.ReadInt16());
-                        } else if (elType == typeof(int))
-                        {
-                            result.Add(reader.ReadInt32());
-                        } else if (elType == typeof(long))
-                        {
-                            result.Add(reader.ReadInt64());
-                        } else if (elType == typeof(float))
-                        {
-                            result.Add(reader.ReadSingle());
-                        } else if (elType == typeof(double))
-                        {
-                            result.Add(reader.ReadDouble());
-                        } else
-                        {
-                            throw new NotSupportedException();
-                        }
+                        result.Add(reader.ReadByte());
                     }
-
-                    return result.Select(x => ((IConvertible)x).ToType(elType, null))
-                        .ToArray()
-                        .Convert(elType);
+                    else if (elType == typeof(short))
+                    {
+                        result.Add(reader.ReadInt16());
+                    }
+                    else if (elType == typeof(int))
+                    {
+                        result.Add(reader.ReadInt32());
+                    }
+                    else if (elType == typeof(long))
+                    {
+                        result.Add(reader.ReadInt64());
+                    }
+                    else if (elType == typeof(float))
+                    {
+                        result.Add(reader.ReadSingle());
+                    }
+                    else if (elType == typeof(double))
+                    {
+                        result.Add(reader.ReadDouble());
+                    }
+                    else
+                    {
+                        throw new NotSupportedException();
+                    }
                 }
+
+                return result.Select(x => ((IConvertible) x).ToType(elType, null))
+                    .ToArray()
+                    .Convert(elType);
             }
 
             return GetValue<IDataProvider[]>(field)
@@ -171,7 +175,7 @@ public class AssetsDataProvider : IDataProvider
         object r = val.ValueType switch
         {
             AssetValueType.Bool => val.AsBool,
-            AssetValueType.Array=> val.AsObject,
+            AssetValueType.Array => val.AsObject,
             AssetValueType.ByteArray => val.AsByteArray,
             AssetValueType.Double => val.AsDouble,
             AssetValueType.Float => val.AsFloat,

@@ -9,8 +9,9 @@ public class FsmStateAction : IActionScriptEntry
         FsmDataInstance dataInstance)
     {
         string actionName = actionData.actionNames[index];
+        FsmData = dataInstance;
         FullName = actionName;
-        Type = FSMLoader.mainAssembly?.MainModule?.GetType(FullName);
+        Type = AssemblyProvider.GetType(FullName);
         if (actionName.Contains('.'))
         {
             actionName = actionName[(actionName.LastIndexOf(".") + 1)..];
@@ -19,16 +20,16 @@ public class FsmStateAction : IActionScriptEntry
         int startIndex = actionData.actionStartIndex[index];
         int endIndex = index == actionData.actionNames.Count - 1 ? actionData.paramDataType.Count : actionData.actionStartIndex[index + 1];
 
-        HashSet<string> parmaNames = new HashSet<string>();
+        HashSet<string> parmaNames = [];
         for (int j = startIndex; j < endIndex; j++)
         {
             string paramName = actionData.paramName[j];
-            if(string.IsNullOrEmpty(paramName))
+            if (string.IsNullOrEmpty(paramName))
             {
                 break;
             }
 
-            object obj = ActionReader.GetFsmObject(actionData, ref j, dataVersion);
+            object obj = ActionReader.GetFsmObject(actionData, AssemblyProvider, ref j, dataVersion);
             FieldDefinition field = Type?.Fields?.FirstOrDefault(x => x.Name == paramName);
 
             if (obj is NamedVariable nv)
@@ -51,7 +52,8 @@ public class FsmStateAction : IActionScriptEntry
                 if (ftype.IsEnum && obj is int val)
                 {
                     obj = MainWindow.GetFsmEnumString(ftype, val);
-                } else if (uitype == UIHint.Layer && obj is FsmInt or int)
+                }
+                else if (uitype == UIHint.Layer && obj is FsmInt or int)
                 {
                     var fi = obj as FsmInt;
                     int layer = fi?.value ?? (int) obj;
@@ -76,12 +78,13 @@ public class FsmStateAction : IActionScriptEntry
     }
     public string FullName { get; set; }
     public string Name { get; set; }
-    public List<Tuple<string, object>> Values { get; set; } = new();
+    public List<Tuple<string, object>> Values { get; set; } = [];
     public bool Enabled { get; set; } = true;
     public int Index { get; set; }
     public FsmState State { get; init; }
-    public TypeDefinition Type { get; set; }
-
+    public TypeDefinition Type { get; }
+    public FsmDataInstance FsmData { get; }
+    public AssemblyProvider AssemblyProvider => FsmData.info.assemblyProvider ?? FSMAssetHelper.defaultProvider;
     public virtual async void BuildView(StackPanel stack, int index)
     {
         Index = index;
@@ -95,7 +98,7 @@ public class FsmStateAction : IActionScriptEntry
             string key = field.Item1;
             object value = field.Item2;
 
-            _ = await App.mainWindow.CreateSidebarRow(key, value, stack);
+            _ = await App.mainWindow.CreateSidebarRow(AssemblyProvider, key, value, stack);
         }
     }
 
@@ -138,25 +141,29 @@ public class FsmStateAction : IActionScriptEntry
         }
         #endregion
         #region Open in Dnspy
-        Button btn = new()
+        if (Type != null)
         {
-            Padding = new Thickness(5),
-            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right,
-            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
-            Width = 100,
-            Content = "Open in ..."
-        };
-        btn.Click += Btn_Click;
-        string filename = System.IO.Path.GetFileName(Config.config.SpyPath);
-        if (filename.Equals("dnspy.exe", StringComparison.OrdinalIgnoreCase))
-        {
-            btn.Content = "Open in DnSpy";
-        } else if (filename.Equals("ilspy.exe", StringComparison.OrdinalIgnoreCase))
-        {
-            btn.Content = "Open in ILSpy";
-        }
+            Button btn = new()
+            {
+                Padding = new Thickness(5),
+                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right,
+                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+                Width = 100,
+                Content = "Open in ..."
+            };
+            btn.Click += Btn_Click;
+            string filename = System.IO.Path.GetFileName(Config.config.SpyPath);
+            if (filename.Equals("dnspy.exe", StringComparison.OrdinalIgnoreCase))
+            {
+                btn.Content = "Open in DnSpy";
+            }
+            else if (filename.Equals("ilspy.exe", StringComparison.OrdinalIgnoreCase))
+            {
+                btn.Content = "Open in ILSpy";
+            }
 
-        valueContainer.Children.Add(btn);
+            valueContainer.Children.Add(btn);
+        }
         #endregion
         return valueContainer;
     }
@@ -165,6 +172,11 @@ public class FsmStateAction : IActionScriptEntry
 
     private async void Btn_Click(object sender, RoutedEventArgs e)
     {
+        if (Type == null)
+        {
+            return;
+        }
+
     SELECT:
         if (string.IsNullOrEmpty(Config.config.SpyPath) || !File.Exists(Config.config.SpyPath))
         {
@@ -175,10 +187,10 @@ public class FsmStateAction : IActionScriptEntry
             ofd.Filters.Add(new()
             {
                 Name = @"DnSpy\ILSpy",
-                Extensions = new()
-                {
+                Extensions =
+                [
                         "exe"
-                    }
+                    ]
             });
             string[] dnspy = await ofd.ShowAsync(App.mainWindow);
             if (dnspy == null || dnspy.Length == 0)
@@ -197,8 +209,7 @@ public class FsmStateAction : IActionScriptEntry
             goto SELECT;
         }
 
-        string arg = " \"" + GameFileHelper.FindGameFilePath(await GameFileHelper.FindHollowKnightPath(App.mainWindow),
-            System.IO.Path.Combine("Managed", "Assembly-CSharp.dll")) + "\" ";
+        string arg = " \"" + Type.Module.FileName + "\" ";
         arg = filename.Equals("dnspy.exe", StringComparison.OrdinalIgnoreCase)
         ? arg + "--select T:" + FullName
         : arg + "/navigateTo:T:" + FullName;

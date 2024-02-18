@@ -8,9 +8,10 @@ namespace FSMViewAvalonia2;
 
 public class FSMLoader
 {
-    public static AssemblyDefinition mainAssembly;
     private readonly MainWindow window;
     private readonly AssetsManager am;
+
+    private readonly Dictionary<(string, string), List<AssetInfo>> fsmListCache = [];
     public FSMLoader(MainWindow window, AssetsManager am)
     {
         this.window = window;
@@ -27,7 +28,8 @@ public class FSMLoader
                 try
                 {
                     return am.LoadAssetsFileFromBundle(file, x, true);
-                } catch (Exception e)
+                }
+                catch (Exception e)
                 {
                     Console.Error.WriteLine(e);
                     throw;
@@ -49,9 +51,9 @@ public class FSMLoader
         AssetsFile file = curFile.file;
 
         List<AssetInfo> result = GetFSMInfos(curFile, loadAsDep);
-        if(isLevel && Config.config.option_includeSharedassets)
+        if (isLevel && Config.config.option_includeSharedassets)
         {
-            foreach(AssetsFileExternal dep in curFile.file.Metadata.Externals.OrderBy(
+            foreach (AssetsFileExternal dep in curFile.file.Metadata.Externals.OrderBy(
                 a =>
                 {
                     string fn = Path.GetFileNameWithoutExtension(a.PathName);
@@ -82,7 +84,7 @@ public class FSMLoader
     public static FsmDataInstance LoadJsonFSM(string text, AssetInfo assetInfo) => assetInfo.ProviderType != AssetInfo.DataProviderType.Json
             ? throw new NotSupportedException()
             : new(assetInfo, new JsonDataProvider(JToken.Parse(text)));
-    
+
     public string GetGameObjectPath(AssetTypeValueField goAti, AssetsFileInstance curFile)
     {
         try
@@ -110,13 +112,41 @@ public class FSMLoader
             }
 
             return pathBuilder.ToString();
-        } catch (Exception)
+        }
+        catch (Exception)
         {
             return "";
         }
     }
 
     private List<AssetInfo> GetFSMInfos(
+        AssetsFileInstance assetsFile, bool loadAsDep
+        )
+    {
+        if (!Config.config.option_enableFSMListCache)
+        {
+            return GetFSMInfosDirect(assetsFile, loadAsDep);
+        }
+
+        (string path, string name) key = (assetsFile.path, assetsFile.name);
+        if (!fsmListCache.TryGetValue(key, out List<AssetInfo> result))
+        {
+            result = GetFSMInfosDirect(assetsFile, loadAsDep);
+            fsmListCache[key] = result;
+        }
+
+        foreach (AssetInfo v in result)
+        {
+            if (v is AssetInfoUnity vu)
+            {
+                vu.loadAsDep = loadAsDep;
+            }
+        }
+
+        return result;
+    }
+
+    private List<AssetInfo> GetFSMInfosDirect(
         AssetsFileInstance assetsFile, bool loadAsDep
         )
     {
@@ -128,8 +158,10 @@ public class FSMLoader
 
 
         AssetsFile file = assetsFile.file;
+        file.GenerateQuickLookupTree();
         var assetInfos = new List<AssetInfo>();
         int assetCount = file.AssetInfos.Count;
+        AssemblyProvider apr = FSMAssetHelper.GetAssemblyProvider(assetsFile);
 
         foreach (AssetFileInfo info in file.GetAssetsOfType(AssetClassID.MonoBehaviour))
         {
@@ -162,14 +194,14 @@ public class FSMLoader
             {
                 if (t_pmBS == null)
                 {
-                    t_pmBS = file.GetTypeTemplateFieldFromAsset(info, "PlayMaker", "",
+                    t_pmBS = assetsFile.GetTypeTemplateFieldFromAsset(info, "PlayMaker", "",
                                                                "PlayMakerFSM", t_monoBF.Children)
                         .RemoveFieldsAfter("fsm", true);
                     t_fsm ??= t_pmBS.GetField("fsm").RemoveFieldsAfter("name", true);
 
                 }
 
-                t_pmBS_data ??= file.GetTypeTemplateFieldFromAsset(info, "PlayMaker", "",
+                t_pmBS_data ??= assetsFile.GetTypeTemplateFieldFromAsset(info, "PlayMaker", "",
                                                                "PlayMakerFSM", t_monoBF.Children);
 
                 AssetTypeValueField pmBf = t_pmBS.MakeValue(file.Reader, info.AbsoluteByteStart);
@@ -188,19 +220,22 @@ public class FSMLoader
                     assetFile = assetsFile.path,
                     nameBase = m_Name,
                     assetFI = assetsFile,
-                    loadAsDep = loadAsDep
+                    loadAsDep = loadAsDep,
+
+                    assemblyProvider = apr
                 });
-            } else if (m_ClassName == "FsmTemplate") //TODO
+            }
+            else if (m_ClassName == "FsmTemplate") //TODO
             {
                 if (t_fsmTemplateBS == null)
                 {
-                    t_fsmTemplateBS = file.GetTypeTemplateFieldFromAsset(info, "PlayMaker", "",
+                    t_fsmTemplateBS = assetsFile.GetTypeTemplateFieldFromAsset(info, "PlayMaker", "",
                                                                "FsmTemplate", t_monoBF.Children)
                         .RemoveFieldsAfter("fsm", true);
                     t_fsm ??= t_fsmTemplateBS.GetField("fsm").RemoveFieldsAfter("name", true);
                 }
 
-                t_fsmTemplateBS_data ??= file.GetTypeTemplateFieldFromAsset(info, "PlayMaker", "",
+                t_fsmTemplateBS_data ??= assetsFile.GetTypeTemplateFieldFromAsset(info, "PlayMaker", "",
                                                                "FsmTemplate", t_monoBF.Children);
 
                 AssetTypeValueField pmBf = t_fsmTemplateBS.MakeValue(file.Reader, info.AbsoluteByteStart);
@@ -220,7 +255,9 @@ public class FSMLoader
                     assetFile = assetsFile.path,
                     nameBase = m_Name,
                     assetFI = assetsFile,
-                    loadAsDep = loadAsDep
+                    loadAsDep = loadAsDep,
+
+                    assemblyProvider = apr
                 });
             }
 
@@ -231,7 +268,7 @@ public class FSMLoader
         return assetInfos;
     }
 
-   
+
 
     public static List<SceneInfo> LoadSceneList()
     {
@@ -239,7 +276,7 @@ public class FSMLoader
         AssetTypeValueField scenes = buildSettings.Get("scenes").Get("Array");
         int sceneCount = scenes.AsArray.size;
 
-        List<SceneInfo> sceneInfos = new();
+        List<SceneInfo> sceneInfos = [];
         for (int i = 0; i < sceneCount; i++)
         {
             sceneInfos.Add(new SceneInfo()

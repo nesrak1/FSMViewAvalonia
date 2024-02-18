@@ -30,4 +30,6 @@ internal class Config
     public bool option_extraLAMZABOnTempFile = false;
     public string hkPath = "";
     public string SpyPath = "";
+
+    public bool option_enableFSMListCache = true;
 }

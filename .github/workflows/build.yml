@@ -12,7 +12,7 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v3
       with:
-        dotnet-version: 6
+        dotnet-version: 8
     - name: Build
       run: |
         dotnet publish -p:Configuration=Release -r win-x64 -f net6
@@ -20,7 +20,7 @@ jobs:
       uses: actions/upload-artifact@v3.1.0
       with:
         name: win-x64
-        path: ./FSMViewAvalonia2/bin/Release/net6/win-x64/publish/
+        path: ./FSMViewAvalonia2/bin/Release/net8/win-x64/publish/
   build:
     needs: [build-win]
     runs-on: windows-latest

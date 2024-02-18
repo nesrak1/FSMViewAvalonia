@@ -97,12 +97,10 @@ public static class GameFileHelper
             return null;
         }
 
-        using (RegistryKey subkey = Registry.CurrentUser.OpenSubKey(path))
+        using RegistryKey subkey = Registry.CurrentUser.OpenSubKey(path);
+        if (subkey != null)
         {
-            if (subkey != null)
-            {
-                return subkey.GetValue(key);
-            }
+            return subkey.GetValue(key);
         }
 
         return null;
@@ -116,13 +114,13 @@ public static class GameFileHelper
     }
     public static string FindGameFilePath(string hkRootPath, string file)
     {
-        string[] pathTests = new string[]
-        {
+        string[] pathTests =
+        [
                 "hollow_knight_Data",
                 "Hollow Knight_Data",
                 "Hollow_Knight_Data",
                 Path.Combine("Contents", "Resources", "Data")
-        };
+        ];
         foreach (string pathTest in pathTests)
         {
             string dataPath = Path.Combine(hkRootPath, pathTest);

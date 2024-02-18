@@ -54,7 +54,8 @@ public class FsmNodeData
         {
             FsmNodeData toNode = toState.node;
             transform = new Rect(toNode.transform.X, toNode.transform.Y - 50, toNode.transform.Width, 18);
-        } else
+        }
+        else
         {
             transform = new Rect(-100, -100, 100, 18);
         }
@@ -62,10 +63,10 @@ public class FsmNodeData
         stateColor = Constants.STATE_COLORS[transition.colorIndex];
         transitionColor = Constants.TRANSITION_COLORS[transition.colorIndex];
         name = transition.fsmEvent.name;
-        transitions = new FsmTransition[1]
-        {
+        transitions =
+        [
                 new FsmTransition(transition)
-        };
+        ];
     }
     public FsmNodeData(FsmState state)
     {
