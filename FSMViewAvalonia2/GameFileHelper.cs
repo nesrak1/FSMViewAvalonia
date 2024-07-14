@@ -51,6 +51,7 @@ public static class GameFileHelper
 
     }
 
+
     public static async Task<string> FindSteamGamePath(Window win, int appid, string gameName)
     {
         string path = null;
