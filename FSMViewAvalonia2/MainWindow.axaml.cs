@@ -2,7 +2,6 @@ using System.Reactive;
 
 using Avalonia.Reactive;
 
-using FSMViewAvalonia2.UEP;
 
 namespace FSMViewAvalonia2;
 public partial class MainWindow : Window
@@ -34,8 +33,6 @@ public partial class MainWindow : Window
         InitView();
 
         InitFSMLoader();
-
-        InitFSMProxy();
 
 
         option_includeSharedassets.IsChecked = Config.config.option_includeSharedassets;
@@ -612,23 +609,6 @@ public partial class MainWindow : Window
             }
         }
 
-        if (UEPConnect.UEPConnected)
-        {
-            var provider = (pptr ?? (rawvalue as JsonNamedAssetProvider)) as JsonNamedAssetProvider;
-            if (provider is not null && provider.instanceId is not null)
-            {
-                Button btn = new()
-                {
-                    Padding = new Thickness(5),
-                    HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right,
-                    VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
-                };
-                marginRight = 55;
-                btn.Content = "Inspect";
-                btn.Click += (sender, ev) => UEPConnect.Send("INSPECT-UOBJ\n" + provider.instanceId);
-                valueContainer.Children.Add(btn);
-            }
-        }
 
         TextBlock valueLabel = new()
         {

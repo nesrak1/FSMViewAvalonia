@@ -1,6 +1,6 @@
 using System.Diagnostics;
+using System.Runtime.Versioning;
 
-using FSMViewAvalonia2.UEP;
 
 namespace FSMViewAvalonia2;
 public class FsmStateAction : IActionScriptEntry
@@ -125,23 +125,8 @@ public class FsmStateAction : IActionScriptEntry
         }
 
         valueContainer.Children.Add(header);
-        #region Inspect
-        if (UEPConnect.UEPConnected && State.fsm.info.ProviderType == AssetInfo.DataProviderType.Json)
-        {
-            Button inspect_btn = new()
-            {
-                Padding = new Thickness(5),
-                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right,
-                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
-                Content = "Inspect",
-                Margin = new Thickness(0, 0, 100, 0)
-            };
-            inspect_btn.Click += Inspect_btn_Click;
-            valueContainer.Children.Add(inspect_btn);
-        }
-        #endregion
         #region Open in Dnspy
-        if (Type != null)
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && Type != null)
         {
             Button btn = new()
             {
@@ -168,8 +153,7 @@ public class FsmStateAction : IActionScriptEntry
         return valueContainer;
     }
 
-    private void Inspect_btn_Click(object sender, RoutedEventArgs e) => UEPConnect.Send("INSPECT-ACTION\n" + State.fsm.info.id + "\n" + State.name + "\n" + Index);
-
+    [SupportedOSPlatform("windows")]
     private async void Btn_Click(object sender, RoutedEventArgs e)
     {
         if (Type == null)

@@ -1,12 +1,17 @@
 
 
-using FSMViewAvalonia2.UEP;
+
+using System.Diagnostics;
+using System.Runtime.Versioning;
 
 namespace FSMViewAvalonia2;
 internal partial class Program
 {
+
+    [SupportedOSPlatform("windows")]
     [LibraryImport("user32.dll", StringMarshalling = StringMarshalling.Utf16)]
     private static partial void MessageBoxW(IntPtr _, string lpText, string lpCaption, uint uType);
+
     public const string PipeName = "FSMViewAvaloniaInstancePipe";
     public static Mutex mutex = new(false, "MutexLock." + PipeName);
 
@@ -77,7 +82,11 @@ internal partial class Program
             }
             catch (Exception e)
             {
-                MessageBoxW(IntPtr.Zero, e.ToString(), "Exception!", 0x10);
+                Console.Error.WriteLine(e);
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    MessageBoxW(IntPtr.Zero, e.ToString(), "Exception!", 0x10);
+                }
             }
         }
     }
@@ -135,12 +144,6 @@ internal partial class Program
         }
 
         string filename = args[0];
-        if (filename.Equals("--UEP", StringComparison.OrdinalIgnoreCase))
-        {
-            string pipeName = args[1];
-            _ = Task.Run(() => UEPConnect.Init(int.Parse(pipeName)));
-            return;
-        }
 
         if (filename.Equals("--NONE", StringComparison.OrdinalIgnoreCase))
         {
