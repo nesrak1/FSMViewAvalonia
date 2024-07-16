@@ -13,10 +13,10 @@ public partial class MainWindow : Window
     //variables
     private AssetsManager am;
     public FSMLoader fsmLoader;
-    private FsmDataInstance currentFSMData;
+    private FsmDataInstanceUI currentFSMData;
     private string lastFileName;
     private bool lastIsBundle;
-    private readonly List<FsmDataInstance> loadedFsmDatas = [];
+    private readonly List<FsmDataInstanceUI> loadedFsmDatas = [];
     private bool addingTabs;
 
     //fsm info
@@ -148,7 +148,7 @@ public partial class MainWindow : Window
         var tabItem = (TabItem) fsmTabs.SelectedItem;
         if (tabItem != null)
         {
-            var fsmInst = (FsmDataInstance) tabItem.Tag;
+            var fsmInst = (FsmDataInstanceUI) tabItem.Tag;
             _ = tabItems.Remove(tabItem);
             _ = loadedFsmDatas.Remove(fsmInst);
             fsmInst.canvasControls.Clear();
@@ -159,7 +159,7 @@ public partial class MainWindow : Window
         var tabItem = (TabItem) fsmTabs.SelectedItem;
         if (tabItem != null)
         {
-            var fsmInst = (FsmDataInstance) tabItem.Tag;
+            var fsmInst = (FsmDataInstanceUI) tabItem.Tag;
             fsmInst.canvasControls.Clear();
         }
 
@@ -230,7 +230,7 @@ public partial class MainWindow : Window
 
             if (fsmTabs.SelectedItem != null)
             {
-                var fsmDataInst = (FsmDataInstance) ((TabItem) fsmTabs.SelectedItem).Tag;
+                var fsmDataInst = (FsmDataInstanceUI) ((TabItem) fsmTabs.SelectedItem).Tag;
 
                 currentFSMData = fsmDataInst;
                 mt.Matrix = currentFSMData.matrix;
@@ -302,11 +302,11 @@ public partial class MainWindow : Window
             }
         }
 
-        currentFSMData = loadedFsmDatas.FirstOrDefault(x => x.info.assetFile == assetInfo.assetFile &&
-                                                        x.info.Name == assetInfo.Name &&
-                                                        x.info.ProviderType == assetInfo.ProviderType &&
+        currentFSMData = loadedFsmDatas.FirstOrDefault(x => x.fsm.info.assetFile == assetInfo.assetFile &&
+                                                        x.fsm.info.Name == assetInfo.Name &&
+                                                        x.fsm.info.ProviderType == assetInfo.ProviderType &&
                                                         (
-                                                        x.info is not AssetInfoUnity xaiu ||
+                                                        x.fsm.info is not AssetInfoUnity xaiu ||
                                                         assetInfo is not AssetInfoUnity aiu ||
                                                         (xaiu.goId == aiu.goId &&
                                                         xaiu.fsmId == aiu.fsmId)
@@ -314,17 +314,19 @@ public partial class MainWindow : Window
                                                         );
         if (currentFSMData == null)
         {
-            currentFSMData = dataProvider == null ?
+            currentFSMData = new(
+                dataProvider == null ?
                 (assetInfo is AssetInfoUnity uinfo ?
                     fsmLoader.LoadFSMWithAssets(selectedId, uinfo) :
                     throw new NotSupportedException())
-                : new(assetInfo, dataProvider);
+                : new(assetInfo, dataProvider)
+                );
             loadedFsmDatas.Add(currentFSMData);
             currentFSMData.tabIndex = tabItems.Count;
 
             TabItem newTabItem = new()
             {
-                Header = $"{currentFSMData.goName}-{currentFSMData.fsmName}",
+                Header = $"{currentFSMData.fsm.goName}-{currentFSMData.fsm.fsmName}",
                 Tag = currentFSMData
             };
 
@@ -381,9 +383,9 @@ public partial class MainWindow : Window
                 PlaceTransitions(node, false);
             }
 
-            foreach (FsmNodeData globalTransition in currentFSMData.globalTransitions)
+            foreach (var globalTransition in currentFSMData.fsm.globalTransitions)
             {
-                FsmNodeData node = globalTransition;
+                FsmNodeData node = new(currentFSMData, globalTransition);
                 UINode uiNode = new(null, node);
 
                 graphCanvas.Children.Add(uiNode.grid);
@@ -404,7 +406,7 @@ public partial class MainWindow : Window
 
     private void LoadEvents()
     {
-        foreach (FsmEventData eventData in currentFSMData.events)
+        foreach (FsmEventData eventData in currentFSMData.fsm.events)
         {
             eventList.Children.Add(CreateSidebarRowEvent(eventData.Name, eventData.Global));
         }
@@ -414,8 +416,8 @@ public partial class MainWindow : Window
 
     private async void LoadVariables()
     {
-        currentFSMData.variables.Sort((a, b) => a.Type.CompareTo(b.Type));
-        foreach (FsmVariableData varData in currentFSMData.variables)
+        currentFSMData.fsm.variables.Sort((a, b) => a.Type.CompareTo(b.Type));
+        foreach (FsmVariableData varData in currentFSMData.fsm.variables)
         {
             if (varData.Values.Count == 0)
             {
@@ -425,10 +427,10 @@ public partial class MainWindow : Window
             string variableType = varData.Type;
 
             variableList.Children.Add(CreateSidebarHeader(variableType));
-            foreach (Tuple<string, object> value in varData.Values)
+            foreach (var value in varData.Values)
             {
-                _ = await CreateSidebarRow(currentFSMData.info.assemblyProvider, value.Item1,
-                    value.Item2, variableList);
+                _ = await CreateSidebarRow(currentFSMData.fsm.info.assemblyProvider,
+                    new(value.Name, value.RawValue, value.Value, null), variableList);
             }
         }
 
@@ -438,11 +440,12 @@ public partial class MainWindow : Window
     private void StateSidebarData(FsmStateData stateData)
     {
         stateList.Children.Clear();
-        List<IActionScriptEntry> entries = stateData.ActionData;
+        IReadOnlyList<IActionScriptEntry> entries = stateData.ActionData;
         for (int i = 0; i < entries.Count; i++)
         {
             IActionScriptEntry entry = entries[i];
-            entry.BuildView(stateList, i);
+            var ui = new FsmStateActionUI((FsmStateAction)entry);
+            ui.BuildView(stateList, i);
         }
     }
 
@@ -472,49 +475,12 @@ public partial class MainWindow : Window
         return header;
     }
 
-    public static string GetFsmEnumString(TypeDefinition enumType, int val)
+
+
+    public async Task<Grid> CreateSidebarRow(IAssemblyProvider assemblyProvider,
+        IActionScriptEntry.PropertyInfo prop, StackPanel panel)
     {
-        string fn = enumType.FullName;
-        if (enumType.IsEnum)
-        {
-            bool isFlag = enumType.CustomAttributes.Any(x => x.AttributeType.FullName == "System.FlagAttribute");
-            StringBuilder sb = isFlag ? new() : null;
-            foreach (FieldDefinition v in enumType.Fields.Where(x => x.IsLiteral && x.Constant is int))
-            {
-                int fv = (int) v.Constant;
-                if (isFlag)
-                {
-                    if ((fv & val) == val)
-                    {
-                        if (sb.Length != 0)
-                        {
-                            _ = sb.Append(',');
-                        }
-
-                        _ = sb.Append(v.Name);
-                    }
-                }
-                else
-                {
-                    if (fv == val)
-                    {
-                        return $"{fn}::{v.Name}";
-                    }
-                }
-            }
-
-            if (sb?.Length != 0)
-            {
-                return $"{fn}::{sb}";
-            }
-        }
-
-        return $"({fn}) {val}";
-    }
-
-    public async Task<Grid> CreateSidebarRow(AssemblyProvider assemblyProvider,
-        string key, object rawvalue, StackPanel panel)
-    {
+        var rawvalue = prop.RawValue;
         string value = rawvalue.ToString();
         if (rawvalue is bool)
         {
@@ -561,7 +527,7 @@ public partial class MainWindow : Window
             int id = 0;
             foreach (object v in array)
             {
-                _ = await CreateSidebarRow(assemblyProvider, $"[{id++}]", v, panel);
+                _ = await CreateSidebarRow(assemblyProvider, new($"[{id++}]", v, v, null), panel);
             }
         }
 
@@ -571,7 +537,7 @@ public partial class MainWindow : Window
             int id = 0;
             foreach (object v in array2.array)
             {
-                _ = await CreateSidebarRow(assemblyProvider, $"[{id++}]", v, panel);
+                _ = await CreateSidebarRow(assemblyProvider, new($"[{id++}]", v, v, null), panel);
             }
         }
 
@@ -584,7 +550,7 @@ public partial class MainWindow : Window
                     TypeDefinition enumType = assemblyProvider.GetType(@enum.enumName.Replace('+', '/'));
                     if (enumType != null)
                     {
-                        value = GetFsmEnumString(enumType, @enum.intValue);
+                        value = Utils.GetFsmEnumString(enumType, @enum.intValue);
                     }
                 }
             }
@@ -612,7 +578,7 @@ public partial class MainWindow : Window
 
         TextBlock valueLabel = new()
         {
-            Text = key,
+            Text = prop.Name,
             HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left,
             VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
             Padding = new Thickness(5),
