@@ -1,593 +1,734 @@
-using AssetsTools.NET.Extra;
-using Avalonia;
-using Avalonia.Controls;
-using Avalonia.Controls.Shapes;
-using Avalonia.Input;
-using Avalonia.Interactivity;
-using Avalonia.Markup.Xaml;
-using Avalonia.Media;
-using MessageBox.Avalonia;
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Windows.Input;
+using System.Reactive;
 
-namespace FSMViewAvalonia2
+using Avalonia.Markup.Xaml.MarkupExtensions;
+using Avalonia.Reactive;
+
+using MsBox.Avalonia;
+using MsBox.Avalonia.Base;
+using MsBox.Avalonia.Enums;
+
+
+namespace FSMViewAvalonia2;
+public partial class MainWindow : Window
 {
-    public class MainWindow : Window
+    //controls
+    private readonly MatrixTransform mt;
+
+    public static MainWindow instance;
+    //variables
+    private AssetsManager am;
+    public FSMLoader fsmLoader;
+    private FsmDataInstanceUI currentFSMData;
+    private string lastFileName;
+    private bool lastIsBundle;
+    private readonly List<FsmDataInstanceUI> loadedFsmDatas = [];
+    private bool addingTabs;
+
+    //fsm info
+    private readonly ObservableCollection<TabItem> tabItems = [];
+    public static readonly FontFamily font = new("Segoe UI Bold");
+
+    public MainWindow()
     {
-        //controls
-        private Canvas graphCanvas;
-        private MenuItem fileOpen;
-        private MenuItem openSceneList;
-        private MenuItem openResources;
-        private MenuItem openLast;
-        private MenuItem closeTab;
-        private TextBlock tipText;
-        private StackPanel stateList;
-        private StackPanel eventList;
-        private StackPanel variableList;
-        private TabControl fsmTabs;
-        private MatrixTransform mt;
+        instance = this;
+        App.mainWindow = this;
+        InitializeComponent();
 
-        //variables
-        private AssetsManager am;
-        private FSMLoader fsmLoader;
-        private FsmDataInstance fsmData;
-        private string lastFileName;
-        private List<FsmDataInstance> loadedFsmDatas;
-        private bool addingTabs;
+        mt = graphCanvas.RenderTransform as MatrixTransform;
 
-        //fsm info
-        private ObservableCollection<TabItem> tabItems;
+        InitView();
 
-        public MainWindow()
+        InitFSMLoader();
+
+
+        option_includeSharedassets.IsChecked = Config.config.option_includeSharedassets;
+        option_includeSharedassets.IsCheckedChanged += (_, ev) => Config.config.option_includeSharedassets =
+            option_includeSharedassets.IsChecked ?? false;
+
+
+    }
+
+    private void InitFSMLoader()
+    {
+        openJson.Click += OpenJson_Click;
+        fileOpen.Click += FileOpen_Click;
+        openLast.Click += OpenLast_Click;
+        closeTab.Click += CloseTab_Click;
+        closeAllTab.Click += CloseAllTab_Click;
+        openResources.Click += OpenResources_Click;
+        openSceneList.Click += OpenSceneList_Click;
+        openBundle.Click += OpenBundle_Click;
+        fsmTabs.SelectionChanged += FsmTabs_SelectionChanged;
+        fsmTabs.ItemsSource = tabItems;
+    }
+
+    private async void OpenBundle_Click(object sender, RoutedEventArgs e)
+    {
+        OpenFileDialog openFileDialog = new();
+        string[] result = await openFileDialog.ShowAsync(this);
+
+        if (result == null || result.Length == 0)
         {
-            InitializeComponent();
-#if DEBUG
-            this.AttachDevTools();
-#endif
-            //generated items
-            graphCanvas = this.FindControl<Canvas>("graphCanvas");
-            fileOpen = this.FindControl<MenuItem>("fileOpen");
-            openSceneList = this.FindControl<MenuItem>("openSceneList");
-            openResources = this.FindControl<MenuItem>("openResources");
-            openLast = this.FindControl<MenuItem>("openLast");
-            closeTab = this.FindControl<MenuItem>("closeTab");
-            tipText = this.FindControl<TextBlock>("tipText");
-            stateList = this.FindControl<StackPanel>("stateList");
-            eventList = this.FindControl<StackPanel>("eventList");
-            variableList = this.FindControl<StackPanel>("variableList");
-            fsmTabs = this.FindControl<TabControl>("fsmTabs");
-            mt = graphCanvas.RenderTransform as MatrixTransform;
-            //generated events
-            PointerPressed += MouseDownCanvas;
-            PointerReleased += MouseUpCanvas;
-            PointerMoved += MouseMoveCanvas;
-            PointerWheelChanged += MouseScrollCanvas;
-            fileOpen.Click += FileOpen_Click;
-            openLast.Click += OpenLast_Click;
-            closeTab.Click += CloseTab_Click;
-            openResources.Click += OpenResources_Click;
-            openSceneList.Click += OpenSceneList_Click;
-            fsmTabs.SelectionChanged += FsmTabs_SelectionChanged;
-
-            loadedFsmDatas = new List<FsmDataInstance>();
-            tabItems = new ObservableCollection<TabItem>();
-            fsmTabs.Items = tabItems;
+            return;
         }
 
-        private async void FileOpen_Click(object sender, RoutedEventArgs e)
+        if (tipText != null)
         {
-            OpenFileDialog openFileDialog = new OpenFileDialog();
-            string[] result = await openFileDialog.ShowAsync(this);
-            
-            if (result == null || result.Length == 0)
-                return;
-
-            if (tipText != null)
-            {
-                graphCanvas.Children.Remove(tipText);
-                tipText = null;
-            }
-
-            string fileName = result[0];
-            lastFileName = fileName;
-            openLast.IsEnabled = true;
-
-            LoadFsm(fileName);
+            _ = graphCanvas.Children.Remove(tipText);
+            tipText = null;
         }
 
-        private void OpenLast_Click(object sender, RoutedEventArgs e)
+        string fileName = result[0];
+        lastFileName = fileName;
+        lastIsBundle = true;
+        openLast.IsEnabled = true;
+
+        _ = await LoadFsm(fileName, true);
+    }
+
+    private async void FileOpen_Click(object sender, RoutedEventArgs e)
+    {
+        OpenFileDialog openFileDialog = new();
+        string[] result = await openFileDialog.ShowAsync(this);
+
+        if (result == null || result.Length == 0)
         {
-            LoadFsm(lastFileName);
+            return;
         }
 
-        private void CloseTab_Click(object sender, RoutedEventArgs e)
+        if (tipText != null)
         {
-            TabItem tabItem = (TabItem)fsmTabs.SelectedItem;
-            if (tabItem != null)
-            {
-                FsmDataInstance fsmInst = (FsmDataInstance)tabItem.Tag;
-                tabItems.Remove(tabItem);
-                loadedFsmDatas.Remove(fsmInst);
-                fsmInst.canvasControls.Clear();
-            }
+            _ = graphCanvas.Children.Remove(tipText);
+            tipText = null;
         }
 
-        private async void OpenResources_Click(object sender, RoutedEventArgs e)
+        string fileName = result[0];
+        lastFileName = fileName;
+        lastIsBundle = false;
+        openLast.IsEnabled = true;
+
+        _ = await LoadFsm(fileName, false);
+    }
+
+    private async void OpenJson_Click(object sender, RoutedEventArgs e)
+    {
+        OpenFileDialog openFileDialog = new();
+        string[] result = await openFileDialog.ShowAsync(this);
+
+        if (result == null || result.Length == 0)
         {
-            await CreateAssetsManagerAndLoader();
-
-            string gamePath = await GameFileHelper.FindHollowKnightPath(this);
-            if (gamePath == null)
-                return;
-
-            string resourcesPath = GameFileHelper.FindGameFilePath(gamePath, "resources.assets");
-
-            LoadFsm(resourcesPath);
+            return;
         }
 
-        private async void OpenSceneList_Click(object sender, RoutedEventArgs e)
+        if (tipText != null)
         {
-            await CreateAssetsManagerAndLoader();
-
-            string gamePath = await GameFileHelper.FindHollowKnightPath(this);
-            if (gamePath == null)
-                return;
-
-            //gog and mac could have multiple folders that match, so find the one with a valid assets file (?)
-            string resourcesPath = GameFileHelper.FindGameFilePath(gamePath, "resources.assets");
-            string dataPath = System.IO.Path.GetDirectoryName(resourcesPath);
-
-            List<SceneInfo> sceneList = fsmLoader.LoadSceneList(dataPath);
-            SceneSelectionDialog selector = new SceneSelectionDialog(sceneList);
-            await selector.ShowDialog(this);
-
-            long selectedId = selector.selectedID;
-            bool selectedLevelFile = selector.selectedLevel;
-
-            if (selectedId == -1)
-                return;
-
-            string format;
-            if (selectedLevelFile)
-                format = "level{0}";
-            else
-                format = "sharedassets{0}.assets";
-
-            string assetsName = string.Format(format, selectedId);
-            string fullAssetsPath = System.IO.Path.Combine(dataPath, assetsName);
-
-            lastFileName = fullAssetsPath;
-            openLast.IsEnabled = true;
-
-            LoadFsm(fullAssetsPath);
+            _ = graphCanvas.Children.Remove(tipText);
+            tipText = null;
         }
 
-        private void FsmTabs_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        string fileName = result[0];
+        string data = File.ReadAllText(fileName);
+        LoadJsonFSM(data, fileName);
+        //System.Diagnostics.Process.Start(Environment.ProcessPath, "-Json \"" + fileName + "\"");
+    }
+
+    public void LoadJsonFSM(string data, string fileName = null)
+    {
+        IDataProvider jsonProvider = new JsonDataProvider(JToken.Parse(data));
+        var assetInfo = new AssetInfo()
         {
-            if (!addingTabs)
-            {
-                graphCanvas.Children.Clear();
-                stateList.Children.Clear();
-                eventList.Children.Clear();
-                variableList.Children.Clear();
+            id = jsonProvider.Get<int>("fsmId"),
+            name = jsonProvider.Get<string>("goName"),
+            nameBase = jsonProvider.Get<string>("goName"),
+            assetFile = fileName ?? Guid.NewGuid().ToString(),
+            path = jsonProvider.Get<string>("goPath")
+        };
+        _ = LoadFsm(assetInfo, jsonProvider);
+    }
 
-                if (fsmTabs.SelectedItem != null)
-                {
-                    var fsmDataInst = (FsmDataInstance)((TabItem)fsmTabs.SelectedItem).Tag;
+    private async void OpenLast_Click(object sender, RoutedEventArgs e) => await LoadFsm(lastFileName, lastIsBundle);
 
-                    fsmData = fsmDataInst;
-                    mt.Matrix = fsmData.matrix;
-
-                    foreach (UINode uiNode in fsmData.nodes)
-                    {
-                        if (uiNode.Selected)
-                        {
-                            uiNode.Selected = false;
-                            uiNode.Selected = true;
-                            if (uiNode.stateData != null)
-                            {
-                                StateSidebarData(uiNode.stateData);
-                            }
-                            break;
-                        }
-                    }
-
-                    LoadStates();
-                    LoadEvents();
-                    LoadVariables();
-                }
-            }
+    private void CloseTab_Click(object sender, RoutedEventArgs e)
+    {
+        var tabItem = (TabItem) fsmTabs.SelectedItem;
+        if (tabItem != null)
+        {
+            var fsmInst = (FsmDataInstanceUI) tabItem.Tag;
+            _ = tabItems.Remove(tabItem);
+            _ = loadedFsmDatas.Remove(fsmInst);
+            fsmInst.canvasControls.Clear();
+        }
+    }
+    private void CloseAllTab_Click(object sender, RoutedEventArgs e)
+    {
+        var tabItem = (TabItem) fsmTabs.SelectedItem;
+        if (tabItem != null)
+        {
+            var fsmInst = (FsmDataInstanceUI) tabItem.Tag;
+            fsmInst.canvasControls.Clear();
         }
 
-        private async void LoadFsm(string fileName)
+        tabItems.Clear();
+        loadedFsmDatas.Clear();
+    }
+
+    private async void OpenResources_Click(object sender, RoutedEventArgs e)
+    {
+        await CreateAssetsManagerAndLoader();
+
+        string gamePath = await GameFileHelper.FindHollowKnightPath(this);
+        if (gamePath == null)
         {
-            await CreateAssetsManagerAndLoader();
+            return;
+        }
 
-            List<AssetInfo> assetInfos = fsmLoader.LoadAllFSMsFromFile(fileName);
-            FSMSelectionDialog selector = new FSMSelectionDialog(assetInfos);
-            await selector.ShowDialog(this);
-            long selectedId = selector.selectedID;
+        string resourcesPath = GameFileHelper.FindGameFilePath(gamePath, "resources.assets");
 
-            if (selectedId == 0)
-                return;
+        _ = await LoadFsm(resourcesPath, false);
+    }
 
-            fsmData = fsmLoader.LoadFSM(selectedId);
-            loadedFsmDatas.Add(fsmData);
+    private async void OpenSceneList_Click(object sender, RoutedEventArgs e)
+    {
+        await CreateAssetsManagerAndLoader();
 
-            TabItem newTabItem = new TabItem
-            {
-                Header = $"{fsmData.goName}-{fsmData.fsmName}",
-                Tag = fsmData
-            };
+        string gamePath = await GameFileHelper.FindHollowKnightPath(this);
+        if (gamePath == null)
+        {
+            return;
+        }
 
-            addingTabs = true;
-            tabItems.Add(newTabItem);
-            fsmTabs.SelectedIndex = tabItems.Count - 1;
-            addingTabs = false;
+        //gog and mac could have multiple folders that match, so find the one with a valid assets file (?)
+        string resourcesPath = GameFileHelper.FindGameFilePath(gamePath, "resources.assets");
+        string dataPath = System.IO.Path.GetDirectoryName(resourcesPath);
 
+        List<SceneInfo> sceneList = FSMLoader.LoadSceneList();
+        SceneSelectionDialog selector = new(sceneList);
+        await selector.ShowDialog(this);
+
+        long selectedId = selector.selectedID;
+        bool selectedLevelFile = selector.selectedLevel;
+
+        if (selectedId == -1)
+        {
+            return;
+        }
+
+        string format = selectedLevelFile ? "level{0}" : "sharedassets{0}.assets";
+
+        string assetsName = string.Format(format, selectedId);
+        string fullAssetsPath = System.IO.Path.Combine(dataPath, assetsName);
+
+        lastFileName = fullAssetsPath;
+        openLast.IsEnabled = true;
+
+        _ = await LoadFsm(fullAssetsPath, false);
+    }
+
+    private void FsmTabs_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (!addingTabs)
+        {
             graphCanvas.Children.Clear();
-            fsmData.matrix = mt.Matrix;
-
             stateList.Children.Clear();
             eventList.Children.Clear();
             variableList.Children.Clear();
 
-            LoadStates();
-            LoadEvents();
-            LoadVariables();
-        }
-
-        private void LoadStates()
-        {
-            if (fsmData.canvasControls == null)
+            if (fsmTabs.SelectedItem != null)
             {
-                fsmData.nodes = new List<UINode>();
-                fsmData.canvasControls = new Controls();
-                foreach (FsmStateData stateData in fsmData.states)
+                var fsmDataInst = (FsmDataInstanceUI) ((TabItem) fsmTabs.SelectedItem).Tag;
+
+                currentFSMData = fsmDataInst;
+                mt.Matrix = currentFSMData.matrix;
+
+                foreach (UINode uiNode in currentFSMData.nodes)
                 {
-                    FsmNodeData node = stateData.node;
-                    UINode uiNode = new UINode(stateData, node);
-
-                    uiNode.grid.PointerPressed += (object sender, PointerPressedEventArgs e) =>
+                    if (uiNode.Selected)
                     {
-                        if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
-                            return;
-
-                        foreach (UINode uiNode2 in fsmData.nodes)
-                        {
-                            uiNode2.Selected = false;
-                        }
+                        uiNode.Selected = false;
                         uiNode.Selected = true;
-                        StateSidebarData(stateData);
-                    };
-
-                    graphCanvas.Children.Add(uiNode.grid);
-                    fsmData.nodes.Add(uiNode);
-
-                    PlaceTransitions(node, false);
-                }
-                foreach (FsmNodeData globalTransition in fsmData.globalTransitions)
-                {
-                    FsmNodeData node = globalTransition;
-                    UINode uiNode = new UINode(null, node);
-
-                    graphCanvas.Children.Add(uiNode.grid);
-                    fsmData.nodes.Add(uiNode);
-
-                    PlaceTransitions(node, true);
-                }
-                fsmData.canvasControls.AddRange(graphCanvas.Children);
-            }
-            else
-            {
-                graphCanvas.Children.Clear();
-                graphCanvas.Children.AddRange(fsmData.canvasControls);
-            }
-        }
-
-        private void LoadEvents()
-        {
-            foreach (FsmEventData eventData in fsmData.events)
-            {
-                eventList.Children.Add(CreateSidebarRowEvent(eventData.Name, eventData.Global));
-            }
-        }
-
-        private void LoadVariables()
-        {
-            foreach (FsmVariableData varData in fsmData.variables)
-            {
-                string variableType = varData.Type;
-
-                variableList.Children.Add(CreateSidebarHeader(variableType));
-                foreach (Tuple<string, object> value in varData.Values)
-                {
-                    variableList.Children.Add(CreateSidebarRow(value.Item1, value.Item2.ToString()));
-                }
-            }
-        }
-
-        private void StateSidebarData(FsmStateData stateData)
-        {
-            stateList.Children.Clear();
-            var entries = stateData.ActionData;
-            for(int i = 0; i < entries.Count;i++)
-            {
-                var entry = entries[i];
-                string actionName = entry.Name;
-                var fields = entry.Values;
-
-                stateList.Children.Add(CreateSidebarHeader(actionName,i, entry.Enabled));
-
-                foreach (var field in fields)
-                {
-                    string key = field.Item1;
-                    object value = field.Item2;
-                    string valueString = value.ToString();
-
-                    if (value is bool)
-                    {
-                        valueString = valueString.ToLower();
-                    }
-
-                    stateList.Children.Add(CreateSidebarRow(key, valueString, entry.Enabled));
-                }
-            }
-        }
-
-        private TextBlock CreateSidebarHeader(string text,  int index, bool enabled)
-        {
-            var header = CreateSidebarHeader($"{index}) {text}");
-            if (!enabled)
-            {
-                header.Background = Brushes.Red;
-                header.Text += " (disabled)";
-            }
-            return header;
-        }
-
-        private TextBlock CreateSidebarHeader(string text)
-        {
-            TextBlock header = new TextBlock()
-            {
-                Text = text,
-                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left,
-                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
-                Padding = new Thickness(5),
-                Height = 28,
-                FontWeight = FontWeight.Bold
-            };
-            return header;
-        }
-
-        private Grid CreateSidebarRow(string key, string value, bool enabled = true)
-        {
-            Grid valueContainer = new Grid()
-            {
-                Height = 28,
-                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Top,
-                Background = Brushes.LightGray
-            };
-            TextBlock valueLabel = new TextBlock()
-            {
-                Text = key,
-                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left,
-                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
-                Padding = new Thickness(5),
-                Width = 120
-            };
-            TextBox valueBox = new TextBox()
-            {
-                Margin = new Thickness(125, 0, 0, 0),
-                IsReadOnly = true,
-                Text = value
-            };
-            valueContainer.Children.Add(valueLabel);
-            valueContainer.Children.Add(valueBox);
-            return valueContainer;
-        }
-
-        private Grid CreateSidebarRowEvent(string key, bool value)
-        {
-            Grid valueContainer = new Grid()
-            {
-                Height = 28,
-                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Top,
-                Background = Brushes.LightGray
-            };
-            TextBlock valueLabel = new TextBlock()
-            {
-                Text = key,
-                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left,
-                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
-                Padding = new Thickness(5),
-                Width = 120
-            };
-            CheckBox valueBox = new CheckBox()
-            {
-                Margin = new Thickness(125, 0, 0, 0),
-                IsEnabled = false,
-                IsChecked = value,
-                Content = "Global"
-            };
-            valueContainer.Children.Add(valueLabel);
-            valueContainer.Children.Add(valueBox);
-            return valueContainer;
-        }
-
-        private async void PlaceTransitions(FsmNodeData node, bool global)
-        {
-            float yPos = 27;
-            foreach (FsmTransition trans in node.transitions)
-            {
-                try
-                {
-                    FsmStateData endState = fsmData.states.FirstOrDefault(s => s.node.name == trans.toState);
-                    if (endState != null)
-                    {
-                        FsmNodeData endNode = endState.node;
-
-                        Point start, end, startMiddle, endMiddle;
-
-                        if (!global)
+                        if (uiNode.stateData != null)
                         {
-                            start = ArrowUtil.ComputeLocation(node, endNode, yPos, out bool isLeftStart);
-                            end = ArrowUtil.ComputeLocation(endNode, node, 10, out bool isLeftEnd);
-
-                            double dist = 40;
-
-                            if (isLeftStart == isLeftEnd)
-                                dist *= 0.5;
-
-                            if (!isLeftStart)
-                                startMiddle = new Point(start.X - dist, start.Y);
-                            else
-                                startMiddle = new Point(start.X + dist, start.Y);
-
-                            if (!isLeftEnd)
-                                endMiddle = new Point(end.X - dist, end.Y);
-                            else
-                                endMiddle = new Point(end.X + dist, end.Y);
-                        }
-                        else
-                        {
-                            start = new Point(node.transform.X + node.transform.Width / 2,
-                                              node.transform.Y + node.transform.Height / 2);
-                            end = new Point(endNode.transform.X + endNode.transform.Width / 2,
-                                            endNode.transform.Y);
-                            startMiddle = new Point(start.X, start.Y + 1);
-                            endMiddle = new Point(end.X, end.Y - 1);
+                            StateSidebarData(uiNode.stateData);
                         }
 
-                        Color color = Constants.TRANSITION_COLORS[trans.colorIndex];
-                        SolidColorBrush brush = new SolidColorBrush(color);
-
-                        Path line = ArrowUtil.CreateLine(start, startMiddle, endMiddle, end, brush);
-
-                        line.PointerMoved += (object sender, PointerEventArgs e) =>
-                        {
-                            line.Stroke = Brushes.Black;
-                        };
-
-                        line.PointerLeave += (object sender, PointerEventArgs e) =>
-                        {
-                            line.Stroke = brush;
-                        };
-
-                        line.ZIndex = -1;
-
-                        graphCanvas.Children.Add(line);
+                        break;
                     }
-                    yPos += 16;
                 }
-                catch (Exception ex)
-                {
-                    var messageBoxStandardWindow = MessageBoxManager
-                        .GetMessageBoxStandardWindow("Exception", ex.ToString());
-                    await messageBoxStandardWindow.Show();
-                }
+
+                LoadStates();
+                LoadEvents();
+                LoadVariables();
             }
-        }
-
-        private async Task CreateAssetsManagerAndLoader()
-        {
-            if (am == null)
-            {
-                am = FSMAssetHelper.CreateAssetManager();
-                if (am == null)
-                {
-                    await MessageBoxManager
-                        .GetMessageBoxStandardWindow("No classdata",
-                        "You're missing classdata.tpk next to the executable. Please make sure it exists.")
-                        .Show();
-                    Environment.Exit(0);
-                }
-            }
-
-            if (fsmLoader == null)
-            {
-                fsmLoader = new FSMLoader(this, am);
-            }
-        }
-
-        #region Drag
-        private Point _last;
-        private bool isDragged = false;
-        private void MouseDownCanvas(object sender, PointerPressedEventArgs args)
-        {
-            if (!args.GetCurrentPoint(this).Properties.IsRightButtonPressed)
-                return;
-
-            _last = args.GetPosition(this);
-            Cursor = new Cursor(StandardCursorType.Hand);
-            isDragged = true;
-        }
-        private void MouseUpCanvas(object sender, PointerReleasedEventArgs args)
-        {
-            if (args.GetCurrentPoint(this).Properties.IsRightButtonPressed)
-                return;
-
-            Cursor = new Cursor(StandardCursorType.Arrow);
-            isDragged = false;
-        }
-        private void MouseMoveCanvas(object sender, PointerEventArgs args)
-        {
-            if (!isDragged)
-                return;
-
-            var pos = args.GetPosition(this);
-            var matrix = mt.Matrix;
-            matrix = new Matrix(matrix.M11, matrix.M12, matrix.M21, matrix.M22, pos.X - _last.X + matrix.M31, pos.Y - _last.Y + matrix.M32);
-            mt.Matrix = matrix;
-            _last = pos;
-
-            if (fsmData != null)
-                fsmData.matrix = mt.Matrix;
-        }
-        private void MouseScrollCanvas(object sender, PointerWheelEventArgs args)
-        {
-            var pos = args.GetPosition(this);
-            var matrix = mt.Matrix;
-
-            double scale = 1 + args.Delta.Y / 10;
-            mt.Matrix = ZoomToLocation(matrix, new Point(pos.X - graphCanvas.Bounds.Width / 2, pos.Y - graphCanvas.Bounds.Height / 2), scale);
-
-            if (fsmData != null)
-                fsmData.matrix = mt.Matrix;
-        }
-
-        private Matrix ZoomToLocation(Matrix mat, Point pos, double scale)
-        {
-            Matrix matrix = mat;
-
-            Matrix step1 = new Matrix(1, 0, 0, 1, -pos.X, -pos.Y);
-            Matrix step2 = new Matrix(scale, 0, 0, scale, 0, 0);
-            Matrix step3 = new Matrix(1, 0, 0, 1, pos.X, pos.Y);
-
-            matrix *= step1;
-            matrix *= step2;
-            matrix *= step3;
-
-            //matrix = Matrix.CreateTranslation(pos.X, pos.Y) * matrix;
-            //Matrix matrix = new Matrix(mat.M11, mat.M12, mat.M21, mat.M22, pos.X - mat.M31, pos.Y - mat.M32);
-            //matrix = Matrix.CreateScale(scale, scale) * matrix;
-            //matrix = Matrix.CreateTranslation(-pos.X, -pos.Y) * matrix;
-            return matrix;
-        }
-        private static Matrix CreateScaling(Matrix mat, double scaleX, double scaleY, double centerX, double centerY)
-        {
-            return new Matrix(scaleX, 0.0, 0.0, scaleY, centerX - scaleX * centerX, centerY - scaleY * centerY) * mat;
-        }
-        #endregion
-
-        private void InitializeComponent()
-        {
-            AvaloniaXamlLoader.Load(this);
         }
     }
+
+    public async Task<bool> LoadFsm(string fileName, bool isBundle, string defaultSearch = "")
+    {
+        await CreateAssetsManagerAndLoader();
+
+        List<AssetInfo> assetInfos = isBundle ? fsmLoader.LoadAllFSMsFromBundle(fileName) :
+            fsmLoader.LoadAllFSMsFromFile(fileName);
+        FSMSelectionDialog selector = new(assetInfos, fileName);
+        if (!string.IsNullOrEmpty(defaultSearch))
+        {
+            AutoCompleteBox tex = selector.FindControl<AutoCompleteBox>("searchBox");
+            tex.Text = defaultSearch;
+            selector.RefreshFilter(defaultSearch);
+        }
+
+        await selector.ShowDialog(this);
+
+        AssetInfo assetInfo = selector.selectedAssetInfo;
+        return LoadFsm(assetInfo);
+    }
+
+    public async Task<bool> LoadFsm(string fileName, string fullname, bool fallback)
+    {
+        await CreateAssetsManagerAndLoader();
+
+        List<AssetInfo> assetInfos = fsmLoader.LoadAllFSMsFromFile(fileName);
+        AssetInfo assetInfo = assetInfos.FirstOrDefault(x => x.assetFile == fileName && x.Name == fullname);
+        return assetInfo is null ? fallback && await LoadFsm(fileName, false, fullname) : LoadFsm(assetInfo);
+    }
+
+    public bool LoadFsm(AssetInfo assetInfo, IDataProvider dataProvider = null)
+    {
+        if (assetInfo == null)
+        {
+            return false;
+        }
+
+        long selectedId = assetInfo.id;
+        if (dataProvider == null)
+        {
+            if (selectedId == 0)
+            {
+                return false;
+            }
+        }
+
+        currentFSMData = loadedFsmDatas.FirstOrDefault(x => x.fsm.info.assetFile == assetInfo.assetFile &&
+                                                        x.fsm.info.Name == assetInfo.Name &&
+                                                        x.fsm.info.ProviderType == assetInfo.ProviderType &&
+                                                        (
+                                                        x.fsm.info is not AssetInfoUnity xaiu ||
+                                                        assetInfo is not AssetInfoUnity aiu ||
+                                                        (xaiu.goId == aiu.goId &&
+                                                        xaiu.fsmId == aiu.fsmId)
+                                                        )
+                                                        );
+        if (currentFSMData == null)
+        {
+            currentFSMData = new(
+                dataProvider == null ?
+                (assetInfo is AssetInfoUnity uinfo ?
+                    fsmLoader.LoadFSMWithAssets(selectedId, uinfo) :
+                    throw new NotSupportedException())
+                : new(assetInfo, dataProvider)
+                );
+            loadedFsmDatas.Add(currentFSMData);
+            currentFSMData.tabIndex = tabItems.Count;
+
+            TabItem newTabItem = new()
+            {
+                Header = $"{currentFSMData.fsm.goName}-{currentFSMData.fsm.fsmName}",
+                Tag = currentFSMData
+            };
+
+            addingTabs = true;
+            tabItems.Add(newTabItem);
+        }
+
+        fsmTabs.SelectedIndex = currentFSMData.tabIndex;
+        addingTabs = false;
+
+        graphCanvas.Children.Clear();
+        currentFSMData.matrix = mt.Matrix = Matrix.Identity;
+
+        stateList.Children.Clear();
+        eventList.Children.Clear();
+        variableList.Children.Clear();
+
+        LoadStates();
+        LoadEvents();
+        LoadVariables();
+        return true;
+    }
+
+    private void LoadStates()
+    {
+        if (currentFSMData.canvasControls == null)
+        {
+            currentFSMData.nodes = [];
+            currentFSMData.canvasControls = [];
+            foreach (FsmStateData stateData in currentFSMData.states)
+            {
+                FsmNodeData node = stateData.node;
+                UINode uiNode = new(stateData, node);
+
+                uiNode.grid.PointerPressed += (object sender, PointerPressedEventArgs e) =>
+                {
+                    if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+                    {
+                        return;
+                    }
+
+                    foreach (UINode uiNode2 in currentFSMData.nodes)
+                    {
+                        uiNode2.Selected = false;
+                    }
+
+                    uiNode.Selected = true;
+                    StateSidebarData(stateData);
+                };
+
+                graphCanvas.Children.Add(uiNode.grid);
+                currentFSMData.nodes.Add(uiNode);
+
+                PlaceTransitions(node, false);
+            }
+
+            foreach (var globalTransition in currentFSMData.fsm.globalTransitions)
+            {
+                FsmNodeData node = new(currentFSMData, globalTransition);
+                UINode uiNode = new(null, node);
+
+                graphCanvas.Children.Add(uiNode.grid);
+                currentFSMData.nodes.Add(uiNode);
+
+                PlaceTransitions(node, true);
+            }
+
+            currentFSMData.canvasControls.AddRange(graphCanvas.Children);
+            (stateList.Parent as ScrollViewer)!.ScrollToHome();
+        }
+        else
+        {
+            graphCanvas.Children.Clear();
+            graphCanvas.Children.AddRange(currentFSMData.canvasControls);
+        }
+    }
+
+    private void LoadEvents()
+    {
+        foreach (FsmEventData eventData in currentFSMData.fsm.events)
+        {
+            eventList.Children.Add(CreateSidebarRowEvent(eventData.Name, eventData.Global));
+        }
+
+        (eventList.Parent as ScrollViewer)!.ScrollToHome();
+    }
+
+    private async void LoadVariables()
+    {
+        currentFSMData.fsm.variables.Sort((a, b) => a.Type.CompareTo(b.Type));
+        foreach (FsmVariableData varData in currentFSMData.fsm.variables)
+        {
+            if (varData.Values.Count == 0)
+            {
+                continue;
+            }
+
+            string variableType = varData.Type;
+
+            variableList.Children.Add(CreateSidebarHeader(variableType));
+            foreach (var value in varData.Values)
+            {
+                _ = await CreateSidebarRow(currentFSMData.fsm.info.assemblyProvider,
+                    new(value.Name, value.RawValue, value.Value, null), variableList);
+            }
+        }
+
+    (variableList.Parent as ScrollViewer)!.ScrollToHome();
+    }
+
+    private void StateSidebarData(FsmStateData stateData)
+    {
+        stateList.Children.Clear();
+        IReadOnlyList<IActionScriptEntry> entries = stateData.ActionData;
+        for (int i = 0; i < entries.Count; i++)
+        {
+            IActionScriptEntry entry = entries[i];
+            var ui = new FsmStateActionUI((FsmStateAction)entry);
+            ui.BuildView(stateList, i);
+        }
+    }
+
+    public TextBlock CreateSidebarHeader(string text, int index, bool enabled)
+    {
+
+        TextBlock header = CreateSidebarHeader($"{index}) {text}");
+        
+        if (!enabled)
+        {
+            header.Background = Brushes.Red;
+            header.Text += " (disabled)";
+        }
+
+        return header;
+    }
+
+    public TextBlock CreateSidebarHeader(string text)
+    {
+        _ = this.TryFindResource("ThemeControlLowBrush", out var background);
+        TextBlock header = new()
+        {
+            Text = text,
+            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch,
+            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+            TextAlignment = TextAlignment.Left,
+            Padding = new Thickness(5),
+            Height = 28,
+            FontWeight = FontWeight.Bold,
+            Background = (IBrush) background,
+            FontFamily = font
+        };
+        return header;
+    }
+
+
+
+    public async Task<Grid> CreateSidebarRow(IAssemblyProvider assemblyProvider,
+        IActionScriptEntry.PropertyInfo prop, StackPanel panel)
+    {
+        _ = this.TryGetResource("ThemeBackgroundBrush", out var background);
+        var rawvalue = prop.RawValue;
+        string value = rawvalue.ToString();
+        if (rawvalue is bool)
+        {
+            value = value.ToLower();
+        }
+
+        Grid valueContainer = new()
+        {
+            Height = 28,
+            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Top,
+            Background = (IBrush)background,
+        };
+        panel.Children.Add(valueContainer);
+        int marginRight = 0;
+        INamedAssetProvider pptr = null;
+        if (rawvalue is GameObjectPPtrHolder ptr)
+        {
+            pptr = ptr.pptr;
+        }
+
+        if (rawvalue is FsmGameObject go)
+        {
+            pptr = go.value;
+        }
+
+        if (rawvalue is FsmOwnerDefault fsmOwnerDefault)
+        {
+            if (fsmOwnerDefault.ownerOption == OwnerDefaultOption.SpecifyGameObject)
+            {
+                pptr = fsmOwnerDefault.gameObject?.value;
+            }
+        }
+
+        if (rawvalue is FsmEventTarget eventTarget)
+        {
+            if (eventTarget.gameObject?.ownerOption == OwnerDefaultOption.SpecifyGameObject)
+            {
+                pptr = eventTarget.gameObject.gameObject?.value;
+            }
+        }
+
+        if (rawvalue is FsmArray array)
+        {
+            int id = 0;
+            foreach (object v in array)
+            {
+                _ = await CreateSidebarRow(assemblyProvider, new($"[{id++}]", v, v, null), panel);
+            }
+        }
+
+        if (rawvalue is FsmArray2 array2)
+        {
+            value = $"[Array {array2.type}] {array2.array?.Length}";
+            int id = 0;
+            foreach (object v in array2.array)
+            {
+                _ = await CreateSidebarRow(assemblyProvider, new($"[{id++}]", v, v, null), panel);
+            }
+        }
+
+        if (assemblyProvider != null)
+        {
+            if (rawvalue is FsmEnum @enum)
+            {
+                if (!string.IsNullOrEmpty(@enum.enumName))
+                {
+                    TypeDefinition enumType = assemblyProvider.GetType(@enum.enumName.Replace('+', '/'));
+                    if (enumType != null)
+                    {
+                        value = Utils.GetFsmEnumString(enumType, @enum.intValue);
+                    }
+                }
+            }
+        }
+
+        if (pptr != null)
+        {
+            string assetPath = pptr.file;
+            if (!string.IsNullOrEmpty(pptr.file) && (File.Exists(pptr.file) ||
+                !string.IsNullOrEmpty(assetPath = GameFileHelper.FindGameFilePath(await GameFileHelper.FindHollowKnightPath(this), pptr.file))))
+            {
+                Button btn = new()
+                {
+                    Padding = new Thickness(5),
+                    HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right,
+                    VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
+                };
+                marginRight = 55;
+                btn.Content = "Search";
+                btn.Click += async (sender, ev) => await LoadFsm(assetPath, false, pptr.name);
+                valueContainer.Children.Add(btn);
+            }
+        }
+
+        var name = prop.Name;
+        if(prop.UIHint is not null)
+        {
+            var uihint = prop.UIHint.Value;
+            name += $" [{uihint}]";
+        }
+        TextBlock valueLabel = new()
+        {
+            Text = name,
+            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left,
+            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+            Padding = new Thickness(5),
+            Margin = new Thickness(0, 0, 0, 0),
+            Width = 120,
+            FontFamily = font
+        };
+        TextBox valueBox = new()
+        {
+            Margin = new Thickness(125, 0, marginRight, 0),
+            IsReadOnly = true,
+            Text = value,
+            FontFamily = font
+        };
+        valueContainer.Children.Add(valueLabel);
+        valueContainer.Children.Add(valueBox);
+        return valueContainer;
+    }
+
+    public static Grid CreateSidebarRowEvent(string key, bool value)
+    {
+        Grid valueContainer = new()
+        {
+            Height = 28,
+            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Top,
+        };
+        TextBlock valueLabel = new()
+        {
+            Text = key,
+            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left,
+            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+            Padding = new Thickness(5),
+            Width = 120,
+            FontFamily = font
+        };
+        CheckBox valueBox = new()
+        {
+            Margin = new Thickness(125, 0, 0, 0),
+            IsEnabled = false,
+            IsChecked = value,
+            Content = "Global",
+            FontFamily = font
+        };
+        valueContainer.Children.Add(valueLabel);
+        valueContainer.Children.Add(valueBox);
+        return valueContainer;
+    }
+
+    private async void PlaceTransitions(FsmNodeData node, bool global)
+    {
+        float yPos = 27;
+        foreach (FsmTransition trans in node.transitions)
+        {
+            try
+            {
+                FsmStateData endState = currentFSMData.states.FirstOrDefault(s => s.node.name == trans.toState);
+                if (endState != null)
+                {
+                    FsmNodeData endNode = endState.node;
+
+                    Point start, end, startMiddle, endMiddle;
+
+                    if (!global)
+                    {
+                        start = ArrowUtil.ComputeLocation(node, endNode, yPos, out bool isLeftStart);
+                        end = ArrowUtil.ComputeLocation(endNode, node, 10, out bool isLeftEnd);
+
+                        double dist = 40;
+
+                        if (isLeftStart == isLeftEnd)
+                        {
+                            dist *= 0.5;
+                        }
+
+                        startMiddle = !isLeftStart ? new Point(start.X - dist, start.Y) : new Point(start.X + dist, start.Y);
+
+                        endMiddle = !isLeftEnd ? new Point(end.X - dist, end.Y) : new Point(end.X + dist, end.Y);
+                    }
+                    else
+                    {
+                        start = new Point(node.transform.X + (node.transform.Width / 2),
+                                          node.transform.Y + (node.transform.Height / 2));
+                        end = new Point(endNode.transform.X + (endNode.transform.Width / 2),
+                                        endNode.transform.Y);
+                        startMiddle = new Point(start.X, start.Y + 1);
+                        endMiddle = new Point(end.X, end.Y - 1);
+                    }
+
+                    Color color = Constants.TRANSITION_COLORS[trans.colorIndex];
+                    SolidColorBrush brush = new(color);
+
+                    Avalonia.Controls.Shapes.Path line = ArrowUtil.CreateLine(start, startMiddle, endMiddle, end, brush);
+
+                    line.PointerMoved += (object sender, PointerEventArgs e) => line.Stroke = Brushes.Black;
+
+                    line.PointerExited += (object sender, PointerEventArgs e) => line.Stroke = brush;
+
+                    line.ZIndex = -1;
+
+                    graphCanvas.Children.Add(line);
+                }
+
+                yPos += 16;
+            }
+            catch (Exception ex)
+            {
+                IMsBox<ButtonResult> messageBoxStandardWindow = MessageBoxManager
+                        .GetMessageBoxStandard("Exception", ex.ToString());
+                _ = await messageBoxStandardWindow.ShowAsync();
+            }
+        }
+    }
+
+    private async Task CreateAssetsManagerAndLoader()
+    {
+        if (fsmLoader == null)
+        {
+            FSMAssetHelper.Init();
+            am = FSMAssetHelper.GetAssetsManager(GameFileHelper.FindGameFilePath("Managed"));
+            if (am == null)
+            {
+                _ = await MessageBoxManager
+                    .GetMessageBoxStandard("No classdata",
+                    "You're missing classdata.tpk next to the executable. Please make sure it exists.")
+                    .ShowAsync();
+                Environment.Exit(0);
+            }
+            GlobalGameManagers.instance ??= new(am);
+            fsmLoader = new FSMLoader(this);
+        }
+
+        
+    }
+
+
 }

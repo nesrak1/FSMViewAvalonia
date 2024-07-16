@@ -1,130 +1,150 @@
-﻿using Avalonia.Controls;
-using Microsoft.Win32;
-using System;
-using System.IO;
-using System.Reflection;
-using System.Runtime.InteropServices;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
+using MsBox.Avalonia;
 
-namespace FSMViewAvalonia2
+using Path = System.IO.Path;
+
+namespace FSMViewAvalonia2;
+
+public static class GameFileHelper
 {
-    public static class GameFileHelper
+    public class GameInfo
     {
-        public static readonly int HOLLOWKNIGHT_APP_ID = 367520;
-        public static readonly string HOLLOWKNIGHT_GAME_NAME = "Hollow Knight";
-        public static readonly string HOLLOWKNIGHT_PATH_FILE = "hkpath.txt";
+        [JsonProperty("name")]
+        public string Name { get; set; } = "Hollow Knight";
+        [JsonProperty("steamid")]
+        public int SteamId { get; set; } = 367520;
+        [JsonProperty("dataDirs")]
+        public List<string> DataDirs { get; set; } = [
+            "hollow_knight_Data",
+            "Hollow Knight_Data",
+            "Hollow_Knight_Data"
+        ];
+    }
+    public static readonly GameInfo gameInfo;
 
-        public static async Task<string> FindHollowKnightPath(Window win)
+    static GameFileHelper()
+    {
+        if(!File.Exists("GameInfo.json"))
         {
-            if (File.Exists(Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), HOLLOWKNIGHT_PATH_FILE)))
+            MessageBoxManager
+                    .GetMessageBoxStandard("No game info",
+                    "You're missing GameInfo.json next to the executable. Please make sure it exists.")
+                    .ShowAsync().Wait();
+            Environment.Exit(0);
+        }
+
+        gameInfo = JsonConvert.DeserializeObject<GameInfo>(File.ReadAllText("GameInfo.json"));
+    }
+
+    public static async Task<string> FindHollowKnightPath(Window win)
+    {
+        if (!string.IsNullOrEmpty(Config.config.hkPath))
+        {
+            return Config.config.hkPath;
+        }
+
+        string path = await FindSteamGamePath(win, gameInfo.SteamId, gameInfo.Name);
+
+        if (path != null)
+        {
+            Config.config.hkPath = path;
+        }
+
+        return path;
+
+    }
+
+
+    public static async Task<string> FindSteamGamePath(Window win, int appid, string gameName)
+    {
+        string path = null;
+        if (ReadRegistrySafe("Software\\Valve\\Steam", "SteamPath") != null)
+        {
+            string appsPath = Path.Combine((string) ReadRegistrySafe("Software\\Valve\\Steam", "SteamPath"), "steamapps");
+
+            if (File.Exists(Path.Combine(appsPath, $"appmanifest_{appid}.acf")))
             {
-                return File.ReadAllText(Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), HOLLOWKNIGHT_PATH_FILE));
+                return Path.Combine(Path.Combine(appsPath, "common"), gameName);
             }
-            else
+
+            path = SearchAllInstallations(Path.Combine(appsPath, "libraryfolders.vdf"), appid, gameName);
+        }
+
+        if (path == null)
+        {
+            _ = await MessageBoxUtil.ShowDialog(win, "Game location", "Couldn't find installation automatically. Please pick the location manually.");
+            OpenFolderDialog ofd = new();
+            string folder = await ofd.ShowAsync(win);
+            if (folder != null && folder != "")
             {
-                string path = await FindSteamGamePath(win, HOLLOWKNIGHT_APP_ID, HOLLOWKNIGHT_GAME_NAME);
-
-                if (path != null)
-                {
-                    File.WriteAllText(Path.Join(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), HOLLOWKNIGHT_PATH_FILE), path);
-                }
-
-                return path;
+                path = folder;
             }
         }
 
-        public static async Task<string> FindSteamGamePath(Window win, int appid, string gameName)
+        return path;
+    }
+
+    private static string SearchAllInstallations(string libraryfolders, int appid, string gameName)
+    {
+        if (!File.Exists(libraryfolders))
         {
-            string path = null;
-            if (ReadRegistrySafe("Software\\Valve\\Steam", "SteamPath") != null)
-            {
-                string appsPath = Path.Combine((string)ReadRegistrySafe("Software\\Valve\\Steam", "SteamPath"), "steamapps");
-
-                if (File.Exists(Path.Combine(appsPath, $"appmanifest_{appid}.acf")))
-                {
-                    return Path.Combine(Path.Combine(appsPath, "common"), gameName);
-                }
-
-                path = SearchAllInstallations(Path.Combine(appsPath, "libraryfolders.vdf"), appid, gameName);
-            }
-
-            if (path == null)
-            {
-                await MessageBoxUtil.ShowDialog(win, "Game location", "Couldn't find installation automatically. Please pick the location manually.");
-                OpenFolderDialog ofd = new OpenFolderDialog();
-                string folder = await ofd.ShowAsync(win);
-                if (folder != null && folder != "")
-                {
-                    path = folder;
-                }
-            }
-
-            return path;
-        }
-
-        private static string SearchAllInstallations(string libraryfolders, int appid, string gameName)
-        {
-            if (!File.Exists(libraryfolders))
-            {
-                return null;
-            }
-            StreamReader file = new StreamReader(libraryfolders);
-            string line;
-            while ((line = file.ReadLine()) != null)
-            {
-                line = line.Trim();
-                line = Regex.Unescape(line);
-                Match regMatch = Regex.Match(line, "\"(.*)\"\\s*\"(.*)\"");
-                string key = regMatch.Groups[1].Value;
-                string value = regMatch.Groups[2].Value;
-                if (int.TryParse(key, out int _))
-                {
-                    if (File.Exists(Path.Combine(value, "steamapps", $"appmanifest_{appid}.acf")))
-                    {
-                        return Path.Combine(Path.Combine(value, "steamapps", "common"), gameName);
-                    }
-                }
-            }
-
             return null;
         }
 
-        private static object ReadRegistrySafe(string path, string key)
+        StreamReader file = new(libraryfolders);
+        string line;
+        while ((line = file.ReadLine()) != null)
         {
-            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                return null;
-
-            using (RegistryKey subkey = Registry.CurrentUser.OpenSubKey(path))
+            line = line.Trim();
+            line = Regex.Unescape(line);
+            Match regMatch = Regex.Match(line, "\"(.*)\"\\s*\"(.*)\"");
+            string key = regMatch.Groups[1].Value;
+            string value = regMatch.Groups[2].Value;
+            if (key == "path")
             {
-                if (subkey != null)
+                if (File.Exists(Path.Combine(value, "steamapps", $"appmanifest_{appid}.acf")))
                 {
-                    return subkey.GetValue(key);
+                    return Path.Combine(Path.Combine(value, "steamapps", "common"), gameName);
                 }
             }
+        }
 
+        return null;
+    }
+
+    private static object ReadRegistrySafe(string path, string key)
+    {
+        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
             return null;
         }
 
-        public static string FindGameFilePath(string hkRootPath, string file)
+        using RegistryKey subkey = Registry.CurrentUser.OpenSubKey(path);
+        if (subkey != null)
         {
-            string[] pathTests = new string[]
-            {
-                "hollow_knight_Data",
-                "Hollow Knight_Data",
-                "Hollow_Knight_Data",
-                Path.Combine("Contents", "Resources", "Data")
-            };
-            foreach (string pathTest in pathTests)
-            {
-                string dataPath = Path.Combine(hkRootPath, pathTest);
-                string filePath = Path.Combine(dataPath, file);
-                if (File.Exists(filePath))
-                {
-                    return filePath;
-                }
-            }
-            return null;
+            return subkey.GetValue(key);
         }
+
+        return null;
+    }
+
+    public static string FindGameFilePath(string file)
+    {
+        Task<string> task = FindHollowKnightPath(null);
+        task.Wait();
+        return FindGameFilePath(task.Result, file);
+    }
+    public static string FindGameFilePath(string hkRootPath, string file)
+    {
+        foreach (string pathTest in gameInfo.DataDirs)
+        {
+            string dataPath = Path.Combine(hkRootPath, pathTest);
+            string filePath = Path.Combine(dataPath, file);
+            if (File.Exists(filePath) || Directory.Exists(filePath))
+            {
+                return filePath;
+            }
+        }
+
+        return null;
     }
 }

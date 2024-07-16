@@ -1,45 +1,36 @@
-﻿using Avalonia.Controls;
-using MessageBox.Avalonia;
-using MessageBox.Avalonia.DTO;
-using MessageBox.Avalonia.Enums;
-using MessageBox.Avalonia.Models;
-using System.Threading.Tasks;
 
-namespace FSMViewAvalonia2
+
+using MsBox.Avalonia;
+using MsBox.Avalonia.Dto;
+using MsBox.Avalonia.Enums;
+using MsBox.Avalonia.Models;
+
+namespace FSMViewAvalonia2;
+
+public static class MessageBoxUtil
 {
-    public static class MessageBoxUtil
+    public static async Task<ButtonResult> ShowDialog(Window window, string header, string message) => await ShowDialog(window, header, message, ButtonEnum.Ok);
+
+    public static async Task<ButtonResult> ShowDialog(Window window, string header, string message, ButtonEnum buttons) => await MessageBoxManager.GetMessageBoxStandard(new MessageBoxStandardParams
     {
-        public static async Task<ButtonResult> ShowDialog(Window window, string header, string message)
+        ButtonDefinitions = buttons,
+        ContentHeader = header,
+        ContentMessage = message
+    }).ShowWindowDialogAsync(window);
+
+    public static async Task<string> ShowDialogCustom(Window window, string header, string message, params string[] buttons)
+    {
+        var definitions = new ButtonDefinition[buttons.Length];
+        for (int i = 0; i < buttons.Length; i++)
         {
-            return await ShowDialog(window, header, message, ButtonEnum.Ok);
+            definitions[i] = new ButtonDefinition { Name = buttons[i]};
         }
 
-        public static async Task<ButtonResult> ShowDialog(Window window, string header, string message, ButtonEnum buttons)
+        return await MessageBoxManager.GetMessageBoxCustom(new MessageBoxCustomParams
         {
-            return await MessageBoxManager.GetMessageBoxStandardWindow(new MessageBoxStandardParams
-            {
-                ButtonDefinitions = buttons,
-                Style = Style.Windows,
-                ContentHeader = header,
-                ContentMessage = message
-            }).ShowDialog(window);
-        }
-
-        public static async Task<string> ShowDialogCustom(Window window, string header, string message, params string[] buttons)
-        {
-            ButtonDefinition[] definitions = new ButtonDefinition[buttons.Length];
-            for (int i = 0; i < buttons.Length; i++)
-            {
-                definitions[i] = new ButtonDefinition { Name = buttons[i], Type = ButtonType.Default };
-            }
-
-            return await MessageBoxManager.GetMessageBoxCustomWindow(new MessageBoxCustomParams
-            {
-                Style = Style.Windows,
-                ContentHeader = header,
-                ContentMessage = message,
-                ButtonDefinitions = definitions
-            }).ShowDialog(window);
-        }
+            ContentHeader = header,
+            ContentMessage = message,
+            ButtonDefinitions = definitions
+        }).ShowWindowDialogAsync(window);
     }
 }

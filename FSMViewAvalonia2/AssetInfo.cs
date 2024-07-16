@@ -1,39 +1,27 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
-namespace FSMViewAvalonia2
+
+namespace FSMViewAvalonia2;
+
+public class AssetInfoUnity : AssetInfo
 {
-    public struct AssetInfo
-    {
-        public long id;
-        public uint size;
-        public string name;
+    public required AssetsManager am;
+    public required uint size;
+    public bool loadAsDep;
+    public required AssetFileInfo assetInfo;
+    public required AssetsFileInstance assetFI;
+    public long fsmId;
+    public long goId;
+    public required AssetTypeTemplateField templateField;
+    public override DataProviderType ProviderType => DataProviderType.Assets;
+    public override string Name => loadAsDep ? "[LoadAsDep]" + path + name + " (" + Path.GetFileNameWithoutExtension(assetFile) + ")" : path + name;
+}
 
-        public string Name
-        {
-            get
-            {
-                return name;
-            }
-        }
-    }
 
-    public struct SceneInfo
-    {
-        public long id;
-        public string name;
-        public bool level;
+public struct SceneInfo
+{
+    public long id;
+    public string name;
+    public bool level;
 
-        public string Name
-        {
-            get
-            {
-                if (!level)
-                    return name + " (sharedassets)";
-                else
-                    return name;
-            }
-        }
-    }
+    public string Name => name;
 }

@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "FSMViewAvalonia2": {
+        "commandName": "Project",
+        "commandLineArgs": "\"I:\\SteamLibrary\\steamapps\\common\\PCZ Demo\\DeviatorDemo_Data\\resources.assets\" \"NPC-002-Elite-FSM\" true"
+    }
+  }
+}
