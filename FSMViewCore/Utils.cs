@@ -6,8 +6,47 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace FSMViewAvalonia2;
-internal static class Utils
+public static class Utils
 {
+    public static string GetFsmEnumString(TypeDefinition enumType, int val)
+    {
+        string fn = enumType.FullName;
+        if (enumType.IsEnum)
+        {
+            bool isFlag = enumType.CustomAttributes.Any(x => x.AttributeType.FullName == "System.FlagAttribute");
+            StringBuilder sb = isFlag ? new() : null;
+            foreach (FieldDefinition v in enumType.Fields.Where(x => x.IsLiteral && x.Constant is int))
+            {
+                int fv = (int)v.Constant;
+                if (isFlag)
+                {
+                    if ((fv & val) == val)
+                    {
+                        if (sb.Length != 0)
+                        {
+                            _ = sb.Append(',');
+                        }
+
+                        _ = sb.Append(v.Name);
+                    }
+                }
+                else
+                {
+                    if (fv == val)
+                    {
+                        return $"{fn}::{v.Name}";
+                    }
+                }
+            }
+
+            if (sb?.Length != 0)
+            {
+                return $"{fn}::{sb}";
+            }
+        }
+
+        return $"({fn}) {val}";
+    }
     public static IEnumerable<AssemblyDefinition> SafeResolveReferences(this AssemblyDefinition assembly) => assembly.MainModule.AssemblyReferences.Select(x =>
                                                                                                                   {
                                                                                                                       try

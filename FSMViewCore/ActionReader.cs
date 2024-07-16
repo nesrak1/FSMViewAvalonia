@@ -1,5 +1,7 @@
 
 
+using System.Text;
+
 namespace FSMViewAvalonia2;
 
 public static class ActionReader
@@ -13,7 +15,7 @@ public static class ActionReader
                 (ParamDataType) Enum.Parse(typeof(ParamDataType), v));
         }
     }
-    public static object GetFsmArray(this ActionData actionData, AssemblyProvider assemblyProvider, ref int index, int dataVersion)
+    public static object GetFsmArray(this ActionData actionData, IAssemblyProvider assemblyProvider, ref int index, int dataVersion)
     {
         string type = actionData.arrayParamTypes[actionData.paramDataPos[index]];
         int size = actionData.arrayParamSizes[actionData.paramDataPos[index]];
@@ -23,8 +25,8 @@ public static class ActionReader
         };
         if (!ParamDataTypes.TryGetValue(type, out ParamDataType pdt))
         {
-            TypeDefinition t = assemblyProvider.GetType(type);
-            if (t.IsSubclassOf("UnityEngine.Object"))
+            TypeDefinition t = assemblyProvider?.GetType(type);
+            if (t?.IsSubclassOf("UnityEngine.Object") ?? false)
             {
                 pdt = ParamDataType.ObjectReference;
             }
@@ -48,7 +50,7 @@ public static class ActionReader
 
         return result;
     }
-    public static object GetFsmObject(this ActionData actionData, AssemblyProvider assemblyProvider, ref int index, int dataVersion)
+    public static object GetFsmObject(this ActionData actionData, IAssemblyProvider assemblyProvider, ref int index, int dataVersion)
     {
         //string actionName = actionData.actionNames[index];
         ParamDataType paramDataType = actionData.paramDataType[index];
@@ -56,7 +58,7 @@ public static class ActionReader
         return ret;
     }
 
-    private static object GetFsmObject(ActionData actionData, AssemblyProvider assemblyProvider, ref int index, int dataVersion,
+    private static object GetFsmObject(ActionData actionData, IAssemblyProvider assemblyProvider, ref int index, int dataVersion,
         ParamDataType paramDataType)
     {
         try

@@ -34,18 +34,18 @@ public partial class FSMSelectionDialog : Window
     {
         if (string.IsNullOrEmpty(query))
         {
-            listBox.Items = AssetInfos;
+            listBox.ItemsSource = AssetInfos;
             return;
         }
 
-        listBox.Items = AssetInfos.Where(x => x.Name.Contains(query, StringComparison.OrdinalIgnoreCase));
+        listBox.ItemsSource = AssetInfos.Where(x => x.Name.Contains(query, StringComparison.OrdinalIgnoreCase));
     }
 
     public FSMSelectionDialog(List<AssetInfo> assetInfos, string name) : this()
     {
         AssetInfos = assetInfos;
 
-        listBox.Items = AssetInfos;
+        listBox.ItemsSource = AssetInfos;
 
         Title = $"Select FSM({name})";
     }

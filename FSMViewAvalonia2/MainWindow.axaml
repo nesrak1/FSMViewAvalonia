@@ -6,54 +6,16 @@
         Width="800" Height="600"
         x:Class="FSMViewAvalonia2.MainWindow"
         Title="FSMView Avalonia">
-  <Window.Styles>
-    <Style Selector="TabControl">
-      <Setter Property="Background" Value="#F0F0F0"/>
-    </Style>
-    <Style Selector="TabControl WrapPanel">
-      <Setter Property="Background" Value="#2B579A"/>
-    </Style>
 
-    <Style Selector="TabItem">
-      <Setter Property="FontSize" Value="12"/>
-      <Setter Property="Height" Value="34"/>
-      <Setter Property="Background" Value="#2B579A"/>
-      <Setter Property="Foreground" Value="#F0F0F0"/>
-      <Setter Property="VerticalContentAlignment" Value="Center" />
-      <Setter Property="Margin" Value="0 0 0 0"/>
-      <Setter Property="Padding" Value="10 0"/>
-    </Style>
-    <Style Selector="TabItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-      <Setter Property="Background" Value="#124078"/>
-    </Style>
-
-    <Style Selector="TabItem:focus">
-      <Setter Property="Foreground" Value="#2B579A"/>
-      <Setter Property="Margin" Value="0 0 0 0"/>
-      <Setter Property="Padding" Value="10 0"/>
-    </Style>
-    <Style Selector="TabItem:focus /template/ ContentPresenter#PART_ContentPresenter">
-      <Setter Property="Background" Value="#f0f0f0"/>
-    </Style>
-
-    <Style Selector="TabItem:selected">
-      <Setter Property="Foreground" Value="#2B579A"/>
-      <Setter Property="Margin" Value="0 0 0 0"/>
-      <Setter Property="Padding" Value="10 0"/>
-    </Style>
-    <Style Selector="TabItem:selected /template/ ContentPresenter#PART_ContentPresenter">
-      <Setter Property="Background" Value="#f0f0f0"/>
-    </Style>
-  </Window.Styles>
   
-  <Grid Background="#3f3f3f">
+  <Grid>
     <Canvas x:Name="graphCanvas" Height="383" Margin="10,26,10,0" VerticalAlignment="Top">
       <TextBlock Canvas.Top="50" Canvas.Left="50" Foreground="#222222" Background="#ffabab" Padding="4" Name="tipText">Welcome to FSMView Avalonia. Go to File->Open to get started.</TextBlock>
       <Canvas.RenderTransform>
         <MatrixTransform />
       </Canvas.RenderTransform>
     </Canvas>
-    <Menu Height="21" VerticalAlignment="Top" Background="#f0f0f0">
+    <Menu Height="21" VerticalAlignment="Top">
       <MenuItem Header="File">
         <MenuItem Header="Open" Name="fileOpen" />
         <MenuItem Header="Open Scene List" Name="openSceneList" />
@@ -80,26 +42,26 @@
       <!-- newSplitter = remove ugliness (copied from 0.10 beta) -->
       <GridSplitter Grid.Row="0" Grid.Column="1" Margin="2,0,2,0"
              Width="4" VerticalAlignment="Stretch"
-             HorizontalAlignment="Center" Background="#ffffffff"
+             HorizontalAlignment="Center"
              Classes="newSplitter" />
       <TabControl HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
                   Grid.Row="0" Grid.Column="2">
         <TabItem Header="State">
-          <Grid Background="#ffe5e5e5">
+          <Grid Background="{DynamicResource ThemeBackgroundBrush}">
             <ScrollViewer>
               <StackPanel Name="stateList"/>
             </ScrollViewer>
           </Grid>
         </TabItem>
         <TabItem Header="Events">
-          <Grid Background="#ffe5e5e5">
+          <Grid Background="{DynamicResource ThemeBackgroundBrush}">
             <ScrollViewer>
               <StackPanel Name="eventList"/>
             </ScrollViewer>
           </Grid>
         </TabItem>
         <TabItem Header="Variables">
-          <Grid Background="#ffe5e5e5">
+          <Grid Background="{DynamicResource ThemeBackgroundBrush}">
             <ScrollViewer>
               <StackPanel Name="variableList"/>
             </ScrollViewer>
@@ -107,7 +69,7 @@
         </TabItem>
          
         <TabItem Header="Options">
-            <Grid Background="#ffe5e5e5">
+            <Grid Background="{DynamicResource ThemeBackgroundBrush}">
                 <ScrollViewer Margin="10">
                     <StackPanel>
                         <CheckBox x:Name="option_includeSharedassets">

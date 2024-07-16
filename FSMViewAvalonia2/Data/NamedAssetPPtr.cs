@@ -29,8 +29,4 @@ public class NamedAssetPPtr : AssetPPtr, INamedAssetProvider
 
     public override string ToString() => file == string.Empty ? name : $"{name} ({file})";
 }
-public class GameObjectPPtrHolder
-{
-    public INamedAssetProvider pptr;
-    public override string ToString() => pptr.ToString();
-}
+

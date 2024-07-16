@@ -4,39 +4,25 @@ namespace FSMViewAvalonia2;
 //not to be confused Structs, which holds the exact data
 //from the assets files, these classes hold simplified
 //data to be displayed on the canvas
+
+public interface IActionScriptEntryUI : IActionScriptEntry
+{
+    void BuildView(StackPanel state, int index);
+}
 public class FsmStateData
 {
     public string Name => state.name;
-    public List<IActionScriptEntry> ActionData { get; set; }
+    public IReadOnlyList<IActionScriptEntry> ActionData { get; set; }
     public FsmState state;
     public FsmNodeData node;
     public bool isStartState;
-}
-public class FsmEventData
-{
-    public string Name { get; set; }
-    public bool Global { get; set; }
-}
-public class FsmVariableData
-{
-    public string Type { get; set; }
-    public VariableType VariableType { get; set; }
-    public List<Tuple<string, object>> Values { get; set; }
-}
-public class FsmGlobalTransition
-{
-    public FsmEvent fsmEvent;
-    public string toState;
-    public int linkStyle;
-    public int linkConstraint;
-    public byte colorIndex;
-}
-public interface IActionScriptEntry
-{
-    string Name { get; set; }
-    List<Tuple<string, object>> Values { get; set; }
-    bool Enabled { get; set; }
-    void BuildView(StackPanel state, int index);
+    public FsmStateData(FsmState state)
+    {
+        this.state = state;
+        node = new(state);
+        isStartState = state.name == state.fsm.startState.name;
+        ActionData = state.fsm.GetActionScriptEntry(state);
+    }
 }
 public class FsmNodeData
 {
@@ -46,10 +32,10 @@ public class FsmNodeData
     public Color transitionColor;
     public string name;
     public FsmTransition[] transitions;
-    public FsmNodeData(FsmDataInstance dataInst, FsmGlobalTransition transition)
+    public FsmNodeData(FsmDataInstanceUI dataInst, FsmGlobalTransition transition)
     {
         isGlobal = true;
-        FsmStateData toState = dataInst.states.FirstOrDefault(s => s.state.name == transition.toState);
+        FsmStateData toState = dataInst.states.FirstOrDefault(s => s.Name == transition.toState);
         if (toState != null)
         {
             FsmNodeData toNode = toState.node;

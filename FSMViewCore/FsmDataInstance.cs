@@ -11,24 +11,26 @@ public class FsmDataInstance
     public string goName;
     public int tabIndex;
     public AssetInfo info;
-    public List<FsmStateData> states;
+    public List<FsmState> states;
     public List<FsmEventData> events;
     public List<FsmVariableData> variables;
     public HashSet<string> variableNames;
-    public List<FsmNodeData> globalTransitions;
-    public FsmStateData startState;
-    public List<UINode> nodes;
-    public Controls canvasControls;
-    public Matrix matrix;
+    public List<FsmGlobalTransition> globalTransitions;
+    public FsmState startState;
     public int dataVersion;
-    private static void GetActionData(List<IActionScriptEntry> list, ActionData actionData, int dataVersion, FsmState state, FsmDataInstance inst)
+
+    public IReadOnlyList<IActionScriptEntry> GetActionScriptEntry(FsmState state)
     {
+        var actionData = state.actionData;
+        if (actionData.actionCache is not null) return actionData.actionCache;
+        var result = new List<IActionScriptEntry>();
         for (int i = 0; i < actionData.actionNames.Count; i++)
         {
-            list.Add(new FsmStateAction(actionData, i, dataVersion, state, inst));
+            result.Add(new FsmStateAction(actionData, i, dataVersion, state, this));
         }
-    }
 
+        return actionData.actionCache = result;
+    }
     private static void GetVariableValues(List<FsmVariableData> varData, IDataProvider variables)
     {
         IDataProvider[] floatVariables = variables.Get<IDataProvider[]>("floatVariables");
@@ -53,7 +55,7 @@ public class FsmDataInstance
         {
             string name = enumVariables[i].Get<string>("name");
             object value = enumVariables[i].Get<int>("value");
-            enums.Values.Add(new Tuple<string, object>(name, value));
+            enums.Values.Add(new(name, value));
         }
 
         FsmVariableData arrays = new() { VariableType = VariableType.Array, Type = "Arrays", Values = [] };
@@ -70,7 +72,7 @@ public class FsmDataInstance
         {
             string name = floatVariables[i].Get<string>("name");
             object value = floatVariables[i].Get<float>("value");
-            floats.Values.Add(new Tuple<string, object>(name, value));
+            floats.Values.Add(new(name, value));
         }
 
         FsmVariableData ints = new() { VariableType = VariableType.Int, Type = "Ints", Values = [] };
@@ -79,7 +81,7 @@ public class FsmDataInstance
         {
             string name = intVariables[i].Get<string>("name");
             object value = intVariables[i].Get<int>("value");
-            ints.Values.Add(new Tuple<string, object>(name, value));
+            ints.Values.Add(new(name, value));
         }
 
         FsmVariableData bools = new() { VariableType = VariableType.Bool, Type = "Bools", Values = [] };
@@ -88,7 +90,7 @@ public class FsmDataInstance
         {
             string name = boolVariables[i].Get<string>("name");
             object value = boolVariables[i].Get<bool>("value");
-            bools.Values.Add(new Tuple<string, object>(name, value));
+            bools.Values.Add(new(name, value));
         }
 
         FsmVariableData strings = new() { VariableType = VariableType.String, Type = "Strings", Values = [] };
@@ -97,7 +99,7 @@ public class FsmDataInstance
         {
             string name = stringVariables[i].Get<string>("name");
             object value = stringVariables[i].Get<string>("value");
-            strings.Values.Add(new Tuple<string, object>(name, value));
+            strings.Values.Add(new(name, value));
         }
 
         FsmVariableData vector2s = new() { VariableType = VariableType.Vector2, Type = "Vector2s", Values = [] };
@@ -107,7 +109,7 @@ public class FsmDataInstance
             string name = vector2Variables[i].Get<string>("name");
             IDataProvider vector2 = vector2Variables[i].Get<IDataProvider>("value");
             object value = new Vector2(vector2);
-            vector2s.Values.Add(new Tuple<string, object>(name, value));
+            vector2s.Values.Add(new(name, value));
         }
 
         FsmVariableData vector3s = new() { VariableType = VariableType.Vector3, Type = "Vector3s", Values = [] };
@@ -117,7 +119,7 @@ public class FsmDataInstance
             string name = vector3Variables[i].Get<string>("name");
             IDataProvider vector3 = vector3Variables[i].Get<IDataProvider>("value");
             object value = new Vector2(vector3);
-            vector3s.Values.Add(new Tuple<string, object>(name, value));
+            vector3s.Values.Add(new(name, value));
         }
 
         FsmVariableData colors = new() { VariableType = VariableType.Color, Type = "Colors", Values = [] };
@@ -127,7 +129,7 @@ public class FsmDataInstance
             string name = colorVariables[i].Get<string>("name");
             IDataProvider color = colorVariables[i].Get<IDataProvider>("value");
             object value = new UnityColor(color);
-            colors.Values.Add(new Tuple<string, object>(name, value));
+            colors.Values.Add(new(name, value));
         }
 
         FsmVariableData rects = new() { VariableType = VariableType.Rect, Type = "Rects", Values = [] };
@@ -137,7 +139,7 @@ public class FsmDataInstance
             string name = rectVariables[i].Get<string>("name");
             IDataProvider rect = rectVariables[i].Get<IDataProvider>("value");
             object value = new UnityRect(rect);
-            rects.Values.Add(new Tuple<string, object>(name, value));
+            rects.Values.Add(new(name, value));
         }
 
         FsmVariableData quaternions = new() { VariableType = VariableType.Quaternion, Type = "Quaternions", Values = [] };
@@ -147,7 +149,7 @@ public class FsmDataInstance
             string name = quaternionVariables[i].Get<string>("name");
             IDataProvider quaternion = quaternionVariables[i].Get<IDataProvider>("value");
             object value = new Quaternion(quaternion);
-            quaternions.Values.Add(new Tuple<string, object>(name, value));
+            quaternions.Values.Add(new(name, value));
         }
 
         string[] pptrTypeHeaders = ["GameObjects", "Objects", "Materials", "Textures"];
@@ -172,7 +174,7 @@ public class FsmDataInstance
                 IDataProvider valueField = field[i].Get<IDataProvider>("value");
                 INamedAssetProvider pptr = valueField?.As<INamedAssetProvider>();
                 object value = pptr?.isNull ?? true ? "[null]" : header == "GameObjects" ? new GameObjectPPtrHolder() { pptr = pptr } : pptr;
-                genericData.Values.Add(new Tuple<string, object>(name, value));
+                genericData.Values.Add(new(name, pptr, value));
             }
         }
     }
@@ -211,7 +213,7 @@ public class FsmDataInstance
         dataInstance.variables = [];
         dataInstance.variableNames = [];
         GetVariableValues(dataInstance.variables, variables);
-        foreach (string v in dataInstance.variables.SelectMany(x => x.Values).Select(x => x.Item1))
+        foreach (string v in dataInstance.variables.SelectMany(x => x.Values).Select(x => x.Name))
         {
             _ = dataInstance.variableNames.Add(v);
         }
@@ -219,22 +221,14 @@ public class FsmDataInstance
         dataInstance.states = [];
         for (int i = 0; i < states.Length; i++)
         {
-            FsmStateData stateData = new()
-            {
-                ActionData = [],
-                state = new FsmState(states[i], dataInstance)
-            };
-            stateData.node = new FsmNodeData(stateData.state);
-            stateData.isStartState = stateData.Name == startState;
+            var state = new FsmState(states[i], dataInstance);
 
-            if (stateData.isStartState)
+            if (state.name == startState)
             {
-                dataInstance.startState = stateData;
+                dataInstance.startState = state;
             }
 
-            GetActionData(stateData.ActionData, stateData.state.actionData, dataInstance.dataVersion, stateData.state, dataInstance);
-
-            dataInstance.states.Add(stateData);
+            dataInstance.states.Add(state);
         }
 
 
@@ -251,8 +245,7 @@ public class FsmDataInstance
                 colorIndex = (byte) globalTransitionField.Get<int>("colorIndex")
             };
 
-            FsmNodeData node = new(dataInstance, globalTransition);
-            dataInstance.globalTransitions.Add(node);
+            dataInstance.globalTransitions.Add(globalTransition);
         }
     }
 

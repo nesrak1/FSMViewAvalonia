@@ -26,11 +26,11 @@ public partial class SceneSelectionDialog : Window
 
         if (string.IsNullOrEmpty(text))
         {
-            listBox.Items = AssetInfos;
+            listBox.ItemsSource = AssetInfos;
             return;
         }
 
-        listBox.Items = AssetInfos
+        listBox.ItemsSource = AssetInfos
                         .Select(x => new { FSM = x, Trimmed = x.Name[("Assets/Scenes/".Length - 1)..] })
                         .Where(x => text.Split().All(part => x.Trimmed.Contains(part, StringComparison.OrdinalIgnoreCase)))
                         .Select(x => x.FSM);
@@ -40,7 +40,7 @@ public partial class SceneSelectionDialog : Window
     {
         AssetInfos = assetInfos;
 
-        listBox.Items = AssetInfos;
+        listBox.ItemsSource = AssetInfos;
     }
 
     private void SelectButton_Click(object sender, Avalonia.Interactivity.RoutedEventArgs e)

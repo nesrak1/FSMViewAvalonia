@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace FSMViewAvalonia2;
-public class AssemblyProvider
+public class AssemblyProvider : IAssemblyProvider
 {
     public required MonoCecilTempGenerator mono;
     public required List<AssemblyDefinition> assemblies;

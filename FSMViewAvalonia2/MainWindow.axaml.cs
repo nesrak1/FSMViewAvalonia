@@ -1,6 +1,11 @@
 using System.Reactive;
 
+using Avalonia.Markup.Xaml.MarkupExtensions;
 using Avalonia.Reactive;
+
+using MsBox.Avalonia;
+using MsBox.Avalonia.Base;
+using MsBox.Avalonia.Enums;
 
 
 namespace FSMViewAvalonia2;
@@ -13,14 +18,15 @@ public partial class MainWindow : Window
     //variables
     private AssetsManager am;
     public FSMLoader fsmLoader;
-    private FsmDataInstance currentFSMData;
+    private FsmDataInstanceUI currentFSMData;
     private string lastFileName;
     private bool lastIsBundle;
-    private readonly List<FsmDataInstance> loadedFsmDatas = [];
+    private readonly List<FsmDataInstanceUI> loadedFsmDatas = [];
     private bool addingTabs;
 
     //fsm info
     private readonly ObservableCollection<TabItem> tabItems = [];
+    public static readonly FontFamily font = new("Segoe UI Bold");
 
     public MainWindow()
     {
@@ -36,8 +42,8 @@ public partial class MainWindow : Window
 
 
         option_includeSharedassets.IsChecked = Config.config.option_includeSharedassets;
-        option_includeSharedassets.Checked += (_, _1) => Config.config.option_includeSharedassets = true;
-        option_includeSharedassets.Unchecked += (_, _1) => Config.config.option_includeSharedassets = false;
+        option_includeSharedassets.IsCheckedChanged += (_, ev) => Config.config.option_includeSharedassets =
+            option_includeSharedassets.IsChecked ?? false;
 
 
     }
@@ -53,8 +59,7 @@ public partial class MainWindow : Window
         openSceneList.Click += OpenSceneList_Click;
         openBundle.Click += OpenBundle_Click;
         fsmTabs.SelectionChanged += FsmTabs_SelectionChanged;
-
-        fsmTabs.Items = tabItems;
+        fsmTabs.ItemsSource = tabItems;
     }
 
     private async void OpenBundle_Click(object sender, RoutedEventArgs e)
@@ -148,7 +153,7 @@ public partial class MainWindow : Window
         var tabItem = (TabItem) fsmTabs.SelectedItem;
         if (tabItem != null)
         {
-            var fsmInst = (FsmDataInstance) tabItem.Tag;
+            var fsmInst = (FsmDataInstanceUI) tabItem.Tag;
             _ = tabItems.Remove(tabItem);
             _ = loadedFsmDatas.Remove(fsmInst);
             fsmInst.canvasControls.Clear();
@@ -159,7 +164,7 @@ public partial class MainWindow : Window
         var tabItem = (TabItem) fsmTabs.SelectedItem;
         if (tabItem != null)
         {
-            var fsmInst = (FsmDataInstance) tabItem.Tag;
+            var fsmInst = (FsmDataInstanceUI) tabItem.Tag;
             fsmInst.canvasControls.Clear();
         }
 
@@ -230,7 +235,7 @@ public partial class MainWindow : Window
 
             if (fsmTabs.SelectedItem != null)
             {
-                var fsmDataInst = (FsmDataInstance) ((TabItem) fsmTabs.SelectedItem).Tag;
+                var fsmDataInst = (FsmDataInstanceUI) ((TabItem) fsmTabs.SelectedItem).Tag;
 
                 currentFSMData = fsmDataInst;
                 mt.Matrix = currentFSMData.matrix;
@@ -302,11 +307,11 @@ public partial class MainWindow : Window
             }
         }
 
-        currentFSMData = loadedFsmDatas.FirstOrDefault(x => x.info.assetFile == assetInfo.assetFile &&
-                                                        x.info.Name == assetInfo.Name &&
-                                                        x.info.ProviderType == assetInfo.ProviderType &&
+        currentFSMData = loadedFsmDatas.FirstOrDefault(x => x.fsm.info.assetFile == assetInfo.assetFile &&
+                                                        x.fsm.info.Name == assetInfo.Name &&
+                                                        x.fsm.info.ProviderType == assetInfo.ProviderType &&
                                                         (
-                                                        x.info is not AssetInfoUnity xaiu ||
+                                                        x.fsm.info is not AssetInfoUnity xaiu ||
                                                         assetInfo is not AssetInfoUnity aiu ||
                                                         (xaiu.goId == aiu.goId &&
                                                         xaiu.fsmId == aiu.fsmId)
@@ -314,17 +319,19 @@ public partial class MainWindow : Window
                                                         );
         if (currentFSMData == null)
         {
-            currentFSMData = dataProvider == null ?
+            currentFSMData = new(
+                dataProvider == null ?
                 (assetInfo is AssetInfoUnity uinfo ?
                     fsmLoader.LoadFSMWithAssets(selectedId, uinfo) :
                     throw new NotSupportedException())
-                : new(assetInfo, dataProvider);
+                : new(assetInfo, dataProvider)
+                );
             loadedFsmDatas.Add(currentFSMData);
             currentFSMData.tabIndex = tabItems.Count;
 
             TabItem newTabItem = new()
             {
-                Header = $"{currentFSMData.goName}-{currentFSMData.fsmName}",
+                Header = $"{currentFSMData.fsm.goName}-{currentFSMData.fsm.fsmName}",
                 Tag = currentFSMData
             };
 
@@ -381,9 +388,9 @@ public partial class MainWindow : Window
                 PlaceTransitions(node, false);
             }
 
-            foreach (FsmNodeData globalTransition in currentFSMData.globalTransitions)
+            foreach (var globalTransition in currentFSMData.fsm.globalTransitions)
             {
-                FsmNodeData node = globalTransition;
+                FsmNodeData node = new(currentFSMData, globalTransition);
                 UINode uiNode = new(null, node);
 
                 graphCanvas.Children.Add(uiNode.grid);
@@ -404,18 +411,18 @@ public partial class MainWindow : Window
 
     private void LoadEvents()
     {
-        foreach (FsmEventData eventData in currentFSMData.events)
+        foreach (FsmEventData eventData in currentFSMData.fsm.events)
         {
             eventList.Children.Add(CreateSidebarRowEvent(eventData.Name, eventData.Global));
         }
 
-    (eventList.Parent as ScrollViewer)!.ScrollToHome();
+        (eventList.Parent as ScrollViewer)!.ScrollToHome();
     }
 
     private async void LoadVariables()
     {
-        currentFSMData.variables.Sort((a, b) => a.Type.CompareTo(b.Type));
-        foreach (FsmVariableData varData in currentFSMData.variables)
+        currentFSMData.fsm.variables.Sort((a, b) => a.Type.CompareTo(b.Type));
+        foreach (FsmVariableData varData in currentFSMData.fsm.variables)
         {
             if (varData.Values.Count == 0)
             {
@@ -425,10 +432,10 @@ public partial class MainWindow : Window
             string variableType = varData.Type;
 
             variableList.Children.Add(CreateSidebarHeader(variableType));
-            foreach (Tuple<string, object> value in varData.Values)
+            foreach (var value in varData.Values)
             {
-                _ = await CreateSidebarRow(currentFSMData.info.assemblyProvider, value.Item1,
-                    value.Item2, variableList);
+                _ = await CreateSidebarRow(currentFSMData.fsm.info.assemblyProvider,
+                    new(value.Name, value.RawValue, value.Value, null), variableList);
             }
         }
 
@@ -438,17 +445,20 @@ public partial class MainWindow : Window
     private void StateSidebarData(FsmStateData stateData)
     {
         stateList.Children.Clear();
-        List<IActionScriptEntry> entries = stateData.ActionData;
+        IReadOnlyList<IActionScriptEntry> entries = stateData.ActionData;
         for (int i = 0; i < entries.Count; i++)
         {
             IActionScriptEntry entry = entries[i];
-            entry.BuildView(stateList, i);
+            var ui = new FsmStateActionUI((FsmStateAction)entry);
+            ui.BuildView(stateList, i);
         }
     }
 
     public TextBlock CreateSidebarHeader(string text, int index, bool enabled)
     {
+
         TextBlock header = CreateSidebarHeader($"{index}) {text}");
+        
         if (!enabled)
         {
             header.Background = Brushes.Red;
@@ -458,63 +468,31 @@ public partial class MainWindow : Window
         return header;
     }
 
-    public static TextBlock CreateSidebarHeader(string text)
+    public TextBlock CreateSidebarHeader(string text)
     {
+        _ = this.TryFindResource("ThemeControlLowBrush", out var background);
         TextBlock header = new()
         {
             Text = text,
-            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left,
+            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch,
             VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+            TextAlignment = TextAlignment.Left,
             Padding = new Thickness(5),
             Height = 28,
-            FontWeight = FontWeight.Bold
+            FontWeight = FontWeight.Bold,
+            Background = (IBrush) background,
+            FontFamily = font
         };
         return header;
     }
 
-    public static string GetFsmEnumString(TypeDefinition enumType, int val)
+
+
+    public async Task<Grid> CreateSidebarRow(IAssemblyProvider assemblyProvider,
+        IActionScriptEntry.PropertyInfo prop, StackPanel panel)
     {
-        string fn = enumType.FullName;
-        if (enumType.IsEnum)
-        {
-            bool isFlag = enumType.CustomAttributes.Any(x => x.AttributeType.FullName == "System.FlagAttribute");
-            StringBuilder sb = isFlag ? new() : null;
-            foreach (FieldDefinition v in enumType.Fields.Where(x => x.IsLiteral && x.Constant is int))
-            {
-                int fv = (int) v.Constant;
-                if (isFlag)
-                {
-                    if ((fv & val) == val)
-                    {
-                        if (sb.Length != 0)
-                        {
-                            _ = sb.Append(',');
-                        }
-
-                        _ = sb.Append(v.Name);
-                    }
-                }
-                else
-                {
-                    if (fv == val)
-                    {
-                        return $"{fn}::{v.Name}";
-                    }
-                }
-            }
-
-            if (sb?.Length != 0)
-            {
-                return $"{fn}::{sb}";
-            }
-        }
-
-        return $"({fn}) {val}";
-    }
-
-    public async Task<Grid> CreateSidebarRow(AssemblyProvider assemblyProvider,
-        string key, object rawvalue, StackPanel panel)
-    {
+        _ = this.TryGetResource("ThemeBackgroundBrush", out var background);
+        var rawvalue = prop.RawValue;
         string value = rawvalue.ToString();
         if (rawvalue is bool)
         {
@@ -525,7 +503,7 @@ public partial class MainWindow : Window
         {
             Height = 28,
             VerticalAlignment = Avalonia.Layout.VerticalAlignment.Top,
-            Background = Brushes.LightGray
+            Background = (IBrush)background,
         };
         panel.Children.Add(valueContainer);
         int marginRight = 0;
@@ -561,7 +539,7 @@ public partial class MainWindow : Window
             int id = 0;
             foreach (object v in array)
             {
-                _ = await CreateSidebarRow(assemblyProvider, $"[{id++}]", v, panel);
+                _ = await CreateSidebarRow(assemblyProvider, new($"[{id++}]", v, v, null), panel);
             }
         }
 
@@ -571,7 +549,7 @@ public partial class MainWindow : Window
             int id = 0;
             foreach (object v in array2.array)
             {
-                _ = await CreateSidebarRow(assemblyProvider, $"[{id++}]", v, panel);
+                _ = await CreateSidebarRow(assemblyProvider, new($"[{id++}]", v, v, null), panel);
             }
         }
 
@@ -584,7 +562,7 @@ public partial class MainWindow : Window
                     TypeDefinition enumType = assemblyProvider.GetType(@enum.enumName.Replace('+', '/'));
                     if (enumType != null)
                     {
-                        value = GetFsmEnumString(enumType, @enum.intValue);
+                        value = Utils.GetFsmEnumString(enumType, @enum.intValue);
                     }
                 }
             }
@@ -612,18 +590,20 @@ public partial class MainWindow : Window
 
         TextBlock valueLabel = new()
         {
-            Text = key,
+            Text = prop.Name,
             HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left,
             VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
             Padding = new Thickness(5),
             Margin = new Thickness(0, 0, 0, 0),
-            Width = 120
+            Width = 120,
+            FontFamily = font
         };
         TextBox valueBox = new()
         {
             Margin = new Thickness(125, 0, marginRight, 0),
             IsReadOnly = true,
-            Text = value
+            Text = value,
+            FontFamily = font
         };
         valueContainer.Children.Add(valueLabel);
         valueContainer.Children.Add(valueBox);
@@ -636,7 +616,6 @@ public partial class MainWindow : Window
         {
             Height = 28,
             VerticalAlignment = Avalonia.Layout.VerticalAlignment.Top,
-            Background = Brushes.LightGray
         };
         TextBlock valueLabel = new()
         {
@@ -644,14 +623,16 @@ public partial class MainWindow : Window
             HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left,
             VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
             Padding = new Thickness(5),
-            Width = 120
+            Width = 120,
+            FontFamily = font
         };
         CheckBox valueBox = new()
         {
             Margin = new Thickness(125, 0, 0, 0),
             IsEnabled = false,
             IsChecked = value,
-            Content = "Global"
+            Content = "Global",
+            FontFamily = font
         };
         valueContainer.Children.Add(valueLabel);
         valueContainer.Children.Add(valueBox);
@@ -705,7 +686,7 @@ public partial class MainWindow : Window
 
                     line.PointerMoved += (object sender, PointerEventArgs e) => line.Stroke = Brushes.Black;
 
-                    line.PointerLeave += (object sender, PointerEventArgs e) => line.Stroke = brush;
+                    line.PointerExited += (object sender, PointerEventArgs e) => line.Stroke = brush;
 
                     line.ZIndex = -1;
 
@@ -716,9 +697,9 @@ public partial class MainWindow : Window
             }
             catch (Exception ex)
             {
-                MessageBox.Avalonia.BaseWindows.Base.IMsBoxWindow<ButtonResult> messageBoxStandardWindow = MessageBoxManager
-                        .GetMessageBoxStandardWindow("Exception", ex.ToString());
-                _ = await messageBoxStandardWindow.Show();
+                IMsBox<ButtonResult> messageBoxStandardWindow = MessageBoxManager
+                        .GetMessageBoxStandard("Exception", ex.ToString());
+                _ = await messageBoxStandardWindow.ShowAsync();
             }
         }
     }
@@ -732,9 +713,9 @@ public partial class MainWindow : Window
             if (am == null)
             {
                 _ = await MessageBoxManager
-                    .GetMessageBoxStandardWindow("No classdata",
+                    .GetMessageBoxStandard("No classdata",
                     "You're missing classdata.tpk next to the executable. Please make sure it exists.")
-                    .Show();
+                    .ShowAsync();
                 Environment.Exit(0);
             }
             GlobalGameManagers.instance ??= new(am);

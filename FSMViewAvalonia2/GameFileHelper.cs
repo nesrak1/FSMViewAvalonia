@@ -1,3 +1,5 @@
+using MsBox.Avalonia;
+
 using Path = System.IO.Path;
 
 namespace FSMViewAvalonia2;
@@ -24,9 +26,9 @@ public static class GameFileHelper
         if(!File.Exists("GameInfo.json"))
         {
             MessageBoxManager
-                    .GetMessageBoxStandardWindow("No game info",
+                    .GetMessageBoxStandard("No game info",
                     "You're missing GameInfo.json next to the executable. Please make sure it exists.")
-                    .Show().Wait();
+                    .ShowAsync().Wait();
             Environment.Exit(0);
         }
 
