@@ -32,15 +32,7 @@ public class FsmStateActionUI
             Height = 28,
             VerticalAlignment = Avalonia.Layout.VerticalAlignment.Top
         };
-        var header = new TextBlock()
-        {
-            Text = "(" + index + ") " + text,
-            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left,
-            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
-            Padding = new Thickness(5),
-            Height = 28,
-            FontWeight = FontWeight.Bold
-        };
+        var header = MainWindow.instance.CreateSidebarHeader("(" + index + ") " + text);
         if (!enabled)
         {
             header.Background = Brushes.Red;

@@ -1,4 +1,4 @@
-﻿
+
 global using System;
 global using System.Collections.Generic;
 global using System.Collections.ObjectModel;
@@ -28,10 +28,6 @@ global using Avalonia.Threading;
 global using FSMViewAvalonia2.Data;
 global using FSMViewAvalonia2.Json;
 
-global using MessageBox.Avalonia;
-global using MessageBox.Avalonia.DTO;
-global using MessageBox.Avalonia.Enums;
-global using MessageBox.Avalonia.Models;
 
 global using Microsoft.Win32;
 

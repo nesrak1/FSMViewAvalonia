@@ -1,6 +1,11 @@
 using System.Reactive;
 
+using Avalonia.Markup.Xaml.MarkupExtensions;
 using Avalonia.Reactive;
+
+using MsBox.Avalonia;
+using MsBox.Avalonia.Base;
+using MsBox.Avalonia.Enums;
 
 
 namespace FSMViewAvalonia2;
@@ -36,8 +41,8 @@ public partial class MainWindow : Window
 
 
         option_includeSharedassets.IsChecked = Config.config.option_includeSharedassets;
-        option_includeSharedassets.Checked += (_, _1) => Config.config.option_includeSharedassets = true;
-        option_includeSharedassets.Unchecked += (_, _1) => Config.config.option_includeSharedassets = false;
+        option_includeSharedassets.IsCheckedChanged += (_, ev) => Config.config.option_includeSharedassets =
+            option_includeSharedassets.IsChecked ?? false;
 
 
     }
@@ -53,8 +58,7 @@ public partial class MainWindow : Window
         openSceneList.Click += OpenSceneList_Click;
         openBundle.Click += OpenBundle_Click;
         fsmTabs.SelectionChanged += FsmTabs_SelectionChanged;
-
-        fsmTabs.Items = tabItems;
+        fsmTabs.ItemsSource = tabItems;
     }
 
     private async void OpenBundle_Click(object sender, RoutedEventArgs e)
@@ -411,7 +415,7 @@ public partial class MainWindow : Window
             eventList.Children.Add(CreateSidebarRowEvent(eventData.Name, eventData.Global));
         }
 
-    (eventList.Parent as ScrollViewer)!.ScrollToHome();
+        (eventList.Parent as ScrollViewer)!.ScrollToHome();
     }
 
     private async void LoadVariables()
@@ -451,7 +455,9 @@ public partial class MainWindow : Window
 
     public TextBlock CreateSidebarHeader(string text, int index, bool enabled)
     {
+
         TextBlock header = CreateSidebarHeader($"{index}) {text}");
+        
         if (!enabled)
         {
             header.Background = Brushes.Red;
@@ -461,16 +467,19 @@ public partial class MainWindow : Window
         return header;
     }
 
-    public static TextBlock CreateSidebarHeader(string text)
+    public TextBlock CreateSidebarHeader(string text)
     {
+        _ = this.TryFindResource("ThemeControlLowBrush", out var background);
         TextBlock header = new()
         {
             Text = text,
-            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left,
+            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch,
             VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+            TextAlignment = TextAlignment.Left,
             Padding = new Thickness(5),
             Height = 28,
-            FontWeight = FontWeight.Bold
+            FontWeight = FontWeight.Bold,
+            Background = (IBrush) background,
         };
         return header;
     }
@@ -480,6 +489,7 @@ public partial class MainWindow : Window
     public async Task<Grid> CreateSidebarRow(IAssemblyProvider assemblyProvider,
         IActionScriptEntry.PropertyInfo prop, StackPanel panel)
     {
+        _ = this.TryGetResource("ThemeBackgroundBrush", out var background);
         var rawvalue = prop.RawValue;
         string value = rawvalue.ToString();
         if (rawvalue is bool)
@@ -491,7 +501,7 @@ public partial class MainWindow : Window
         {
             Height = 28,
             VerticalAlignment = Avalonia.Layout.VerticalAlignment.Top,
-            Background = Brushes.LightGray
+            Background = (IBrush)background,
         };
         panel.Children.Add(valueContainer);
         int marginRight = 0;
@@ -602,7 +612,6 @@ public partial class MainWindow : Window
         {
             Height = 28,
             VerticalAlignment = Avalonia.Layout.VerticalAlignment.Top,
-            Background = Brushes.LightGray
         };
         TextBlock valueLabel = new()
         {
@@ -671,7 +680,7 @@ public partial class MainWindow : Window
 
                     line.PointerMoved += (object sender, PointerEventArgs e) => line.Stroke = Brushes.Black;
 
-                    line.PointerLeave += (object sender, PointerEventArgs e) => line.Stroke = brush;
+                    line.PointerExited += (object sender, PointerEventArgs e) => line.Stroke = brush;
 
                     line.ZIndex = -1;
 
@@ -682,9 +691,9 @@ public partial class MainWindow : Window
             }
             catch (Exception ex)
             {
-                MessageBox.Avalonia.BaseWindows.Base.IMsBoxWindow<ButtonResult> messageBoxStandardWindow = MessageBoxManager
-                        .GetMessageBoxStandardWindow("Exception", ex.ToString());
-                _ = await messageBoxStandardWindow.Show();
+                IMsBox<ButtonResult> messageBoxStandardWindow = MessageBoxManager
+                        .GetMessageBoxStandard("Exception", ex.ToString());
+                _ = await messageBoxStandardWindow.ShowAsync();
             }
         }
     }
@@ -698,9 +707,9 @@ public partial class MainWindow : Window
             if (am == null)
             {
                 _ = await MessageBoxManager
-                    .GetMessageBoxStandardWindow("No classdata",
+                    .GetMessageBoxStandard("No classdata",
                     "You're missing classdata.tpk next to the executable. Please make sure it exists.")
-                    .Show();
+                    .ShowAsync();
                 Environment.Exit(0);
             }
             GlobalGameManagers.instance ??= new(am);
