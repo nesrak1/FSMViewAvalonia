@@ -587,10 +587,15 @@ public partial class MainWindow : Window
             }
         }
 
-
+        var name = prop.Name;
+        if(prop.UIHint is not null)
+        {
+            var uihint = prop.UIHint.Value;
+            name += $" [{uihint}]";
+        }
         TextBlock valueLabel = new()
         {
-            Text = prop.Name,
+            Text = name,
             HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left,
             VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
             Padding = new Thickness(5),

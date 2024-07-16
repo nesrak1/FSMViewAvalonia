@@ -33,6 +33,7 @@ public class FsmStateAction : IActionScriptEntry
             object obj = ActionReader.GetFsmObject(actionData, AssemblyProvider, ref j, dataVersion);
             var raw = obj;
             string displayValue = "";
+            string sectionName = null;
             UIHint? uitype = null;
             FieldDefinition field = Type?.Fields?.FirstOrDefault(x => x.Name == paramName);
 
@@ -53,6 +54,11 @@ public class FsmStateAction : IActionScriptEntry
                 CustomAttribute UIHintAttr = field.CustomAttributes
                         .FirstOrDefault(x => x.AttributeType.FullName == "HutongGames.PlayMaker.UIHintAttribute");
                 uitype = (UIHint?) (int?) UIHintAttr?.ConstructorArguments[0].Value;
+
+                CustomAttribute ActionSectionAttr = field.CustomAttributes
+                        .FirstOrDefault(x => x.AttributeType.FullName == "HutongGames.PlayMaker.ActionSection");
+                sectionName = (string)ActionSectionAttr?.ConstructorArguments[0].Value;
+
                 if (ftype.IsEnum && obj is int val)
                 {
                     displayValue = Utils.GetFsmEnumString(ftype, val);
@@ -60,7 +66,7 @@ public class FsmStateAction : IActionScriptEntry
 
             }
 
-            Values.Add(new(paramName, raw, displayValue, uitype));
+            Values.Add(new(paramName, raw, displayValue, uitype, sectionName));
         }
 
         State = state;
