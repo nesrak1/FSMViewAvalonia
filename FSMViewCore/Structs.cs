@@ -323,9 +323,11 @@ public class FsmTemplateControl
     public INamedAssetProvider fsmTemplate;
     public FsmVarOverride[] fsmVarOverrides;
     public FsmTemplateControl() { }
-    public FsmTemplateControl(IDataProvider field) =>
+    public FsmTemplateControl(IDataProvider field)
+    {
         //fsmTemplate = StructUtil.ReadAssetPPtr(field.Get("fsmTemplate"));
-        fsmVarOverrides = field.Get<IDataProvider[]>("fsmVarOverrides").Select(i => new FsmVarOverride(i)).ToArray();
+        //fsmVarOverrides = field.Get<IDataProvider[]>("fsmVarOverrides").Select(i => new FsmVarOverride(i)).ToArray();
+    }
     public override string ToString() => "TemplateControl";
 }
 

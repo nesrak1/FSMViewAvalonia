@@ -26,6 +26,7 @@ public partial class MainWindow : Window
 
     //fsm info
     private readonly ObservableCollection<TabItem> tabItems = [];
+    public static readonly FontFamily font = new("Segoe UI Bold");
 
     public MainWindow()
     {
@@ -480,6 +481,7 @@ public partial class MainWindow : Window
             Height = 28,
             FontWeight = FontWeight.Bold,
             Background = (IBrush) background,
+            FontFamily = font
         };
         return header;
     }
@@ -593,13 +595,15 @@ public partial class MainWindow : Window
             VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
             Padding = new Thickness(5),
             Margin = new Thickness(0, 0, 0, 0),
-            Width = 120
+            Width = 120,
+            FontFamily = font
         };
         TextBox valueBox = new()
         {
             Margin = new Thickness(125, 0, marginRight, 0),
             IsReadOnly = true,
-            Text = value
+            Text = value,
+            FontFamily = font
         };
         valueContainer.Children.Add(valueLabel);
         valueContainer.Children.Add(valueBox);
@@ -619,14 +623,16 @@ public partial class MainWindow : Window
             HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left,
             VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
             Padding = new Thickness(5),
-            Width = 120
+            Width = 120,
+            FontFamily = font
         };
         CheckBox valueBox = new()
         {
             Margin = new Thickness(125, 0, 0, 0),
             IsEnabled = false,
             IsChecked = value,
-            Content = "Global"
+            Content = "Global",
+            FontFamily = font
         };
         valueContainer.Children.Add(valueLabel);
         valueContainer.Children.Add(valueBox);
