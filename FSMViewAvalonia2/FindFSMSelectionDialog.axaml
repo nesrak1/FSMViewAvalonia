@@ -1,0 +1,34 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="350" d:DesignHeight="600"
+        Width="350" Height="600"
+        x:Class="FSMViewAvalonia2.FindFSMSelectionDialog"
+        Title="Select FSM">
+    <Grid>
+        <Grid x:Name="loadRoot" IsVisible="True">
+
+                <ProgressBar  Margin="10 10"
+                              Height="20"
+                Minimum="0" Maximum="100"
+                              Value="30"
+                              x:Name="loadProgressBar"
+                 ProgressTextFormat="Loading assets ({0}/{3})"
+                ShowProgressText="True"/>
+                
+        </Grid>
+        <Grid x:Name="inputRoot" IsVisible="False">
+            <!-- AutoCompleteBox used over TextBox due to TextChanged event -->
+            <AutoCompleteBox x:Name="searchBox" VerticalAlignment="Top" />
+            <ListBox x:Name="listBox" Margin="0,20">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding Path=Name}"></TextBlock>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+            <Button x:Name="selectButton" Content="Select" VerticalAlignment="Bottom" />
+        </Grid>
+    </Grid>
+</Window>

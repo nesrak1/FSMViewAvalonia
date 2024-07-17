@@ -13,7 +13,7 @@ public class AssetInfoUnity : AssetInfo
     public long goId;
     public required AssetTypeTemplateField templateField;
     public override DataProviderType ProviderType => DataProviderType.Assets;
-    public override string Name => loadAsDep ? "[LoadAsDep]" + path + name + " (" + Path.GetFileNameWithoutExtension(assetFile) + ")" : path + name;
+    public override string Name => loadAsDep ? "[LoadAsDep]" + base.Name + " (" + Path.GetFileNameWithoutExtension(assetFile) + ")" : base.Name;
 }
 
 

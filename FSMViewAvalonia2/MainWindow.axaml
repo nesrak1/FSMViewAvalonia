@@ -7,7 +7,6 @@
         x:Class="FSMViewAvalonia2.MainWindow"
         Title="FSMView Avalonia">
 
-  
   <Grid>
     <Canvas x:Name="graphCanvas" Height="383" Margin="10,26,10,0" VerticalAlignment="Top">
       <TextBlock Canvas.Top="50" Canvas.Left="50" Foreground="#222222" Background="#ffabab" Padding="4" Name="tipText">Welcome to FSMView Avalonia. Go to File->Open to get started.</TextBlock>
@@ -16,7 +15,7 @@
       </Canvas.RenderTransform>
     </Canvas>
     <Menu Height="21" VerticalAlignment="Top">
-      <MenuItem Header="File">
+      <MenuItem Header="File" Name="fileMenuRoot">
         <MenuItem Header="Open" Name="fileOpen" />
         <MenuItem Header="Open Scene List" Name="openSceneList" />
         <MenuItem Header="Open Assets Bundle" Name="openBundle" />
@@ -24,6 +23,11 @@
         <MenuItem Header="Open resources.assets" Name="openResources" />
         <MenuItem Header="Open Last" Name="openLast" IsEnabled="False" />
       </MenuItem>
+        <MenuItem Header="Find" Name="findMenuRoot">
+            
+            <MenuItem Header="Find in all scenes" Name="findInAllScenes" />
+            <MenuItem Header="Generate quick lookup table" Name="generateFsmList" />
+        </MenuItem>
       <MenuItem Header="Close Tab" Name="closeTab"></MenuItem>
       <MenuItem Header="Close All Tab" Name="closeAllTab"></MenuItem>
     </Menu>

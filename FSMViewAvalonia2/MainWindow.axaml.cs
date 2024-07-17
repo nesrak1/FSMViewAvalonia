@@ -30,6 +30,9 @@ public partial class MainWindow : Window
 
     public MainWindow()
     {
+#if DEBUG
+        this.AttachDevTools();
+#endif
         instance = this;
         App.mainWindow = this;
         InitializeComponent();
@@ -39,6 +42,8 @@ public partial class MainWindow : Window
         InitView();
 
         InitFSMLoader();
+
+        InitFind();
 
 
         option_includeSharedassets.IsChecked = Config.config.option_includeSharedassets;

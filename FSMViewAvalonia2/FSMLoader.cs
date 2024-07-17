@@ -40,7 +40,7 @@ public class FSMLoader
             .SelectMany(x => GetFSMInfos(am, x, false))
             .ToList();
     }
-    public List<AssetInfo> LoadAllFSMsFromFile(string path, bool loadAsDep = false)
+    public List<AssetInfo> LoadAllFSMsFromFile(string path, bool loadAsDep = false, bool forceOnly = false)
     {
         bool isLevel = Path.GetFileNameWithoutExtension(path).StartsWith("level");
 
@@ -53,7 +53,7 @@ public class FSMLoader
         AssetsFile file = curFile.file;
 
         List<AssetInfo> result = GetFSMInfos(am, curFile, loadAsDep);
-        if (isLevel && Config.config.option_includeSharedassets)
+        if (isLevel && Config.config.option_includeSharedassets && !forceOnly)
         {
             foreach (AssetsFileExternal dep in curFile.file.Metadata.Externals.OrderBy(
                 a =>
@@ -216,7 +216,7 @@ public class FSMLoader
                     templateField = t_pmBS_data,
                     assetInfo = info,
                     size = info.ByteSize,
-                    name = m_Name + "-" + fsmName,
+                    name = fsmName,
                     path = GetGameObjectPath(am, goAti, assetsFile),
                     goId = goAE.info.PathId,
                     fsmId = info.PathId,
@@ -224,7 +224,7 @@ public class FSMLoader
                     nameBase = m_Name,
                     assetFI = assetsFile,
                     loadAsDep = loadAsDep,
-
+                    goName = m_Name,
                     assemblyProvider = apr,
                     am = am
                 });
@@ -252,7 +252,7 @@ public class FSMLoader
                     templateField = t_fsmTemplateBS_data,
                     assetInfo = info,
                     size = info.ByteSize,
-                    name = m_MonoName + "-" + fsmName + " (template)",
+                    name = fsmName + " (template)",
                     path = "",
                     goId = 0,
                     fsmId = info.PathId,
@@ -260,7 +260,7 @@ public class FSMLoader
                     nameBase = m_Name,
                     assetFI = assetsFile,
                     loadAsDep = loadAsDep,
-
+                    goName = m_Name,
                     assemblyProvider = apr,
                     am = am
                 });
