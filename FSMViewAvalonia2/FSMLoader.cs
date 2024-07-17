@@ -226,7 +226,8 @@ public class FSMLoader
                     loadAsDep = loadAsDep,
                     goName = m_Name,
                     assemblyProvider = apr,
-                    am = am
+                    am = am,
+                    isTemplate = false
                 });
             }
             else if (m_ClassName == "FsmTemplate") //TODO
@@ -252,7 +253,7 @@ public class FSMLoader
                     templateField = t_fsmTemplateBS_data,
                     assetInfo = info,
                     size = info.ByteSize,
-                    name = fsmName + " (template)",
+                    name = fsmName,
                     path = "",
                     goId = 0,
                     fsmId = info.PathId,
@@ -262,7 +263,8 @@ public class FSMLoader
                     loadAsDep = loadAsDep,
                     goName = m_Name,
                     assemblyProvider = apr,
-                    am = am
+                    am = am,
+                    isTemplate = true
                 });
             }
 

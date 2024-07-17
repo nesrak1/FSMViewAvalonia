@@ -223,6 +223,7 @@ public partial class MainWindow : Window
         string assetsName = string.Format(format, selectedId);
         string fullAssetsPath = System.IO.Path.Combine(dataPath, assetsName);
 
+        lastIsBundle = false;
         lastFileName = fullAssetsPath;
         openLast.IsEnabled = true;
 
@@ -608,6 +609,7 @@ public partial class MainWindow : Window
             Width = 120,
             FontFamily = font
         };
+        ToolTip.SetTip(valueLabel, name);
         TextBox valueBox = new()
         {
             Margin = new Thickness(125, 0, marginRight, 0),

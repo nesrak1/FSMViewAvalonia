@@ -19,7 +19,7 @@ partial class MainWindow
             public string assetFileName;
             public bool isTemplate;
 
-            public string Name => $"{goName}-{fsmName} [G:{goId}][F:{fsmId}]({assetFileName})";
+            public string Name => $"{goName}-{fsmName} {(isTemplate ? "(template)" : "")} [G:{goId}][F:{fsmId}]({assetFileName})";
             public override string ToString() => Name;
         }
         public List<FsmItem> fsms = [];
@@ -32,11 +32,13 @@ partial class MainWindow
     private LookupTable fsmsLookupCache;
     private async void GenerateFsmList_Click(object sender, RoutedEventArgs e)
     {
+        await CreateAssetsManagerAndLoader();
         var view = await GenerateLookupTable(false, true);
         view?.Hide();
     }
     private async void FindInAllScenes_Click(object sender, RoutedEventArgs e)
     {
+        await CreateAssetsManagerAndLoader();
         var view = await GenerateLookupTable(false, false);
         if(view is null)
         {
@@ -49,7 +51,19 @@ partial class MainWindow
             {
                 return;
             }
-            _ = await LoadFsm(GameFileHelper.FindGameFilePath(info.assetFileName), info.goName + "-" + info.fsmName, false);
+            var assetPath = GameFileHelper.FindGameFilePath(info.assetFileName);
+            var fsms = fsmLoader.LoadAllFSMsFromFile(assetPath, false, false);
+            var fi = fsms.OfType<AssetInfoUnity>().FirstOrDefault(x => x.goId == info.goId && x.fsmId == info.fsmId &&
+                                                                        x.name == info.fsmName);
+            if(fi is not null)
+            {
+                if(LoadFsm(fi))
+                {
+                    lastFileName = assetPath;
+                    lastIsBundle = false;
+                    openLast.IsEnabled = true;
+                }
+            }
         };
     }
 
@@ -77,7 +91,7 @@ partial class MainWindow
                     {
                         cancel.Cancel();
                     };
-                    findFSMSelection.Show();
+                    _ = findFSMSelection.ShowDialog(this);
                     timer = new(TimeSpan.FromSeconds(0.1), DispatcherPriority.Normal, (_, _1) =>
                     {
                         findFSMSelection.UpdateProgress(currentFile, totalFile);
@@ -137,7 +151,7 @@ partial class MainWindow
                             goId = a.goId,
                             fsmName = a.name,
                             goName = a.path + a.goName,
-                            isTemplate = false
+                            isTemplate = a.isTemplate
                         });
                     }
                     
