@@ -15,9 +15,13 @@ public class FsmDataInstance
 
     public IReadOnlyList<IActionScriptEntry> GetActionScriptEntry(FsmState state)
     {
-        var actionData = state.actionData;
-        if (actionData.actionCache is not null) return actionData.actionCache;
-        var result = new List<IActionScriptEntry>();
+        ActionData actionData = state.actionData;
+        if (actionData.actionCache is not null)
+        {
+            return actionData.actionCache;
+        }
+
+        List<IActionScriptEntry> result = new();
         for (int i = 0; i < actionData.actionNames.Count; i++)
         {
             result.Add(new FsmStateAction(actionData, i, dataVersion, state, this));
@@ -56,7 +60,7 @@ public class FsmDataInstance
         varData.Add(arrays);
         for (int i = 0; i < arrayVariables.Length; i++)
         {
-            var arr = new FsmArray(arrayVariables[i]);
+            FsmArray arr = new(arrayVariables[i]);
             arrays.Values.Add(new(arr.name, arr));
         }
 
@@ -215,7 +219,7 @@ public class FsmDataInstance
         dataInstance.states = [];
         for (int i = 0; i < states.Length; i++)
         {
-            var state = new FsmState(states[i], dataInstance);
+            FsmState state = new(states[i], dataInstance);
 
             if (state.name == startState)
             {

@@ -17,7 +17,7 @@ public class FsmStateActionUI
 
         stack.Children.Add(CreateSidebarHeader(actionName, index, action.Enabled));
 
-        foreach (var field in action.Values)
+        foreach (IActionScriptEntry.PropertyInfo field in action.Values)
         {
 
             _ = await App.mainWindow.CreateSidebarRow(action.AssemblyProvider, field, stack);
@@ -31,7 +31,7 @@ public class FsmStateActionUI
             Height = 28,
             VerticalAlignment = Avalonia.Layout.VerticalAlignment.Top
         };
-        var header = MainWindow.instance.CreateSidebarHeader("(" + index + ") " + text);
+        TextBlock header = MainWindow.instance.CreateSidebarHeader("(" + index + ") " + text);
         if (!enabled)
         {
             header.Background = Brushes.Red;

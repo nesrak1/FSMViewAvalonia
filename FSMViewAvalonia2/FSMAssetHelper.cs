@@ -53,15 +53,17 @@ public static class FSMAssetHelper
     }
     public static AssetsManager GetAssetsManager(string path)
     {
-        var gd = GetGameId(path);
+        string gd = GetGameId(path);
         if (gd == null)
         {
             return CreateAssetManager();
         }
+
         if (assetsManagers.TryGetValue(gd, out AssetsManager manager))
         {
             return manager;
         }
+
         manager = CreateAssetManager();
         assetsManagers[gd] = manager;
         return manager;

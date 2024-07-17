@@ -19,7 +19,7 @@ public static class ActionReader
     {
         string type = actionData.arrayParamTypes[actionData.paramDataPos[index]];
         int size = actionData.arrayParamSizes[actionData.paramDataPos[index]];
-        var result = new FsmArray2
+        FsmArray2 result = new()
         {
             type = type
         };

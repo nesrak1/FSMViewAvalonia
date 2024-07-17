@@ -27,7 +27,7 @@ public class FsmStateAction : IActionScriptEntry
             }
 
             object obj = ActionReader.GetFsmObject(actionData, AssemblyProvider, ref j, dataVersion);
-            var raw = obj;
+            object raw = obj;
             string displayValue = "";
             string sectionName = null;
             UIHint? uitype = null;

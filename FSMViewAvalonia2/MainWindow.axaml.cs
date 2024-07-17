@@ -389,7 +389,7 @@ public partial class MainWindow : Window
                 PlaceTransitions(node, false);
             }
 
-            foreach (var globalTransition in currentFSMData.fsm.globalTransitions)
+            foreach (FsmGlobalTransition globalTransition in currentFSMData.fsm.globalTransitions)
             {
                 FsmNodeData node = new(currentFSMData, globalTransition);
                 UINode uiNode = new(null, node);
@@ -433,7 +433,7 @@ public partial class MainWindow : Window
             string variableType = varData.Type;
 
             variableList.Children.Add(CreateSidebarHeader(variableType));
-            foreach (var value in varData.Values)
+            foreach (FsmVariableData.ValueTuple value in varData.Values)
             {
                 _ = await CreateSidebarRow(currentFSMData.fsm.info.assemblyProvider,
                     new(value.Name, value.RawValue, value.Value, null), variableList);
@@ -471,7 +471,7 @@ public partial class MainWindow : Window
 
     public TextBlock CreateSidebarHeader(string text)
     {
-        _ = this.TryFindResource("ThemeControlLowBrush", out var background);
+        _ = this.TryFindResource("ThemeControlLowBrush", out object background);
         TextBlock header = new()
         {
             Text = text,
@@ -492,8 +492,8 @@ public partial class MainWindow : Window
     public async Task<Grid> CreateSidebarRow(IAssemblyProvider assemblyProvider,
         IActionScriptEntry.PropertyInfo prop, StackPanel panel)
     {
-        _ = this.TryGetResource("ThemeBackgroundBrush", out var background);
-        var rawvalue = prop.RawValue;
+        _ = this.TryGetResource("ThemeBackgroundBrush", out object background);
+        object rawvalue = prop.RawValue;
         string value = rawvalue.ToString();
         if (rawvalue is bool)
         {
@@ -588,12 +588,13 @@ public partial class MainWindow : Window
             }
         }
 
-        var name = prop.Name;
+        string name = prop.Name;
         if (prop.UIHint is not null)
         {
-            var uihint = prop.UIHint.Value;
+            UIHint uihint = prop.UIHint.Value;
             name += $" [{uihint}]";
         }
+
         TextBlock valueLabel = new()
         {
             Text = name,
@@ -725,6 +726,7 @@ public partial class MainWindow : Window
                     .ShowAsync();
                 Environment.Exit(0);
             }
+
             GlobalGameManagers.instance ??= new(am);
             fsmLoader = new FSMLoader(this);
         }

@@ -1,5 +1,6 @@
 namespace FSMViewAvalonia2;
-partial class MainWindow
+
+public partial class MainWindow
 {
     public class LookupTable
     {
@@ -27,27 +28,29 @@ partial class MainWindow
     private async void GenerateFsmList_Click(object sender, RoutedEventArgs e)
     {
         await CreateAssetsManagerAndLoader();
-        var view = await GenerateLookupTable(false, true);
+        FindFSMSelectionDialog view = await GenerateLookupTable(false, true);
         view?.Hide();
     }
     private async void FindInAllScenes_Click(object sender, RoutedEventArgs e)
     {
         await CreateAssetsManagerAndLoader();
-        var view = await GenerateLookupTable(false, false);
+        FindFSMSelectionDialog view = await GenerateLookupTable(false, false);
         if (view is null)
         {
             return;
         }
+
         view.Closed += async (_, _1) =>
         {
-            var info = view.selectedAssetInfo;
+            LookupTable.FsmItem info = view.selectedAssetInfo;
             if (info is null)
             {
                 return;
             }
-            var assetPath = GameFileHelper.FindGameFilePath(info.assetFileName);
-            var fsms = fsmLoader.LoadAllFSMsFromFile(assetPath, false, false);
-            var fi = fsms.OfType<AssetInfoUnity>().FirstOrDefault(x => x.goId == info.goId && x.fsmId == info.fsmId &&
+
+            string assetPath = GameFileHelper.FindGameFilePath(info.assetFileName);
+            List<AssetInfo> fsms = fsmLoader.LoadAllFSMsFromFile(assetPath, false, false);
+            AssetInfoUnity fi = fsms.OfType<AssetInfoUnity>().FirstOrDefault(x => x.goId == info.goId && x.fsmId == info.fsmId &&
                                                                         x.name == info.fsmName);
             if (fi is not null)
             {
@@ -68,8 +71,8 @@ partial class MainWindow
         try
         {
             FindFSMSelectionDialog findFSMSelection = null;
-            var curGameId = FSMAssetHelper.GetGameId(GameFileHelper.FindGameFilePath("Managed"));
-            var cachePath = $"fsmLookupTable-{curGameId}.json";
+            string curGameId = FSMAssetHelper.GetGameId(GameFileHelper.FindGameFilePath("Managed"));
+            string cachePath = $"fsmLookupTable-{curGameId}.json";
             int currentFile = 0;
             int totalFile = 9999;
             CancellationTokenSource cancel = new();
@@ -103,6 +106,7 @@ partial class MainWindow
                         fsmsLookupCache = JsonConvert.DeserializeObject<LookupTable>(File.ReadAllText(cachePath));
                     }
                 }
+
                 if (fsmsLookupCache != null && !force)
                 {
                     findFSMSelection?.Finish(fsmsLookupCache.fsms);
@@ -116,12 +120,12 @@ partial class MainWindow
                 {
                     gameId = curGameId,
                 };
-                var root = Path.GetDirectoryName(GameFileHelper.FindGameFilePath("Managed"));
+                string root = Path.GetDirectoryName(GameFileHelper.FindGameFilePath("Managed"));
                 List<string> files = [];
 
-                foreach (var p in Directory.EnumerateFiles(root, "*", SearchOption.TopDirectoryOnly))
+                foreach (string p in Directory.EnumerateFiles(root, "*", SearchOption.TopDirectoryOnly))
                 {
-                    var pname = Path.GetFileName(p);
+                    string pname = Path.GetFileName(p);
                     if (pname.StartsWith("level", StringComparison.OrdinalIgnoreCase) ||
                         pname.EndsWith("assets", StringComparison.OrdinalIgnoreCase)
                         )
@@ -129,14 +133,15 @@ partial class MainWindow
                         files.Add(p);
                     }
                 }
+
                 totalFile = files.Count;
                 var loader = new FSMLoader(this);
-                var l = result.fsms;
-                foreach (var v in files)
+                List<LookupTable.FsmItem> l = result.fsms;
+                foreach (string v in files)
                 {
                     cancel.Token.ThrowIfCancellationRequested();
-                    var assetName = Path.GetFileName(v);
-                    foreach (var a in loader.LoadAllFSMsFromFile(v, false, true).OfType<AssetInfoUnity>())
+                    string assetName = Path.GetFileName(v);
+                    foreach (AssetInfoUnity a in loader.LoadAllFSMsFromFile(v, false, true).OfType<AssetInfoUnity>())
                     {
                         l.Add(new()
                         {
@@ -151,6 +156,7 @@ partial class MainWindow
 
                     currentFile++;
                 }
+
                 loader = null;
                 fsmsLookupCache = result;
                 await File.WriteAllTextAsync(cachePath,

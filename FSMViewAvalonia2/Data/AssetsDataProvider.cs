@@ -64,7 +64,7 @@ public class AssetsDataProvider : IDataProvider
         string result;
         if (name.IsDummy)
         {
-            var gof = fields["m_GameObject"];
+            AssetTypeValueField gof = fields["m_GameObject"];
             if (!gof.IsDummy && gof.TypeName == "PPtr<GameObject>")
             {
                 AssetExternal go = am.GetExtAsset(assetsFileInstance, gof);
@@ -80,6 +80,7 @@ public class AssetsDataProvider : IDataProvider
         {
             result = name.AsString;
         }
+
         if (type != AssetClassID.GameObject)
         {
             string typeName;
@@ -92,6 +93,7 @@ public class AssetsDataProvider : IDataProvider
             {
                 typeName = type.ToString();
             }
+
             result += $" ({typeName})";
         }
 

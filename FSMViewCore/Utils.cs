@@ -57,7 +57,7 @@ public static class Utils
     public static TypeDefinition FindType(this IEnumerable<AssemblyDefinition> asm, string name) => asm.Select(x => x.MainModule.GetType(name)).FirstOrDefault(x => x != null);
     public static Array Convert(this Array src, Type type)
     {
-        var result = Array.CreateInstance(type, src.Length);
+        Array result = Array.CreateInstance(type, src.Length);
         for (int i = 0; i < src.Length; i++)
         {
             result.SetValue(src.GetValue(i), i);
