@@ -12,7 +12,7 @@ public partial class FindFSMSelectionDialog : Window
     {
         InitializeComponent();
 #if DEBUG
-            this.AttachDevTools();
+        this.AttachDevTools();
 #endif
         //generated items
         //generated events
@@ -22,7 +22,7 @@ public partial class FindFSMSelectionDialog : Window
         AutoCompleteBox tbox = this.FindControl<AutoCompleteBox>("searchBox");
 
         tbox.TextChanged += OnInput;
-        
+
     }
     public void UpdateProgress(int val, int total)
     {

@@ -23,7 +23,7 @@ public static class GameFileHelper
 
     static GameFileHelper()
     {
-        if(!File.Exists("GameInfo.json"))
+        if (!File.Exists("GameInfo.json"))
         {
             MessageBoxManager
                     .GetMessageBoxStandard("No game info",

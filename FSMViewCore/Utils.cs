@@ -1,9 +1,4 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace FSMViewAvalonia2;
 public static class Utils
@@ -52,7 +47,8 @@ public static class Utils
                                                                                                                       try
                                                                                                                       {
                                                                                                                           return assembly.MainModule.AssemblyResolver.Resolve(x);
-                                                                                                                      } catch (Exception e)
+                                                                                                                      }
+                                                                                                                      catch (Exception e)
                                                                                                                       {
                                                                                                                           Console.Error.WriteLine(e);
                                                                                                                           return null;
@@ -71,9 +67,9 @@ public static class Utils
     }
     public static bool IsSubclassOf(this TypeDefinition type, string parentType)
     {
-        while(type!= null)
+        while (type != null)
         {
-            if(type.FullName == parentType)
+            if (type.FullName == parentType)
             {
                 return true;
             }

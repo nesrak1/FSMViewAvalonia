@@ -20,7 +20,7 @@ public class JsonDataProvider : IDataProvider
             ? token.Children().Select(x => x.ToObject(type.GetElementType())).ToArray().Convert(type.GetElementType())
             : token.ToObject(type);
 
-    T IDataProvider.As<T>() => (T)Convert(typeof(T), _token);
+    T IDataProvider.As<T>() => (T) Convert(typeof(T), _token);
 
     T IDataProvider.GetValue<T>(string key)
     {

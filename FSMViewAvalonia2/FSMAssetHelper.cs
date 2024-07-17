@@ -34,7 +34,7 @@ public static class FSMAssetHelper
     public static AssemblyProvider GetAssemblyProvider(AssetsFileInstance assetsFile)
     {
         string dataName = GetGameId(assetsFile.path);
-        if(dataName == null)
+        if (dataName == null)
         {
             return defaultProvider;
         }
@@ -54,11 +54,11 @@ public static class FSMAssetHelper
     public static AssetsManager GetAssetsManager(string path)
     {
         var gd = GetGameId(path);
-        if(gd == null)
+        if (gd == null)
         {
             return CreateAssetManager();
         }
-        if(assetsManagers.TryGetValue(gd, out AssetsManager manager))
+        if (assetsManagers.TryGetValue(gd, out AssetsManager manager))
         {
             return manager;
         }

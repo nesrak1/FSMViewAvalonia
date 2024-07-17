@@ -11,7 +11,7 @@ public partial class FSMSelectionDialog : Window
     {
         InitializeComponent();
 #if DEBUG
-            this.AttachDevTools();
+        this.AttachDevTools();
 #endif
         //generated items
         //generated events

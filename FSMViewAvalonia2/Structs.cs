@@ -1,7 +1,3 @@
-
-
-using System.Collections;
-
 namespace FSMViewAvalonia2;
 public static class Constants
 {

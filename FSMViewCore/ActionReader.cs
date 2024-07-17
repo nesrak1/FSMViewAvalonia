@@ -12,7 +12,7 @@ public static class ActionReader
         foreach (string v in Enum.GetNames(typeof(ParamDataType)))
         {
             ParamDataTypes.Add($"HutongGames.PlayMaker.{v}",
-                (ParamDataType) Enum.Parse(typeof(ParamDataType), v));
+                (ParamDataType)Enum.Parse(typeof(ParamDataType), v));
         }
     }
     public static object GetFsmArray(this ActionData actionData, IAssemblyProvider assemblyProvider, ref int index, int dataVersion)
@@ -126,7 +126,7 @@ public static class ActionReader
                     case ParamDataType.FsmQuaternion:
                     case ParamDataType.FsmColor:
                         nv.useVariable = r.ReadBoolean();
-                        int nameLength = paramByteDataSize - ((int) r.BaseStream.Position - paramDataPos);
+                        int nameLength = paramByteDataSize - ((int)r.BaseStream.Position - paramDataPos);
                         nv.name = Encoding.UTF8.GetString(r.ReadBytes(nameLength));
                         break;
                 }

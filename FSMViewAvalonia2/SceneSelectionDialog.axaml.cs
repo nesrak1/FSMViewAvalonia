@@ -10,7 +10,7 @@ public partial class SceneSelectionDialog : Window
     {
         InitializeComponent();
 #if DEBUG
-            this.AttachDevTools();
+        this.AttachDevTools();
 #endif
         //generated events
         selectButton.Click += SelectButton_Click;

@@ -24,42 +24,42 @@ public static class StructUtil
             case Type intType when intType == typeof(int):
                 for (int i = 0; i < size; i++)
                 {
-                    data.Add((T) (object) field[i].As<int>());
+                    data.Add((T)(object)field[i].As<int>());
                 }
 
                 return data;
             case Type stringType when stringType == typeof(string):
                 for (int i = 0; i < size; i++)
                 {
-                    data.Add((T) (object) field[i].As<string>());
+                    data.Add((T)(object)field[i].As<string>());
                 }
 
                 return data;
             case Type boolType when boolType == typeof(bool):
                 for (int i = 0; i < size; i++)
                 {
-                    data.Add((T) (object) field[i].As<bool>());
+                    data.Add((T)(object)field[i].As<bool>());
                 }
 
                 return data;
             case Type byteType when byteType == typeof(byte):
                 for (int i = 0; i < size; i++)
                 {
-                    data.Add((T) (object) (byte) field[i].As<int>());
+                    data.Add((T)(object)(byte)field[i].As<int>());
                 }
 
                 return data;
             case Type enumType when enumType.IsEnum:
                 for (int i = 0; i < size; i++)
                 {
-                    data.Add((T) (object) field[i].As<int>());
+                    data.Add((T)(object)field[i].As<int>());
                 }
 
                 return data;
             case Type namedPPtrType when namedPPtrType == typeof(INamedAssetProvider):
                 for (int i = 0; i < size; i++)
                 {
-                    data.Add((T) (object) field[i].As<INamedAssetProvider>());
+                    data.Add((T)(object)field[i].As<INamedAssetProvider>());
                 }
 
                 return data;
@@ -67,7 +67,7 @@ public static class StructUtil
                 //no error checking so don't put something stupid for <T>
                 for (int i = 0; i < size; i++)
                 {
-                    data.Add((T) Activator.CreateInstance(typeof(T), field[i]));
+                    data.Add((T)Activator.CreateInstance(typeof(T), field[i]));
                 }
 
                 return data;
@@ -116,7 +116,7 @@ public class FsmState
     {
         name = provider.GetValue<string>("name");
         description = provider.GetValue<string>("description");
-        colorIndex = (byte) provider.GetValue<uint>("colorIndex");
+        colorIndex = (byte)provider.GetValue<uint>("colorIndex");
         position = new UnityRect(provider.GetValue<IDataProvider>("position"));
         isBreakpoint = provider.GetValue<bool>("isBreakpoint");
         isSequence = provider.GetValue<bool>("isSequence");
@@ -205,7 +205,7 @@ public class FsmOwnerDefault
     public FsmOwnerDefault() { }
     public FsmOwnerDefault(IDataProvider field)
     {
-        ownerOption = (OwnerDefaultOption) field.Get<int>("ownerOption");
+        ownerOption = (OwnerDefaultOption)field.Get<int>("ownerOption");
         gameObject = new FsmGameObject(field.Get<IDataProvider>("gameObject"));
     }
     public override string ToString() => $"OwnerDefault {ToStringWithNoHead()}";
@@ -342,7 +342,7 @@ public class FsmEventTarget
     public FsmEventTarget() { }
     public FsmEventTarget(IDataProvider field)
     {
-        target = (EventTarget) field.Get<int>("target");
+        target = (EventTarget)field.Get<int>("target");
         excludeSelf = new FsmBool(field.Get<IDataProvider>("excludeSelf"));
         gameObject = new FsmOwnerDefault(field.Get<IDataProvider>("gameObject"));
         fsmName = new FsmString(field.Get<IDataProvider>("fsmName"));
@@ -426,7 +426,7 @@ public class FsmLayoutOption : NamedVariable
     public FsmLayoutOption() { }
     public FsmLayoutOption(IDataProvider field) : base(field)
     {
-        option = (LayoutOptionType) field.Get<int>("option");
+        option = (LayoutOptionType)field.Get<int>("option");
         floatParam = new FsmFloat(field.Get<IDataProvider>("floatParam"));
         boolParam = new FsmBool(field.Get<IDataProvider>("boolParam"));
     }
@@ -468,7 +468,7 @@ public class FsmVar
         variableName = field.Get<string>("variableName");
         objectType = field.Get<string>("objectType");
         useVariable = field.Get<bool>("useVariable");
-        type = (VariableType) field.Get<int>("type");
+        type = (VariableType)field.Get<int>("type");
         floatValue = field.Get<float>("floatValue");
         intValue = field.Get<int>("intValue");
         boolValue = field.Get<bool>("boolValue");
@@ -549,7 +549,7 @@ public class FsmArray : NamedVariable, IEnumerable<object>
     public FsmArray() { }
     public FsmArray(IDataProvider field) : base(field)
     {
-        type = (VariableType) field.Get<int>("type");
+        type = (VariableType)field.Get<int>("type");
         objectTypeName = field.Get<string>("objectTypeName");
         floatValues = field.Get<IDataProvider[]>("floatValues").Select(x => x.As<float>()).ToArray();
         intValues = field.Get<IDataProvider[]>("intValues").Select(x => x.As<int>()).ToArray();
@@ -837,7 +837,7 @@ public class FsmTransition
         toState = valueField.Get<string>("toState");
         linkStyle = valueField.Get<int>("linkStyle");
         linkConstraint = valueField.Get<int>("linkConstraint");
-        colorIndex = (byte) valueField.Get<int>("colorIndex");
+        colorIndex = (byte)valueField.Get<int>("colorIndex");
     }
     public override string ToString() => $"Transition({fsmEvent.name} -> {toState})";
 }

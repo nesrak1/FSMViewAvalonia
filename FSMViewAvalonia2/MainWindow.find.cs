@@ -1,9 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 namespace FSMViewAvalonia2;
 partial class MainWindow
 {
@@ -40,7 +34,7 @@ partial class MainWindow
     {
         await CreateAssetsManagerAndLoader();
         var view = await GenerateLookupTable(false, false);
-        if(view is null)
+        if (view is null)
         {
             return;
         }
@@ -55,9 +49,9 @@ partial class MainWindow
             var fsms = fsmLoader.LoadAllFSMsFromFile(assetPath, false, false);
             var fi = fsms.OfType<AssetInfoUnity>().FirstOrDefault(x => x.goId == info.goId && x.fsmId == info.fsmId &&
                                                                         x.name == info.fsmName);
-            if(fi is not null)
+            if (fi is not null)
             {
-                if(LoadFsm(fi))
+                if (LoadFsm(fi))
                 {
                     lastFileName = assetPath;
                     lastIsBundle = false;
@@ -79,12 +73,12 @@ partial class MainWindow
             int currentFile = 0;
             int totalFile = 9999;
             CancellationTokenSource cancel = new();
-            
+
             Dispatcher.UIThread.Invoke(() =>
             {
                 fileMenuRoot.IsEnabled = false;
                 findMenuRoot.IsEnabled = false;
-                if(!noUI)
+                if (!noUI)
                 {
                     findFSMSelection = new();
                     findFSMSelection.Closed += (_, _1) =>
@@ -99,12 +93,12 @@ partial class MainWindow
                     timer.Start();
                 }
             });
-            
+
             if (!force)
             {
-                if(fsmsLookupCache is null)
+                if (fsmsLookupCache is null)
                 {
-                    if(File.Exists(cachePath))
+                    if (File.Exists(cachePath))
                     {
                         fsmsLookupCache = JsonConvert.DeserializeObject<LookupTable>(File.ReadAllText(cachePath));
                     }
@@ -115,8 +109,8 @@ partial class MainWindow
                     return findFSMSelection;
                 }
             }
-            
-            await Task.Run(async() =>
+
+            await Task.Run(async () =>
             {
                 var result = new LookupTable()
                 {
@@ -125,10 +119,10 @@ partial class MainWindow
                 var root = Path.GetDirectoryName(GameFileHelper.FindGameFilePath("Managed"));
                 List<string> files = [];
 
-                foreach(var p in Directory.EnumerateFiles(root, "*", SearchOption.TopDirectoryOnly))
+                foreach (var p in Directory.EnumerateFiles(root, "*", SearchOption.TopDirectoryOnly))
                 {
                     var pname = Path.GetFileName(p);
-                    if(pname.StartsWith("level", StringComparison.OrdinalIgnoreCase) ||
+                    if (pname.StartsWith("level", StringComparison.OrdinalIgnoreCase) ||
                         pname.EndsWith("assets", StringComparison.OrdinalIgnoreCase)
                         )
                     {
@@ -138,11 +132,11 @@ partial class MainWindow
                 totalFile = files.Count;
                 var loader = new FSMLoader(this);
                 var l = result.fsms;
-                foreach(var v in files)
+                foreach (var v in files)
                 {
                     cancel.Token.ThrowIfCancellationRequested();
                     var assetName = Path.GetFileName(v);
-                    foreach(var a in loader.LoadAllFSMsFromFile(v, false,true).OfType<AssetInfoUnity>())
+                    foreach (var a in loader.LoadAllFSMsFromFile(v, false, true).OfType<AssetInfoUnity>())
                     {
                         l.Add(new()
                         {
@@ -154,7 +148,7 @@ partial class MainWindow
                             isTemplate = a.isTemplate
                         });
                     }
-                    
+
                     currentFile++;
                 }
                 loader = null;
@@ -168,7 +162,7 @@ partial class MainWindow
             findFSMSelection?.Finish(fsmsLookupCache.fsms);
             return findFSMSelection;
         }
-        catch(OperationCanceledException)
+        catch (OperationCanceledException)
         {
             return null;
         }

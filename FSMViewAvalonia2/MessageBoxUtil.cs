@@ -23,7 +23,7 @@ public static class MessageBoxUtil
         var definitions = new ButtonDefinition[buttons.Length];
         for (int i = 0; i < buttons.Length; i++)
         {
-            definitions[i] = new ButtonDefinition { Name = buttons[i]};
+            definitions[i] = new ButtonDefinition { Name = buttons[i] };
         }
 
         return await MessageBoxManager.GetMessageBoxCustom(new MessageBoxCustomParams

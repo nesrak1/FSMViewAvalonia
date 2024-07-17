@@ -1,7 +1,3 @@
-
-
-
-using System.Diagnostics;
 using System.Runtime.Versioning;
 
 namespace FSMViewAvalonia2;

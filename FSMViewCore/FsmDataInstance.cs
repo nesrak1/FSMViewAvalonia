@@ -1,9 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 namespace FSMViewAvalonia2;
 public class FsmDataInstance
 {
@@ -242,7 +236,7 @@ public class FsmDataInstance
                 toState = globalTransitionField.Get<string>("toState"),
                 linkStyle = globalTransitionField.Get<int>("linkStyle"),
                 linkConstraint = globalTransitionField.Get<int>("linkConstraint"),
-                colorIndex = (byte) globalTransitionField.Get<int>("colorIndex")
+                colorIndex = (byte)globalTransitionField.Get<int>("colorIndex")
             };
 
             dataInstance.globalTransitions.Add(globalTransition);

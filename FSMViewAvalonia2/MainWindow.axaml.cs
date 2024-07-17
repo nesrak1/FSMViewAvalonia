@@ -1,8 +1,3 @@
-using System.Reactive;
-
-using Avalonia.Markup.Xaml.MarkupExtensions;
-using Avalonia.Reactive;
-
 using MsBox.Avalonia;
 using MsBox.Avalonia.Base;
 using MsBox.Avalonia.Enums;
@@ -455,7 +450,7 @@ public partial class MainWindow : Window
         for (int i = 0; i < entries.Count; i++)
         {
             IActionScriptEntry entry = entries[i];
-            var ui = new FsmStateActionUI((FsmStateAction)entry);
+            var ui = new FsmStateActionUI((FsmStateAction) entry);
             ui.BuildView(stateList, i);
         }
     }
@@ -464,7 +459,7 @@ public partial class MainWindow : Window
     {
 
         TextBlock header = CreateSidebarHeader($"{index}) {text}");
-        
+
         if (!enabled)
         {
             header.Background = Brushes.Red;
@@ -509,7 +504,7 @@ public partial class MainWindow : Window
         {
             Height = 28,
             VerticalAlignment = Avalonia.Layout.VerticalAlignment.Top,
-            Background = (IBrush)background,
+            Background = (IBrush) background,
         };
         panel.Children.Add(valueContainer);
         int marginRight = 0;
@@ -594,7 +589,7 @@ public partial class MainWindow : Window
         }
 
         var name = prop.Name;
-        if(prop.UIHint is not null)
+        if (prop.UIHint is not null)
         {
             var uihint = prop.UIHint.Value;
             name += $" [{uihint}]";
@@ -734,7 +729,7 @@ public partial class MainWindow : Window
             fsmLoader = new FSMLoader(this);
         }
 
-        
+
     }
 
 

@@ -13,11 +13,13 @@ internal class Config
             try
             {
                 config = JsonConvert.DeserializeObject<Config>(File.ReadAllText(ConfigPath));
-            } catch (Exception)
+            }
+            catch (Exception)
             {
                 config = new();
             }
-        } else
+        }
+        else
         {
             config = new();
         }

@@ -1,11 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 namespace FSMViewAvalonia2;
-public  class FsmDataInstanceUI
+public class FsmDataInstanceUI
 {
     public FsmDataInstance fsm;
     public int tabIndex;

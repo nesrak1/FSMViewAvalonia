@@ -1,5 +1,3 @@
-using System.Diagnostics;
-
 using FSMViewAvalonia2.Assets;
 
 using Path = System.IO.Path;

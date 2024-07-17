@@ -1,9 +1,3 @@
-using System;
-using System.Collections;
-using System.Runtime.CompilerServices;
-
-using AssetsTools.NET;
-
 namespace FSMViewAvalonia2.Data;
 public class AssetsDataProvider : IDataProvider
 {
@@ -19,8 +13,8 @@ public class AssetsDataProvider : IDataProvider
         inst = resovler.inst;
     }
 
-    
-    
+
+
     private NamedAssetPPtr GetNamedPtr(AssetPPtr pptr)
     {
         if (pptr.PathId == 0)
@@ -100,7 +94,7 @@ public class AssetsDataProvider : IDataProvider
             }
             result += $" ({typeName})";
         }
-        
+
 
         return result;
     }

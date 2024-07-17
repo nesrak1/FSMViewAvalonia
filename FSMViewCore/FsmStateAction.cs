@@ -1,11 +1,7 @@
-using System.Diagnostics;
-using System.Runtime.Versioning;
-
-
 namespace FSMViewAvalonia2;
 public class FsmStateAction : IActionScriptEntry
 {
-    
+
     public FsmStateAction(ActionData actionData, int index, int dataVersion, FsmState state,
         FsmDataInstance dataInstance)
     {
@@ -53,7 +49,7 @@ public class FsmStateAction : IActionScriptEntry
                 TypeDefinition ftype = field.FieldType.Resolve();
                 CustomAttribute UIHintAttr = field.CustomAttributes
                         .FirstOrDefault(x => x.AttributeType.FullName == "HutongGames.PlayMaker.UIHintAttribute");
-                uitype = (UIHint?) (int?) UIHintAttr?.ConstructorArguments[0].Value;
+                uitype = (UIHint?)(int?)UIHintAttr?.ConstructorArguments[0].Value;
 
                 CustomAttribute ActionSectionAttr = field.CustomAttributes
                         .FirstOrDefault(x => x.AttributeType.FullName == "HutongGames.PlayMaker.ActionSection");
@@ -77,7 +73,7 @@ public class FsmStateAction : IActionScriptEntry
     public string Name { get; set; }
     public List<IActionScriptEntry.PropertyInfo> Values { get; set; } = [];
     public bool Enabled { get; set; } = true;
-   
+
     public FsmState State { get; init; }
     public TypeDefinition Type { get; }
     public FsmDataInstance FsmData { get; }
