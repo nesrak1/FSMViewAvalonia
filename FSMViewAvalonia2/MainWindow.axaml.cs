@@ -11,7 +11,7 @@ public partial class MainWindow : Window
 
     public static MainWindow instance;
     //variables
-    private AssetsManager am;
+
     public FSMLoader fsmLoader;
     private FsmDataInstanceUI currentFSMData;
     private string lastFileName;
@@ -174,7 +174,7 @@ public partial class MainWindow : Window
 
     private async void OpenResources_Click(object sender, RoutedEventArgs e)
     {
-        await CreateAssetsManagerAndLoader();
+        CreateAssetsManagerAndLoader();
 
         string gamePath = await GameFileHelper.FindHollowKnightPath(this);
         if (gamePath == null)
@@ -189,7 +189,7 @@ public partial class MainWindow : Window
 
     private async void OpenSceneList_Click(object sender, RoutedEventArgs e)
     {
-        await CreateAssetsManagerAndLoader();
+        CreateAssetsManagerAndLoader();
 
         string gamePath = await GameFileHelper.FindHollowKnightPath(this);
         if (gamePath == null)
@@ -265,7 +265,7 @@ public partial class MainWindow : Window
 
     public async Task<bool> LoadFsm(string fileName, bool isBundle, string defaultSearch = "")
     {
-        await CreateAssetsManagerAndLoader();
+        CreateAssetsManagerAndLoader();
 
         List<AssetInfo> assetInfos = isBundle ? fsmLoader.LoadAllFSMsFromBundle(fileName) :
             fsmLoader.LoadAllFSMsFromFile(fileName);
@@ -285,7 +285,7 @@ public partial class MainWindow : Window
 
     public async Task<bool> LoadFsm(string fileName, string fullname, bool fallback)
     {
-        await CreateAssetsManagerAndLoader();
+        CreateAssetsManagerAndLoader();
 
         List<AssetInfo> assetInfos = fsmLoader.LoadAllFSMsFromFile(fileName);
         AssetInfo assetInfo = assetInfos.FirstOrDefault(x => x.assetFile == fileName && x.Name == fullname);
@@ -712,22 +712,13 @@ public partial class MainWindow : Window
         }
     }
 
-    private async Task CreateAssetsManagerAndLoader()
+    private void CreateAssetsManagerAndLoader()
     {
         if (fsmLoader == null)
         {
             FSMAssetHelper.Init();
-            am = FSMAssetHelper.GetAssetsManager(GameFileHelper.FindGameFilePath("Managed"));
-            if (am == null)
-            {
-                _ = await MessageBoxManager
-                    .GetMessageBoxStandard("No classdata",
-                    "You're missing classdata.tpk next to the executable. Please make sure it exists.")
-                    .ShowAsync();
-                Environment.Exit(0);
-            }
 
-            GlobalGameManagers.instance ??= new(am);
+            GlobalGameManagers.instance ??= new(FSMAssetHelper.CreateAssetManager());
             fsmLoader = new FSMLoader(this);
         }
 

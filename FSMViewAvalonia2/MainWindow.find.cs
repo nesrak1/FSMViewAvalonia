@@ -14,6 +14,7 @@ public partial class MainWindow
             public string assetFileName;
             public bool isTemplate;
 
+            [JsonIgnore]
             public string Name => $"{goName}-{fsmName} {(isTemplate ? "(template)" : "")} [G:{goId}][F:{fsmId}]({assetFileName})";
             public override string ToString() => Name;
         }
@@ -27,13 +28,13 @@ public partial class MainWindow
     private LookupTable fsmsLookupCache;
     private async void GenerateFsmList_Click(object sender, RoutedEventArgs e)
     {
-        await CreateAssetsManagerAndLoader();
+        CreateAssetsManagerAndLoader();
         FindFSMSelectionDialog view = await GenerateLookupTable(false, true);
         view?.Hide();
     }
     private async void FindInAllScenes_Click(object sender, RoutedEventArgs e)
     {
-        await CreateAssetsManagerAndLoader();
+        CreateAssetsManagerAndLoader();
         FindFSMSelectionDialog view = await GenerateLookupTable(false, false);
         if (view is null)
         {

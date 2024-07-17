@@ -11,7 +11,7 @@ public static class FSMAssetHelper
 
 
     private readonly static Dictionary<string, AssemblyProvider> assemblyProviders = [];
-    private readonly static Dictionary<string, AssetsManager> assetsManagers = [];
+    
     private static MonoCecilTempGenerator hkMono;
 
     public static string GetGameId(string gamePath)
@@ -51,23 +51,7 @@ public static class FSMAssetHelper
         assemblyProviders[dataName] = mono;
         return mono;
     }
-    public static AssetsManager GetAssetsManager(string path)
-    {
-        string gd = GetGameId(path);
-        if (gd == null)
-        {
-            return CreateAssetManager();
-        }
-
-        if (assetsManagers.TryGetValue(gd, out AssetsManager manager))
-        {
-            return manager;
-        }
-
-        manager = CreateAssetManager();
-        assetsManagers[gd] = manager;
-        return manager;
-    }
+    
     public static MonoCecilTempGenerator GetMonoCTG(AssetsFileInstance assetsFile)
     {
         return GetAssemblyProvider(assetsFile).mono;
@@ -109,7 +93,7 @@ public static class FSMAssetHelper
         assemblyProviders["hollow knight"] = defaultProvider;
 
     }
-    private static AssetsManager CreateAssetManager()
+    public static AssetsManager CreateAssetManager()
     {
         AssetsManager am = new()
         {

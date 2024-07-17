@@ -9,13 +9,14 @@ public class FSMLoader
     private readonly MainWindow window;
 
     private readonly Dictionary<(string, string), List<AssetInfo>> fsmListCache = [];
+    private readonly Dictionary<string, AssetsManager> assetsManagers = [];
     public FSMLoader(MainWindow window)
     {
         this.window = window;
     }
     public List<AssetInfo> LoadAllFSMsFromBundle(string path, bool loadAsDep = false)
     {
-        AssetsManager am = FSMAssetHelper.GetAssetsManager(path);
+        AssetsManager am = GetAssetsManager(path);
 
         BundleFileInstance file = am.LoadBundleFile(path, false);
         _ = am.LoadClassDatabaseFromPackage(file.file.Header.EngineVersion);
@@ -38,11 +39,28 @@ public class FSMLoader
             .SelectMany(x => GetFSMInfos(am, x, false))
             .ToList();
     }
+    private AssetsManager GetAssetsManager(string path)
+    {
+        string gd = FSMAssetHelper.GetGameId(path);
+        if (gd == null)
+        {
+            return FSMAssetHelper.CreateAssetManager();
+        }
+
+        if (assetsManagers.TryGetValue(gd, out AssetsManager manager))
+        {
+            return manager;
+        }
+
+        manager = FSMAssetHelper.CreateAssetManager();
+        assetsManagers[gd] = manager;
+        return manager;
+    }
     public List<AssetInfo> LoadAllFSMsFromFile(string path, bool loadAsDep = false, bool forceOnly = false)
     {
         bool isLevel = Path.GetFileNameWithoutExtension(path).StartsWith("level");
 
-        AssetsManager am = FSMAssetHelper.GetAssetsManager(path);
+        AssetsManager am = GetAssetsManager(path);
         AssetsFileInstance curFile = am.LoadAssetsFile(path, true);
         am.LoadDependencies(curFile);
 
