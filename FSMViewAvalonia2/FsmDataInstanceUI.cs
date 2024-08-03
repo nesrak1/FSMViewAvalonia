@@ -13,4 +13,12 @@ public class FsmDataInstanceUI
 
         states = fsm.states.Select(x => new FsmStateData(x)).ToList();
     }
+    //To prevent memory leak because Avalonia's bugs
+    public void Detach()
+    {
+        fsm = null;
+        nodes = null;
+        canvasControls = null;
+        states = null;
+    }
 }
