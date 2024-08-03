@@ -1,3 +1,5 @@
+using FSMViewAvalonia2.Context;
+
 using MsBox.Avalonia;
 using MsBox.Avalonia.Base;
 using MsBox.Avalonia.Enums;
@@ -287,7 +289,7 @@ public partial class MainWindow : Window
                         uiNode.Selected = true;
                         if (uiNode.stateData != null)
                         {
-                            StateSidebarData(uiNode.stateData);
+                            StateSidebarData(uiNode.stateData, fsmDataInst.context);
                         }
 
                         break;
@@ -358,12 +360,14 @@ public partial class MainWindow : Window
                                                         );
         if (currentFSMData == null)
         {
+
             currentFSMData = new(
                 dataProvider == null ?
                 (assetInfo is AssetInfoUnity uinfo ?
                     fsmLoader.LoadFSMWithAssets(selectedId, uinfo) :
                     throw new NotSupportedException())
-                : new(assetInfo, dataProvider)
+                : new(assetInfo, dataProvider),
+                assetInfo is AssetInfoUnity uinfo2 ? uinfo2.context : null
                 );
             loadedFsmDatas.Add(currentFSMData);
             currentFSMData.tabIndex = tabItems.Count;
@@ -418,7 +422,7 @@ public partial class MainWindow : Window
                     }
 
                     uiNode.Selected = true;
-                    StateSidebarData(stateData);
+                    StateSidebarData(stateData, currentFSMData.context);
                 };
 
                 graphCanvas.Children.Add(uiNode.grid);
@@ -473,7 +477,7 @@ public partial class MainWindow : Window
             variableList.Children.Add(CreateSidebarHeader(variableType));
             foreach (FsmVariableData.ValueTuple value in varData.Values)
             {
-                _ = await CreateSidebarRow(currentFSMData.fsm.info.assemblyProvider,
+                _ = await CreateSidebarRow(currentFSMData.fsm.info is AssetInfoUnity aiu ? aiu.context : null,
                     new(value.Name, value.RawValue, value.Value, null), variableList);
             }
         }
@@ -481,14 +485,14 @@ public partial class MainWindow : Window
     (variableList.Parent as ScrollViewer)!.ScrollToHome();
     }
 
-    private void StateSidebarData(FsmStateData stateData)
+    private void StateSidebarData(FsmStateData stateData, GameContext ctx)
     {
         stateList.Children.Clear();
         IReadOnlyList<IActionScriptEntry> entries = stateData.ActionData;
         for (int i = 0; i < entries.Count; i++)
         {
             IActionScriptEntry entry = entries[i];
-            var ui = new FsmStateActionUI((FsmStateAction) entry);
+            var ui = new FsmStateActionUI(ctx, (FsmStateAction) entry);
             ui.BuildView(stateList, i);
         }
     }
@@ -527,9 +531,10 @@ public partial class MainWindow : Window
 
 
 
-    public async Task<Grid> CreateSidebarRow(IAssemblyProvider assemblyProvider,
+    public async Task<Grid> CreateSidebarRow(GameContext ctx,
         IActionScriptEntry.PropertyInfo prop, StackPanel panel)
     {
+        
         _ = this.TryGetResource("ThemeBackgroundBrush", out object background);
         object rawvalue = prop.RawValue;
         string value = rawvalue.ToString();
@@ -578,7 +583,7 @@ public partial class MainWindow : Window
             int id = 0;
             foreach (object v in array)
             {
-                _ = await CreateSidebarRow(assemblyProvider, new($"[{id++}]", v, v, null), panel);
+                _ = await CreateSidebarRow(ctx, new($"[{id++}]", v, v, null), panel);
             }
         }
 
@@ -588,12 +593,14 @@ public partial class MainWindow : Window
             int id = 0;
             foreach (object v in array2.array)
             {
-                _ = await CreateSidebarRow(assemblyProvider, new($"[{id++}]", v, v, null), panel);
+                _ = await CreateSidebarRow(ctx, new($"[{id++}]", v, v, null), panel);
             }
         }
 
-        if (assemblyProvider != null)
+        if (ctx != null)
         {
+            var assemblyProvider = ctx.assemblyProvider;
+
             if (rawvalue is FsmEnum @enum)
             {
                 if (!string.IsNullOrEmpty(@enum.enumName))
@@ -605,8 +612,20 @@ public partial class MainWindow : Window
                     }
                 }
             }
-        }
 
+            if(prop.UIHint is not null)
+            {
+                var uiHint = prop.UIHint.Value;
+                if(uiHint == UIHint.Layer)
+                {
+                    if(rawvalue is FsmInt @int && @int.value < 32 && @int.value >= 0)
+                    {
+                        value = ctx.gameManagers.GetAsset(AssetClassID.TagManager)["layers"][0][@int.value].AsString
+                            + $"({@int.value})";
+                    }
+                }
+            }
+        }
         if (pptr != null)
         {
             string assetPath = pptr.file;

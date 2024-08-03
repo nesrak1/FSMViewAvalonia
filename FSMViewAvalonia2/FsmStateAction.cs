@@ -1,14 +1,18 @@
 using System.Runtime.Versioning;
 
+using FSMViewAvalonia2.Context;
+
 
 namespace FSMViewAvalonia2;
 public class FsmStateActionUI
 {
     public int Index { get; set; }
     public FsmStateAction action;
-    public FsmStateActionUI(FsmStateAction action)
+    public GameContext gameContext;
+    public FsmStateActionUI(GameContext ctx, FsmStateAction action)
     {
         this.action = action;
+        this.gameContext = ctx;
     }
     public virtual async void BuildView(StackPanel stack, int index)
     {
@@ -20,7 +24,7 @@ public class FsmStateActionUI
         foreach (IActionScriptEntry.PropertyInfo field in action.Values)
         {
 
-            _ = await App.mainWindow.CreateSidebarRow(action.AssemblyProvider, field, stack);
+            _ = await App.mainWindow.CreateSidebarRow(gameContext, field, stack);
         }
     }
 
