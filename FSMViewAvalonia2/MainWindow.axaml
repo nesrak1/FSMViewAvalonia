@@ -30,6 +30,7 @@
         </MenuItem>
       <MenuItem Header="Close Tab" Name="closeTab"></MenuItem>
       <MenuItem Header="Close All Tab" Name="closeAllTab"></MenuItem>
+        <MenuItem Header="Release Memory" Name="releaseMemoryTab"></MenuItem>
     </Menu>
     <Grid Margin="0,24,0,0">
       <Grid.RowDefinitions>

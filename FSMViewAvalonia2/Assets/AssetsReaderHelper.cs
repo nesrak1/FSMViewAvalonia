@@ -1,3 +1,5 @@
+using FSMViewAvalonia2.Context;
+
 namespace FSMViewAvalonia2.Assets;
 internal static class AssetsReaderHelper
 {
@@ -19,6 +21,7 @@ internal static class AssetsReaderHelper
     }
     public static AssetTypeTemplateField GetTypeTemplateFieldFromAsset(
         this AssetsFileInstance assetsFileInstance,
+        GameContext ctx,
         AssetFileInfo info,
         string assemblyName, string nameSpace, string typeName,
         List<AssetTypeTemplateField> parent = null)
@@ -34,7 +37,7 @@ internal static class AssetsReaderHelper
         }
         else
         {
-            result = FSMAssetHelper.GetMonoCTG(assetsFileInstance).GetTemplateField(result, assemblyName, nameSpace,
+            result = ctx.assemblyProvider.mono.GetTemplateField(result, assemblyName, nameSpace,
                                                                typeName, new(file.Metadata.UnityVersion));
         }
 

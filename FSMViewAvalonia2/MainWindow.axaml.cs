@@ -68,12 +68,44 @@ public partial class MainWindow : Window
         fileOpen.Click += FileOpen_Click;
         openLast.Click += OpenLast_Click;
         closeTab.Click += CloseTab_Click;
+        releaseMemoryTab.Click += ReleaseMemoryTab_Click;
         closeAllTab.Click += CloseAllTab_Click;
         openResources.Click += OpenResources_Click;
         openSceneList.Click += OpenSceneList_Click;
         openBundle.Click += OpenBundle_Click;
         fsmTabs.SelectionChanged += FsmTabs_SelectionChanged;
         fsmTabs.ItemsSource = tabItems;
+    }
+
+    private void CleanupWorkshop()
+    {
+        var tabItem = (TabItem) fsmTabs.SelectedItem;
+        if (tabItem != null)
+        {
+            var fsmInst = (FsmDataInstanceUI) tabItem.Tag;
+            fsmInst.canvasControls.Clear();
+        }
+
+        currentFSMData?.Detach();
+        foreach(var v in loadedFsmDatas)
+        {
+            v?.Detach();
+        }
+        tabItems.Clear();
+        loadedFsmDatas.Clear();
+        currentFSMData = null;
+        graphCanvas.Children.Clear();
+        eventList.Children.Clear();
+        stateList.Children.Clear();
+    }
+
+    private void ReleaseMemoryTab_Click(object sender, RoutedEventArgs e)
+    {
+        CleanupWorkshop();
+
+
+        fsmLoader = new(this);
+        GC.Collect(2, GCCollectionMode.Forced);
     }
 
     private async void OpenBundle_Click(object sender, RoutedEventArgs e)
@@ -175,15 +207,7 @@ public partial class MainWindow : Window
     }
     private void CloseAllTab_Click(object sender, RoutedEventArgs e)
     {
-        var tabItem = (TabItem) fsmTabs.SelectedItem;
-        if (tabItem != null)
-        {
-            var fsmInst = (FsmDataInstanceUI) tabItem.Tag;
-            fsmInst.canvasControls.Clear();
-        }
-
-        tabItems.Clear();
-        loadedFsmDatas.Clear();
+        CleanupWorkshop();
     }
 
     private async void OpenResources_Click(object sender, RoutedEventArgs e)
@@ -730,11 +754,8 @@ public partial class MainWindow : Window
     {
         if (fsmLoader == null)
         {
-            FSMAssetHelper.Init();
             fsmLoader = new FSMLoader(this);
         }
-
-
     }
 
     public void UpdateCurrentGame()

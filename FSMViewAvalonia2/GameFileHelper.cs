@@ -1,3 +1,5 @@
+using FSMViewAvalonia2.Context;
+
 using MsBox.Avalonia;
 
 using Path = System.IO.Path;
@@ -6,30 +8,7 @@ namespace FSMViewAvalonia2;
 
 public static class GameFileHelper
 {
-    public class GameInfo
-    {
-        [JsonProperty("name")]
-        [JsonRequired]
-        public string Name { get; set; } = "Hollow Knight";
-        [JsonProperty("steamid")]
-        [JsonRequired]
-        public int SteamId { get; set; } = 367520;
-        [JsonProperty("dataDirs")]
-        [JsonRequired]
-        public List<string> DataDirs { get; set; } = [
-            "hollow_knight_Data",
-            "Hollow Knight_Data",
-            "Hollow_Knight_Data"
-        ];
-        [JsonIgnore]
-        public int Index { get; set; }
-        public bool IsNone => SteamId == -1;
-        public override string ToString() => $"{Name} ({SteamId})";
-    }
-    public class GameInfoCollections : List<GameInfo>
-    {
-
-    }
+    
 
     private static readonly Dictionary<GameId, GameInfo> id2infoTable = [];
     public static readonly GameInfoCollections allGameInfos;

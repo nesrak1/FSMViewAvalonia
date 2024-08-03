@@ -1,4 +1,4 @@
-namespace FSMViewAvalonia2;
+namespace FSMViewAvalonia2.Context;
 public class AssemblyProvider : IAssemblyProvider
 {
     public required MonoCecilTempGenerator mono;
