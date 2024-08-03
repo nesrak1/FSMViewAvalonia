@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -23,7 +24,30 @@ public struct GameId
     public readonly override int GetHashCode() => Id.GetHashCode();
     public readonly override string ToString() => Id;
 
-  
+
+    private static string ProcessGameId(string id)
+    {
+        int i = 0;
+        var bf = ArrayPool<char>.Shared.Rent(id.Length);
+        for (int j = 0; j < id.Length; j++)
+        {
+            var c = id[j];
+            if(c == '-' ||
+               c == ' '
+            )
+            {
+                continue;
+            }
+            if(c >= 'A' && c <= 'Z')
+            {
+                c = (char)(c - 'A' + 'a');
+            }
+            bf[i++] = c;
+        }
+        var result = new string(bf, 0, i);
+        ArrayPool<char>.Shared.Return(bf);
+        return result;
+    }
     private static string GetGameIdFromPath(string gamePath)
     {
         string path = Path.GetDirectoryName(Path.GetFullPath(gamePath));
@@ -38,7 +62,7 @@ public struct GameId
             return null;
         }
 
-        return dataName.ToLower();
+        return ProcessGameId(dataName);
     }
     public static GameId FromName(string name)
     {
@@ -48,7 +72,7 @@ public struct GameId
         }
         return new()
         {
-            Id = name.ToLower() + "_data",
+            Id = ProcessGameId(name + "_data"),
         };
     }
     public static GameId FromPath(string path)
@@ -68,8 +92,7 @@ public struct GameId
                     Path.GetFullPath(gp), StringComparison.OrdinalIgnoreCase
                     ))
                 {
-                    id = v.Name.ToLower() + "_data";
-                    break;
+                    return FromName(v.Name);
                 }
             }
         }

@@ -30,6 +30,8 @@ public static class GameFileHelper
     {
 
     }
+
+    private static readonly Dictionary<GameId, GameInfo> id2infoTable = [];
     public static readonly GameInfoCollections allGameInfos;
     public static GameInfo CurrentGameInfo
     {
@@ -62,12 +64,9 @@ public static class GameFileHelper
         {
             return null;
         }
-        foreach(var v in allGameInfos)
+        if (id2infoTable.TryGetValue(id, out var result))
         {
-            if(v.DataDirs.Any(x => x.Equals(id.Id, StringComparison.OrdinalIgnoreCase)))
-            {
-                return v;
-            }
+            return result;
         }
         return null;
     }
@@ -87,7 +86,13 @@ public static class GameFileHelper
         });
         for(int i = 0; i < allGameInfos.Count; i++)
         {
-            allGameInfos[i].Index = i;
+            var info = allGameInfos[i];
+            info.Index = i;
+            id2infoTable[GameId.FromName(info.Name)] = info;
+            foreach(var v in info.DataDirs)
+            {
+                id2infoTable[GameId.FromName(v)] = info;
+            }
         }
     }
 

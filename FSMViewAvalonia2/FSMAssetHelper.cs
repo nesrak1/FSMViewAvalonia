@@ -21,18 +21,7 @@ public static class FSMAssetHelper
             return GetAssemblyProvider(GameFileHelper.CurrentGameId);
         }
 
-        if (assemblyProviders.TryGetValue(gameId, out AssemblyProvider mono))
-        {
-            return mono;
-        }
-
-        mono = CreateAssemblyProvider(
-            Path.Combine(
-                Path.GetDirectoryName(path), "Managed"
-                )
-            );
-        assemblyProviders[gameId] = mono;
-        return mono;
+        return GetAssemblyProvider(gameId);
     }
     public static AssemblyProvider GetAssemblyProvider(GameId gameId)
     {
@@ -60,6 +49,10 @@ public static class FSMAssetHelper
 
     private static AssemblyProvider CreateAssemblyProvider(string managedPath)
     {
+        if(!Directory.Exists(managedPath))
+        {
+            return defaultProvider;
+        }
         var assemblies = new List<AssemblyDefinition>();
         foreach (string v in Directory.EnumerateFiles(managedPath, "*.dll", SearchOption.AllDirectories))
         {
