@@ -1,5 +1,7 @@
 
 
+using System.Xml.Linq;
+
 namespace FSMViewAvalonia2;
 
 internal class Config
@@ -26,12 +28,15 @@ internal class Config
 
         AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
     }
-
-    private static void CurrentDomain_ProcessExit(object sender, EventArgs e) => File.WriteAllText(ConfigPath, JsonConvert.SerializeObject(config, Formatting.Indented));
+    public static void Save()
+    {
+        File.WriteAllText(ConfigPath, JsonConvert.SerializeObject(config, Formatting.Indented));
+    }
+    private static void CurrentDomain_ProcessExit(object sender, EventArgs e) => Save();
     public bool option_includeSharedassets = false;
     public bool option_extraLAMZABOnTempFile = false;
-    public string hkPath = "";
+    public Dictionary<int, string> gamePaths = [];
     public string SpyPath = "";
-
+    public int currentGame = 0;
     public bool option_enableFSMListCache = true;
 }

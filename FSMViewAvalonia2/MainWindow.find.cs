@@ -1,3 +1,5 @@
+using FSMViewAvalonia2.Context;
+
 namespace FSMViewAvalonia2;
 
 public partial class MainWindow
@@ -25,7 +27,8 @@ public partial class MainWindow
         findInAllScenes.Click += FindInAllScenes_Click;
         generateFsmList.Click += GenerateFsmList_Click;
     }
-    private LookupTable fsmsLookupCache;
+    private readonly Dictionary<GameId, LookupTable> fsmsLookupCaches = [];
+
     private async void GenerateFsmList_Click(object sender, RoutedEventArgs e)
     {
         CreateAssetsManagerAndLoader();
@@ -71,8 +74,9 @@ public partial class MainWindow
         DispatcherTimer timer = null;
         try
         {
+            LookupTable fsmsLookupCache = null;
             FindFSMSelectionDialog findFSMSelection = null;
-            string curGameId = FSMAssetHelper.GetGameId(GameFileHelper.FindGameFilePath("Managed"));
+            GameId curGameId = GameFileHelper.CurrentGameId;
             string cachePath = $"fsmLookupTable-{curGameId}.json";
             int currentFile = 0;
             int totalFile = 9999;
@@ -100,11 +104,12 @@ public partial class MainWindow
 
             if (!force)
             {
-                if (fsmsLookupCache is null)
+                if (!fsmsLookupCaches.TryGetValue(curGameId, out fsmsLookupCache))
                 {
                     if (File.Exists(cachePath))
                     {
                         fsmsLookupCache = JsonConvert.DeserializeObject<LookupTable>(File.ReadAllText(cachePath));
+                        fsmsLookupCaches[curGameId] = fsmsLookupCache;
                     }
                 }
 
@@ -119,7 +124,7 @@ public partial class MainWindow
             {
                 var result = new LookupTable()
                 {
-                    gameId = curGameId,
+                    gameId = curGameId.Id,
                 };
                 string root = Path.GetDirectoryName(GameFileHelper.FindGameFilePath("Managed"));
                 List<string> files = [];
@@ -140,22 +145,30 @@ public partial class MainWindow
                 List<LookupTable.FsmItem> l = result.fsms;
                 foreach (string v in files)
                 {
-                    cancel.Token.ThrowIfCancellationRequested();
-                    string assetName = Path.GetFileName(v);
-                    foreach (AssetInfoUnity a in loader.LoadAllFSMsFromFile(v, false, true).OfType<AssetInfoUnity>())
+                    try
                     {
-                        l.Add(new()
-                        {
-                            assetFileName = assetName,
-                            fsmId = a.fsmId,
-                            goId = a.goId,
-                            fsmName = a.name,
-                            goName = a.path + a.goName,
-                            isTemplate = a.isTemplate
-                        });
-                    }
+                        cancel.Token.ThrowIfCancellationRequested();
+                        string assetName = Path.GetFileName(v);
 
-                    currentFile++;
+                        foreach (AssetInfoUnity a in loader.LoadAllFSMsFromFile(v, false, true).OfType<AssetInfoUnity>())
+                        {
+                            l.Add(new()
+                            {
+                                assetFileName = assetName,
+                                fsmId = a.fsmId,
+                                goId = a.goId,
+                                fsmName = a.name,
+                                goName = a.path + a.goName,
+                                isTemplate = a.isTemplate
+                            });
+                        }
+
+                        currentFile++;
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.Error.WriteLine(ex.ToString());
+                    }
                 }
 
                 loader = null;

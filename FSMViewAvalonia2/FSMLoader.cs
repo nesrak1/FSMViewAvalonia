@@ -1,4 +1,5 @@
 using FSMViewAvalonia2.Assets;
+using FSMViewAvalonia2.Context;
 
 using Path = System.IO.Path;
 
@@ -9,14 +10,14 @@ public class FSMLoader
     private readonly MainWindow window;
 
     private readonly Dictionary<(string, string), List<AssetInfo>> fsmListCache = [];
-    private readonly Dictionary<string, AssetsManager> assetsManagers = [];
+    private readonly DefaultGameIsolate<AssetsManager> assetsManagers = new(_ => FSMAssetHelper.CreateAssetManager());
     public FSMLoader(MainWindow window)
     {
         this.window = window;
     }
     public List<AssetInfo> LoadAllFSMsFromBundle(string path, bool loadAsDep = false)
     {
-        AssetsManager am = GetAssetsManager(path);
+        AssetsManager am = GetAssetsManager(GameId.FromPath(path));
 
         BundleFileInstance file = am.LoadBundleFile(path, false);
         _ = am.LoadClassDatabaseFromPackage(file.file.Header.EngineVersion);
@@ -39,28 +40,20 @@ public class FSMLoader
             .SelectMany(x => GetFSMInfos(am, x, false))
             .ToList();
     }
-    private AssetsManager GetAssetsManager(string path)
+    public AssetsManager GetAssetsManager(GameId gd)
     {
-        string gd = FSMAssetHelper.GetGameId(path);
-        if (gd == null)
+        if (gd.IsNone)
         {
             return FSMAssetHelper.CreateAssetManager();
         }
 
-        if (assetsManagers.TryGetValue(gd, out AssetsManager manager))
-        {
-            return manager;
-        }
-
-        manager = FSMAssetHelper.CreateAssetManager();
-        assetsManagers[gd] = manager;
-        return manager;
+        return assetsManagers.Get(gd);
     }
     public List<AssetInfo> LoadAllFSMsFromFile(string path, bool loadAsDep = false, bool forceOnly = false)
     {
         bool isLevel = Path.GetFileNameWithoutExtension(path).StartsWith("level");
 
-        AssetsManager am = GetAssetsManager(path);
+        AssetsManager am = GetAssetsManager(GameId.FromPath(path));
         AssetsFileInstance curFile = am.LoadAssetsFile(path, true);
         am.LoadDependencies(curFile);
 
@@ -293,9 +286,9 @@ public class FSMLoader
 
 
 
-    public static List<SceneInfo> LoadSceneList()
+    public List<SceneInfo> LoadSceneList()
     {
-        AssetTypeValueField buildSettings = GlobalGameManagers.instance.GetAsset(AssetClassID.BuildSettings);
+        AssetTypeValueField buildSettings = GlobalGameManagers.Get(GameFileHelper.CurrentGameId).GetAsset(AssetClassID.BuildSettings);
         AssetTypeValueField scenes = buildSettings.Get("scenes").Get("Array");
         int sceneCount = scenes.AsArray.size;
 

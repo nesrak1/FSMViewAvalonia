@@ -40,14 +40,28 @@ public partial class MainWindow : Window
 
         InitFind();
 
-
+        InitOption();
+        
+    }
+    private void InitOption()
+    {
         option_includeSharedassets.IsChecked = Config.config.option_includeSharedassets;
         option_includeSharedassets.IsCheckedChanged += (_, ev) => Config.config.option_includeSharedassets =
             option_includeSharedassets.IsChecked ?? false;
-
-
+        option_currentGame.Items.Clear();
+        foreach (var v in GameFileHelper.allGameInfos)
+        {
+            _ = option_currentGame.Items.Add(v);
+        }
+        option_currentGame.SelectedIndex = GameFileHelper.CurrentGameInfo.Index;
+        option_currentGame.SelectionChanged += (_, ev) =>
+        {
+            Config.config.currentGame = option_currentGame.SelectedIndex;
+            UpdateCurrentGame();
+            Config.Save();
+        };
+        UpdateCurrentGame();
     }
-
     private void InitFSMLoader()
     {
         openJson.Click += OpenJson_Click;
@@ -176,7 +190,7 @@ public partial class MainWindow : Window
     {
         CreateAssetsManagerAndLoader();
 
-        string gamePath = await GameFileHelper.FindHollowKnightPath(this);
+        string gamePath = await GameFileHelper.FindGamePath(this);
         if (gamePath == null)
         {
             return;
@@ -191,7 +205,7 @@ public partial class MainWindow : Window
     {
         CreateAssetsManagerAndLoader();
 
-        string gamePath = await GameFileHelper.FindHollowKnightPath(this);
+        string gamePath = await GameFileHelper.FindGamePath(this);
         if (gamePath == null)
         {
             return;
@@ -201,7 +215,7 @@ public partial class MainWindow : Window
         string resourcesPath = GameFileHelper.FindGameFilePath(gamePath, "resources.assets");
         string dataPath = System.IO.Path.GetDirectoryName(resourcesPath);
 
-        List<SceneInfo> sceneList = FSMLoader.LoadSceneList();
+        List<SceneInfo> sceneList = fsmLoader.LoadSceneList();
         SceneSelectionDialog selector = new(sceneList);
         await selector.ShowDialog(this);
 
@@ -573,7 +587,7 @@ public partial class MainWindow : Window
         {
             string assetPath = pptr.file;
             if (!string.IsNullOrEmpty(pptr.file) && (File.Exists(pptr.file) ||
-                !string.IsNullOrEmpty(assetPath = GameFileHelper.FindGameFilePath(await GameFileHelper.FindHollowKnightPath(this), pptr.file))))
+                !string.IsNullOrEmpty(assetPath = GameFileHelper.FindGameFilePath(await GameFileHelper.FindGamePath(this), pptr.file))))
             {
                 Button btn = new()
                 {
@@ -717,13 +731,28 @@ public partial class MainWindow : Window
         if (fsmLoader == null)
         {
             FSMAssetHelper.Init();
-
-            GlobalGameManagers.instance ??= new(FSMAssetHelper.CreateAssetManager());
             fsmLoader = new FSMLoader(this);
         }
 
 
     }
 
+    public void UpdateCurrentGame()
+    {
+        var isNone = GameFileHelper.CurrentGameInfo.IsNone;
+        findMenuRoot.IsEnabled = !isNone;
+        findInAllScenes.IsEnabled = !isNone;
+        openResources.IsEnabled = !isNone;
+        openSceneList.IsEnabled = !isNone;
+        generateFsmList.IsEnabled = !isNone;
 
+        if (isNone)
+        {
+            Title = "FSMView Avalonia";
+        }
+        else
+        {
+            Title = "FSMView Avalonia for " + GameFileHelper.CurrentGameInfo.Name;
+        }
+    }
 }

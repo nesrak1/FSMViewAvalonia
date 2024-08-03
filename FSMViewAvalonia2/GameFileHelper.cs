@@ -9,44 +9,106 @@ public static class GameFileHelper
     public class GameInfo
     {
         [JsonProperty("name")]
+        [JsonRequired]
         public string Name { get; set; } = "Hollow Knight";
         [JsonProperty("steamid")]
+        [JsonRequired]
         public int SteamId { get; set; } = 367520;
         [JsonProperty("dataDirs")]
+        [JsonRequired]
         public List<string> DataDirs { get; set; } = [
             "hollow_knight_Data",
             "Hollow Knight_Data",
             "Hollow_Knight_Data"
         ];
+        [JsonIgnore]
+        public int Index { get; set; }
+        public bool IsNone => SteamId == -1;
+        public override string ToString() => $"{Name} ({SteamId})";
     }
-    public static readonly GameInfo gameInfo;
+    public class GameInfoCollections : List<GameInfo>
+    {
 
+    }
+    public static readonly GameInfoCollections allGameInfos;
+    public static GameInfo CurrentGameInfo
+    {
+        get
+        {
+            var id = Config.config.currentGame;
+            if(id >= allGameInfos.Count)
+            {
+                id = 0;
+                Config.config.currentGame = id;
+                Config.Save();
+            }
+            return allGameInfos[id];
+        }
+    }
+    public static GameId CurrentGameId
+    {
+        get
+        {
+            if(CurrentGameInfo.IsNone)
+            {
+                return default;
+            }
+            return GameId.FromName(CurrentGameInfo.Name);
+        }
+    }
+    public static GameInfo GetGameInfoFromId(GameId id)
+    {
+        if(id.IsNone)
+        {
+            return null;
+        }
+        foreach(var v in allGameInfos)
+        {
+            if(v.DataDirs.Any(x => x.Equals(id.Id, StringComparison.OrdinalIgnoreCase)))
+            {
+                return v;
+            }
+        }
+        return null;
+    }
     static GameFileHelper()
     {
-        if (!File.Exists("GameInfo.json"))
+        if (File.Exists("GameInfos.json"))
         {
-            MessageBoxManager
-                    .GetMessageBoxStandard("No game info",
-                    "You're missing GameInfo.json next to the executable. Please make sure it exists.")
-                    .ShowAsync().Wait();
-            Environment.Exit(0);
+            allGameInfos = JsonConvert.DeserializeObject<GameInfoCollections>(File.ReadAllText("GameInfos.json"));
         }
 
-        gameInfo = JsonConvert.DeserializeObject<GameInfo>(File.ReadAllText("GameInfo.json"));
+        allGameInfos ??= [];
+        allGameInfos.Insert(0, new()
+        {
+            DataDirs = [],
+            Name = "None",
+            SteamId = -1
+        });
+        for(int i = 0; i < allGameInfos.Count; i++)
+        {
+            allGameInfos[i].Index = i;
+        }
     }
 
-    public static async Task<string> FindHollowKnightPath(Window win)
+    public static async Task<string> FindGamePath(Window win, bool noUI = false, GameInfo info = null)
     {
-        if (!string.IsNullOrEmpty(Config.config.hkPath))
+        Config.config.gamePaths ??= [];
+        info ??= CurrentGameInfo;
+        if(info.IsNone)
         {
-            return Config.config.hkPath;
+            return "";
+        }
+        if (Config.config.gamePaths.TryGetValue(info.SteamId, out var path) && Directory.Exists(path))
+        {
+            return path;
         }
 
-        string path = await FindSteamGamePath(win, gameInfo.SteamId, gameInfo.Name);
+        path = await FindSteamGamePath(win, info.SteamId, info.Name, noUI);
 
         if (path != null)
         {
-            Config.config.hkPath = path;
+            Config.config.gamePaths[info.SteamId] = path;
         }
 
         return path;
@@ -54,7 +116,7 @@ public static class GameFileHelper
     }
 
 
-    public static async Task<string> FindSteamGamePath(Window win, int appid, string gameName)
+    public static async Task<string> FindSteamGamePath(Window win, int appid, string gameName, bool noUI)
     {
         string path = null;
         if (ReadRegistrySafe("Software\\Valve\\Steam", "SteamPath") != null)
@@ -69,7 +131,7 @@ public static class GameFileHelper
             path = SearchAllInstallations(Path.Combine(appsPath, "libraryfolders.vdf"), appid, gameName);
         }
 
-        if (path == null)
+        if (path == null && !noUI)
         {
             _ = await MessageBoxUtil.ShowDialog(win, "Game location", "Couldn't find installation automatically. Please pick the location manually.");
             OpenFolderDialog ofd = new();
@@ -127,15 +189,24 @@ public static class GameFileHelper
         return null;
     }
 
-    public static string FindGameFilePath(string file)
+    public static string FindGameFilePath(string file, bool noUI = false, GameInfo info = null)
     {
-        Task<string> task = FindHollowKnightPath(null);
-        task.Wait();
-        return FindGameFilePath(task.Result, file);
+        var inMain = Thread.CurrentThread == Program.mainThread;
+        Task<string> task = FindGamePath(null, noUI | inMain, info);
+        var result = task.Result;
+        if (string.IsNullOrEmpty(result))
+        {
+            if(!noUI)
+            {
+                throw new InvalidOperationException();
+            }
+            return null;
+        }
+        return FindGameFilePath(result, file);
     }
     public static string FindGameFilePath(string hkRootPath, string file)
     {
-        foreach (string pathTest in gameInfo.DataDirs)
+        foreach (string pathTest in CurrentGameInfo.DataDirs)
         {
             string dataPath = Path.Combine(hkRootPath, pathTest);
             string filePath = Path.Combine(dataPath, file);

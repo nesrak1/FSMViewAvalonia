@@ -1,15 +1,20 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8</TargetFramework>
     <LangVersion>preview</LangVersion>
     <PublishSingleFile>true</PublishSingleFile>
     <SelfContained>true</SelfContained>
-     <PublishReadyToRun>true</PublishReadyToRun>
+     <PublishReadyToRun>false</PublishReadyToRun>
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
     <AssemblyVersion>2.0.0</AssemblyVersion>
+      <PublishTrimmed>true</PublishTrimmed>
   </PropertyGroup>
+    <ItemGroup>
+        <TrimmerRootAssembly Include="FSMViewCore" />
+        <TrimmerRootAssembly Include="FSMViewAvalonia2" />
+    </ItemGroup>
   <ItemGroup>
     <PackageReference Include="AssetsTools.NET" Version="3.0.0" />
     <PackageReference Include="AssetsTools.NET.MonoCecil" Version="1.0.0" />
@@ -37,7 +42,10 @@
     <None Update="classdata.tpk">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="GameInfo.json">
+    <None Update="default_managed\PlayMaker.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="GameInfos.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="GridSplitter.xaml">

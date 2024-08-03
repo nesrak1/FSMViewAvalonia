@@ -1,18 +1,39 @@
+using FSMViewAvalonia2.Context;
+
 namespace FSMViewAvalonia2;
 
 internal class GlobalGameManagers
 {
-    public static GlobalGameManagers instance;
+    private static readonly DefaultGameIsolate<GlobalGameManagers> managers = new(id =>
+    {
+        var info = GameFileHelper.GetGameInfoFromId(id);
+        if (info == null)
+        {
+            return null;
+        }
+
+        return new(info);
+
+    });
     public AssetsManager am;
     public AssetsFileInstance file;
 
-    public GlobalGameManagers(AssetsManager am)
+    private GlobalGameManagers(GameFileHelper.GameInfo info)
     {
-        instance = this;
-        string ggmPath = GameFileHelper.FindGameFilePath("globalgamemanagers");
+        am = FSMAssetHelper.CreateAssetManager();
+        string ggmPath = GameFileHelper.FindGameFilePath("globalgamemanagers", true, info);
         file = am.LoadAssetsFile(ggmPath, false);
         _ = am.LoadClassDatabaseFromPackage(file.file.Metadata.UnityVersion);
-        this.am = am;
+    }
+
+    public static GlobalGameManagers Get(GameId id)
+    {
+        if(id.IsNone)
+        {
+            return null;
+        }
+
+        return managers.Get(id);
     }
 
     public AssetTypeValueField GetAsset(AssetClassID id) => am.GetBaseField(file, file.file.GetAssetsOfType((int) id)[0]);

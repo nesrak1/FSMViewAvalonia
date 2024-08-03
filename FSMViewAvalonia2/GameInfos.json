@@ -1,0 +1,18 @@
+[
+    {
+        "name": "Hollow Knight",
+        "steamid": 367520,
+        "dataDirs": [
+            "hollow_knight_Data",
+            "Hollow Knight_Data",
+            "Hollow_Knight_Data"
+        ]
+    },
+    {
+        "name": "DEVIATOR",
+        "steamid": 2620730,
+        "dataDirs": [
+            "Deviator_Data"
+        ]
+    }
+]

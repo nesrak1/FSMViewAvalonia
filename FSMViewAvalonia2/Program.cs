@@ -10,12 +10,14 @@ internal partial class Program
 
     public const string PipeName = "FSMViewAvaloniaInstancePipe";
     public static Mutex mutex = new(false, "MutexLock." + PipeName);
+    public static Thread mainThread = null;
 
     // Initialization code. Don't use any Avalonia, third-party APIs or any
     // SynchronizationContext-reliant code before AppMain is called: things aren't initialized
     // yet and stuff might break.
     public static void Main(string[] args)
     {
+        mainThread = Thread.CurrentThread;
     //MessageBoxW(IntPtr.Zero, string.Join(",", Encoding.ASCII.GetBytes("CLDB").Select(x => ((int)x).ToString())), "Exception!", 0x10);
     RETRY:
         if (!mutex.WaitOne(1))
@@ -158,7 +160,7 @@ internal partial class Program
         if (!File.Exists(filename))
         {
             filename = System.IO.Path.GetFileName(filename);
-            string gamePath = await GameFileHelper.FindHollowKnightPath(App.mainWindow);
+            string gamePath = await GameFileHelper.FindGamePath(App.mainWindow);
             if (gamePath == null)
             {
                 return;
