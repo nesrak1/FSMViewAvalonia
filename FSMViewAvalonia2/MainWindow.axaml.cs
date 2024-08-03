@@ -730,11 +730,8 @@ public partial class MainWindow : Window
     {
         if (fsmLoader == null)
         {
-            FSMAssetHelper.Init();
             fsmLoader = new FSMLoader(this);
         }
-
-
     }
 
     public void UpdateCurrentGame()
